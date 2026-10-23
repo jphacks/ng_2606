@@ -47,3 +47,11 @@ sysinfo.txt
 
 # Gradle
 .gradle/
+
+# XR Simulation の個人ごとの設定（人によって変わるので共有しない）
+/[Aa]ssets/XR/UserSimulationSettings/
+/[Aa]ssets/XR/UserSimulationSettings.meta
+
+# Unity Purchasing が自動生成する。この企画では課金を使わない
+/[Aa]ssets/Resources/BillingMode.json
+/[Aa]ssets/Resources/BillingMode.json.meta
