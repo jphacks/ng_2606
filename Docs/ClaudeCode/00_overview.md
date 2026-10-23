@@ -245,7 +245,7 @@ Input System のアセット Assets/_Project/Shared/Input/DeskStageControls.inpu
 
 ### 進み具合
 
-- ☐ 全体 Step 1：プロジェクトの作成
+- ☑ 全体 Step 1：プロジェクトの作成
 - ☐ 全体 Step 2：Git と GitHub
 - ☐ 全体 Step 3：共通コードを作る
 - ☐ 全体 Step 4：全員が受け取る
