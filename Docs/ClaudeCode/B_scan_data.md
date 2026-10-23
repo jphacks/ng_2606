@@ -12,7 +12,7 @@
 
 - － Step 1：検証用の物のセット（P0）… 省略（P0 の検証をしないため）
 - － Step 2：検証の記録表（P0）… 省略（P0 の検証をしないため）
-- ☐ Step 3：stage.json version 2 の説明と、箱の設定アセット（P0）
+- ☑ Step 3：stage.json version 2 の説明と、箱の設定アセット（P0）
 - ☐ Step 4：お手本ステージ（M1）
 - ☐ Step 5：ステージの組み立て（StageBuilder）（M1）
 - ☐ Step 6：箱づくり・第1段階（BoxBuilder）（M1）
