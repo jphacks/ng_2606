@@ -1,0 +1,19 @@
+{
+    "name": "DeskStage.UI",
+    "rootNamespace": "DeskStage.UI",
+    "references": [
+        "DeskStage.Shared",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
