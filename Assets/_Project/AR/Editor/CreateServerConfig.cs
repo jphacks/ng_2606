@@ -30,7 +30,7 @@ namespace DeskStage.AR.EditorTools
 
             Debug.Log(token == null
                 ? $"[Scan] {AssetPath} を作りました。Server/.env が見つからないので、合言葉は空です（試しのモードのサーバー向け）"
-                : $"[Scan] {AssetPath} を作り、Server/.env の合言葉を入れました（{token.Length} 文字）。このファイルは Git に入りません");
+                : $"[Scan] {AssetPath} を作り、Server/.env の合言葉を入れました。このファイルは Git に入りません");
         }
 
         /// <summary>Server/.env の APP_TOKEN。ファイルや値がなければ null。</summary>

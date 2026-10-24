@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using DeskStage.Shared;
@@ -12,6 +13,7 @@ namespace DeskStage.AR
     /// ・答えが届いたら ScanContext.RaiseScanResultReceived に渡し、Finished にする
     /// ・通信の失敗、サーバーの断り、答えの形が違うときは Lost にして、理由をログに残す
     /// ・Rescan を受けたら、送っている途中なら止める（撮り直しは PhotoCapture が行う）
+    /// ・合言葉と写真を暗号化なしで外に出さないため、http:// は自分の PC か、開発用ビルドで家の Wi-Fi の中だけに送る
     /// </summary>
     public class ScanClient : MonoBehaviour
     {
@@ -65,6 +67,11 @@ namespace DeskStage.AR
                 new MultipartFormFileSection("side", side, "side.jpg", "image/jpeg"),
             };
             var url = ScanUrl(ServerUrl);
+            if (!IsAllowedUrl(url, Debug.isDebugBuild, out var refused))
+            {
+                Fail(refused);
+                yield break;
+            }
             var started = Time.realtimeSinceStartup;
 
             using (request = UnityWebRequest.Post(url, form))
@@ -123,6 +130,45 @@ namespace DeskStage.AR
         public static string ScanUrl(string serverUrl)
         {
             return (serverUrl ?? "").Trim().TrimEnd('/') + "/scan";
+        }
+
+        /// <summary>
+        /// 送ってよい URL か。https はいつでもよい。http は、自分の PC（127.0.0.1、localhost）か、
+        /// allowLanHttp のとき（開発用ビルド）に家の Wi-Fi の中のアドレス（10.x、172.16〜31.x、192.168.x）だけ。
+        /// </summary>
+        public static bool IsAllowedUrl(string url, bool allowLanHttp, out string reason)
+        {
+            reason = "";
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                reason = $"サーバーの場所が正しくありません（{url}）";
+                return false;
+            }
+            if (uri.Scheme == Uri.UriSchemeHttps)
+            {
+                return true;
+            }
+            if (uri.Scheme != Uri.UriSchemeHttp)
+            {
+                reason = $"http か https のサーバーにしか送れません（{url}）";
+                return false;
+            }
+            if (uri.IsLoopback || (allowLanHttp && IsPrivateLan(uri.Host)))
+            {
+                return true;
+            }
+            reason = "暗号化なし（http://）では、自分の PC か、開発用ビルドで家の Wi-Fi の中のサーバーにしか送れません。https:// のサーバーにしてください";
+            return false;
+        }
+
+        static bool IsPrivateLan(string host)
+        {
+            var parts = host.Split('.');
+            if (parts.Length != 4 || !int.TryParse(parts[0], out var a) || !int.TryParse(parts[1], out var b))
+            {
+                return false;
+            }
+            return a == 10 || (a == 172 && b >= 16 && b <= 31) || (a == 192 && b == 168);
         }
 
         /// <summary>中身を詳しく確かめるのは B（StageReader）。ここでは JSON のオブジェクトらしいかだけを見る。</summary>

@@ -13,6 +13,23 @@ namespace DeskStage.AR.Tests
             Assert.That(ScanClient.ScanUrl(server), Is.EqualTo(expected));
         }
 
+        [TestCase("https://scan.example.com/scan", false, true)]
+        [TestCase("http://127.0.0.1:8000/scan", false, true)]
+        [TestCase("http://localhost:8000/scan", false, true)]
+        [TestCase("http://192.168.0.10:8000/scan", true, true)]
+        [TestCase("http://10.0.0.5:8000/scan", true, true)]
+        [TestCase("http://172.20.1.2:8000/scan", true, true)]
+        [TestCase("http://192.168.0.10:8000/scan", false, false)]
+        [TestCase("http://scan.example.com/scan", true, false)]
+        [TestCase("http://172.40.1.2:8000/scan", true, false)]
+        [TestCase("ftp://127.0.0.1/scan", true, false)]
+        [TestCase("not a url", true, false)]
+        public void 暗号化なしで外に送らない(string url, bool allowLanHttp, bool expected)
+        {
+            Assert.That(ScanClient.IsAllowedUrl(url, allowLanHttp, out var reason), Is.EqualTo(expected));
+            Assert.That(reason.Length > 0, Is.EqualTo(!expected), "断るときは理由がある");
+        }
+
         [TestCase("{\"paperFound\":false}", true)]
         [TestCase("  {}  ", true)]
         [TestCase("", false)]

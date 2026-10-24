@@ -4,7 +4,9 @@ namespace DeskStage.AR
 {
     /// <summary>
     /// 読み取りサーバーの場所と合言葉（A の Step 25）。
-    /// 合言葉は秘密なので、このアセット（ServerConfig.asset）は Git に入れない（同じフォルダの .gitignore）。
+    /// 合言葉は、このアセット（ServerConfig.asset）を Git に入れない（同じフォルダの .gitignore）。
+    /// ただし、アプリに入れた合言葉はアプリを調べれば取り出せるので、強い秘密ではない。いたずらで呼ばれるのを減らすためのもの。
+    /// 大事な API キーはサーバーにだけ置き、料金の使いすぎはサーバーの1日の回数の上限で防ぐ（Server/README.md）。
     /// メニュー「DeskStage/A/5. サーバーの設定を作る」で、Server/.env の APP_TOKEN から作る。
     /// </summary>
     [CreateAssetMenu(fileName = "ServerConfig", menuName = "DeskStage/A/サーバーの設定")]
