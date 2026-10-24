@@ -15,11 +15,11 @@ namespace DeskStage.Merge
     }
 
     /// <summary>
-    /// 人形を撮って、人形だけを取り出す（キャラクターを写真で作る）。
+    /// カメラで、人形（キャラクター）と、ステージの背景の写真を撮る。
     /// カメラ（WebCamTexture）を開き、端末の向きに合わせて起こした映像を Preview に出す。
-    /// 2 回撮る：先に「背景だけ」（CaptureFrame）、次に、同じ場所に人形を置いて撮る（TakeCutout）。
-    /// 2 枚の差から人形を取り出す（計算は BackgroundSubtraction）。撮る場所は、人型の枠（HumanMask.CropRegion）の中。
-    /// 背景の色で自動で切り抜く方法（CutoutMath）は、うまく切れなかったので、使わない。
+    ///  ・人形：TakeFramed。人型の枠（HumanMask.CropRegion の場所）を撮り、枠の外を透明にする（枠の形に切り抜く）
+    ///  ・背景：CaptureFullJpeg。映像の全体を、そのまま撮る
+    /// 背景の色で自動で切り抜く方法（CutoutMath）と、背景との差で取り出す方法（BackgroundSubtraction）は、使っていない。
     /// 机の写真を撮る PhotoCapture と、同じカメラを使うので、同時には開かない（撮影の画面では、これを閉じておく）。
     /// </summary>
     public class CharacterCapture : MonoBehaviour
@@ -152,22 +152,54 @@ namespace DeskStage.Merge
             }
         }
 
-        /// <summary>
-        /// 人形を置いた写真（いまの映像の枠の場所）を撮り、先に撮った背景との差から、人形を取り出す。
-        /// 背景と大きさが合わないとき、映像がまだのときは、失敗の結果を返す。
-        /// </summary>
-        public CutoutResult TakeCutout(FrameResult background)
+        /// <summary>いまの映像の、人型の枠の場所を撮って、枠の外を透明にする（枠の形に切り抜く）。映像がまだなら、失敗の結果を返す。</summary>
+        public CutoutResult TakeFramed()
         {
-            var photo = CaptureFrame();
-            if (!photo.Ok)
+            var frame = CaptureFrame();
+            if (!frame.Ok)
             {
-                return new CutoutResult { Ok = false, Reason = photo.Reason };
+                return new CutoutResult { Ok = false, Reason = frame.Reason };
             }
-            if (!background.Ok || background.Width != photo.Width || background.Height != photo.Height)
+            return new CutoutResult
             {
-                return new CutoutResult { Ok = false, Reason = "はいけいの しゃしんが ありません。はいけいから とりなおしてね" };
+                Ok = true,
+                Reason = "",
+                Pixels = HumanMask.Apply(frame.Pixels, frame.Width, frame.Height),
+                Width = frame.Width,
+                Height = frame.Height,
+            };
+        }
+
+        /// <summary>
+        /// いまの映像の全体を、JPEG の写真として撮る（ステージの背景用。枠は使わない）。長い辺は maxSide 以下。
+        /// 映像がまだなら null。
+        /// </summary>
+        public byte[] CaptureFullJpeg(int maxSide, int quality)
+        {
+            var source = Preview;
+            if (source == null || source.width <= 16)
+            {
+                return null;
             }
-            return BackgroundSubtraction.Cut(background.Pixels, photo.Pixels, photo.Width, photo.Height);
+            var size = PhotoMath.FitLongSide(source.width, source.height, maxSide);
+            var rt = RenderTexture.GetTemporary(size.x, size.y, 0);
+            var before = RenderTexture.active;
+            try
+            {
+                Graphics.Blit(source, rt);
+                RenderTexture.active = rt;
+                var tex = new Texture2D(size.x, size.y, TextureFormat.RGB24, false);
+                tex.ReadPixels(new Rect(0, 0, size.x, size.y), 0, 0);
+                tex.Apply();
+                var jpeg = tex.EncodeToJPG(quality);
+                Destroy(tex);
+                return jpeg;
+            }
+            finally
+            {
+                RenderTexture.active = before;
+                RenderTexture.ReleaseTemporary(rt);
+            }
         }
     }
 }

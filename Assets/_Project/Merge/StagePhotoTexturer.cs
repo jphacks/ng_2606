@@ -17,7 +17,9 @@ namespace DeskStage.Merge
     /// 地面と背景も、本物の写真にする：
     /// ・地面（PhotoGround）：机の板の外側。1枚目（真上）の写真を、机の四隅から外へのばして貼った大きな板を、
     ///   「落ちた」と判定する高さ（fallDepth）に敷く。机のふちから落ちると、この地面に着く
-    /// ・背景（PhotoBackdrop）：2枚目（斜め）の写真を、ぼかして、ステージの周りの大きなドームの内側に貼る
+    /// ・背景（PhotoBackdrop）：背景専用に撮った写真（BackdropStore。一覧の「はいけいを とる」で撮る）を、ぼかして、
+    ///   ステージの周りの大きなドームの内側に貼る。背景の写真が無ければ、背景は出さない
+    ///   背景は、撮影の写真が無くても（保存したステージを読み込んだときも）貼る
     /// </summary>
     public class StagePhotoTexturer : MonoBehaviour
     {
@@ -60,7 +62,7 @@ namespace DeskStage.Merge
         int photoWidth;
         int photoHeight;
 
-        // 2枚目（斜め）の写真を、ぼかすために小さくした物（背景に使う）
+        // 背景専用の写真を、ぼかすために小さくした物（背景に使う）
         Color32[] backdropPixels;
         int backdropWidth;
         int backdropHeight;
@@ -119,19 +121,18 @@ namespace DeskStage.Merge
                 Debug.LogWarning("[Merge] 1枚目の写真を読めませんでした。ステージに写真を貼りません");
             }
             Destroy(tex);
-
-            backdropPixels = null;
-            if (side != null)
-            {
-                MakeBackdropPixels(side);
-            }
         }
 
-        /// <summary>2枚目の写真を読み、ミップマップの小さい段（箱型のぼかしがかかった物）から、背景用の小さな画像を取る。</summary>
-        void MakeBackdropPixels(byte[] side)
+        /// <summary>背景専用の写真を読み、ミップマップの小さい段（箱型のぼかしがかかった物）から、背景用の小さな画像を取る。</summary>
+        void MakeBackdropPixels(byte[] jpeg)
         {
+            backdropPixels = null;
+            if (jpeg == null)
+            {
+                return;
+            }
             var tex = new Texture2D(2, 2, TextureFormat.RGB24, true);
-            if (tex.LoadImage(side))
+            if (tex.LoadImage(jpeg))
             {
                 var level = 0;
                 while ((tex.width >> (level + 1)) >= BackdropTargetWidth && level + 1 < tex.mipmapCount)
@@ -148,7 +149,6 @@ namespace DeskStage.Merge
         void OnRescan()
         {
             photoPixels = null;
-            backdropPixels = null;
             Release();
         }
 
@@ -156,26 +156,33 @@ namespace DeskStage.Merge
         {
             Release();
             var root = StageContext.StageRoot;
-            if (root == null || photoPixels == null || photoMaterial == null)
+            if (root == null || photoMaterial == null)
             {
                 return;
             }
 
-            var desk = root.Find("Desk");
-            if (desk != null && StagePhotoRegions.DeskQuad != null)
+            // 机・地面・箱：撮影の 1 枚目の写真があるときだけ（保存したステージを読み込んだときは、写真が無い）
+            if (photoPixels != null)
             {
-                AddPhoto(desk, "", StagePhotoRegions.DeskQuad, false);
-                AddGround(root, desk, StagePhotoRegions.DeskQuad);
-            }
-            AddBackdrop(root);
-            foreach (var pair in StagePhotoRegions.TopFaces)
-            {
-                var box = root.Find(pair.Key);
-                if (box != null)
+                var desk = root.Find("Desk");
+                if (desk != null && StagePhotoRegions.DeskQuad != null)
                 {
-                    AddPhoto(box, pair.Key, pair.Value, true);
+                    AddPhoto(desk, "", StagePhotoRegions.DeskQuad, false);
+                    AddGround(root, desk, StagePhotoRegions.DeskQuad);
+                }
+                foreach (var pair in StagePhotoRegions.TopFaces)
+                {
+                    var box = root.Find(pair.Key);
+                    if (box != null)
+                    {
+                        AddPhoto(box, pair.Key, pair.Value, true);
+                    }
                 }
             }
+
+            // 背景：背景専用の写真があれば、いつでも貼る
+            MakeBackdropPixels(BackdropStore.AtDefaultPlace().Load());
+            AddBackdrop(root);
         }
 
         void AddPhoto(Transform target, string boxId, Vector2[] quad, bool paintSides)

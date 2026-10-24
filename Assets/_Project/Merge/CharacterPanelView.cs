@@ -9,10 +9,8 @@ namespace DeskStage.Merge
     /// <summary>
     /// キャラクターを写真で作る・選ぶ画面（合流のつなぎ）。一覧の画面の「キャラを えらぶ」ボタンから開く、全画面の重ね画面。
     ///  ・一覧：いつものキャラと、撮ったキャラが並ぶ。押すと選ぶ。「あたらしく とる」「えらんだ キャラを けす」「とじる」
-    ///  ・撮る：2 段階。先に「はいけいを とる」（人形は置かない）、次に、同じ場所に人形を置いて「にんぎょうを とる」。
-    ///    カメラの映像には、太めで 3 等身くらいの人型の枠（HumanMask）が重なる。枠の中を撮る。
-    ///    2 段階目では、撮った背景を、うすく重ねて、スマホの位置を合わせやすくする
-    ///  ・たしかめる：背景との差で取り出した人形を見て、「これにする」か「とりなおす」
+    ///  ・撮る：カメラの映像に、太めで 3 等身くらいの人型の枠（HumanMask）が重なる。人形を枠に合わせて「とる」。枠の中だけが、キャラになる
+    ///  ・たしかめる：枠の形に切れた人形を見て、「これにする」か「とりなおす」
     /// 部品はすべて、開いたときに作る（見た目の大きさは、画面の大きさから決める）。
     /// D の正式な画面ができるまでの代わり。
     /// </summary>
@@ -40,14 +38,7 @@ namespace DeskStage.Merge
         TMP_Text listMessage;
         RawImage capturePreview;
         RawImage captureGuide;
-        RawImage captureGhost;
         Texture2D guideTexture;
-        Texture2D rectangleTexture;
-        Texture2D ghostTexture;
-        FrameResult backgroundFrame;
-        int captureStep;
-        TMP_Text takeLabel;
-        Button redoButton;
         float guideAspect;
         AspectRatioFitter captureFitter;
         TMP_Text captureHint;
@@ -82,12 +73,6 @@ namespace DeskStage.Merge
                 Destroy(guideTexture);
                 guideTexture = null;
             }
-            if (rectangleTexture != null)
-            {
-                Destroy(rectangleTexture);
-                rectangleTexture = null;
-            }
-            ReleaseGhost();
         }
 
         public void Open()
@@ -119,13 +104,7 @@ namespace DeskStage.Merge
         void ShowCapture()
         {
             SetOnly(captureView);
-            captureStep = 0;
-            backgroundFrame = default;
-            ReleaseGhost();
-            captureGhost.enabled = false;
-            redoButton.gameObject.SetActive(false);
-            takeLabel.text = "はいけいを とる";
-            captureHint.text = "まず はいけいだけ とるよ。しかくい わくの なかに にんぎょうが ないように して、スマホを うごかさないでね";
+            captureHint.text = "にんぎょうを わくに あわせてね。あたまから あしまで ぜんぶ いれてね";
             if (capture != null) capture.Open();
         }
 
@@ -180,8 +159,7 @@ namespace DeskStage.Merge
                 UpdateGuide(aspect);
             }
             captureGuide.enabled = preview != null;
-            // 背景を撮るときは四角い枠、人形を撮るときは人型の枠
-            captureGuide.texture = captureStep == 0 ? rectangleTexture : guideTexture;
+
             if (!string.IsNullOrEmpty(capture.Problem))
             {
                 captureHint.text = capture.Problem;
@@ -190,27 +168,7 @@ namespace DeskStage.Merge
 
         // ---- ボタンの動き ----
 
-        void OnTake()
-        {
-            if (captureStep == 0)
-            {
-                // はいけいを撮る。次は、同じ場所に人形を置いて撮る（撮った背景を、うすく重ねて見せる）
-                var frame = capture.CaptureFrame();
-                if (!frame.Ok)
-                {
-                    captureHint.text = frame.Reason;
-                    return;
-                }
-                backgroundFrame = frame;
-                ShowGhost(frame);
-                captureStep = 1;
-                redoButton.gameObject.SetActive(true);
-                takeLabel.text = "にんぎょうを とる";
-                captureHint.text = "つぎは わくに にんぎょうを おいて、さっきと おなじ ばしょで とってね。うすく みえる はいけいに あわせてね";
-                return;
-            }
-            ShowReview(capture.TakeCutout(backgroundFrame));
-        }
+        void OnTake() => ShowReview(capture.TakeFramed());
 
         static Texture2D NewOverlayTexture(int width, int height, Color32[] pixels)
         {
@@ -224,53 +182,20 @@ namespace DeskStage.Merge
             return texture;
         }
 
-        /// <summary>撮った背景を、映像の上に、うすく重ねる（人型の枠と同じ場所）。</summary>
-        void ShowGhost(FrameResult frame)
-        {
-            ReleaseGhost();
-            ghostTexture = new Texture2D(frame.Width, frame.Height, TextureFormat.RGB24, false)
-            {
-                filterMode = FilterMode.Bilinear,
-                wrapMode = TextureWrapMode.Clamp,
-            };
-            ghostTexture.SetPixels32(frame.Pixels);
-            ghostTexture.Apply();
-            captureGhost.texture = ghostTexture;
-            captureGhost.color = new Color(1f, 1f, 1f, 0.35f);
-            captureGhost.enabled = true;
-        }
-
-        void ReleaseGhost()
-        {
-            if (ghostTexture != null)
-            {
-                Destroy(ghostTexture);
-                ghostTexture = null;
-            }
-        }
-
         /// <summary>映像の上に、人型の枠の案内の絵を重ねる（映像の縦横の比が変わったら、作り直す）。</summary>
         void UpdateGuide(float aspect)
         {
-            if (guideTexture != null && rectangleTexture != null && Mathf.Abs(aspect - guideAspect) < 0.001f)
+            if (guideTexture != null && Mathf.Abs(aspect - guideAspect) < 0.001f)
             {
                 return;
             }
             const int guideHeight = 240;
             var width = Mathf.Max(8, Mathf.RoundToInt(guideHeight * aspect));
             if (guideTexture != null) Destroy(guideTexture);
-            if (rectangleTexture != null) Destroy(rectangleTexture);
             var region = HumanMask.CropRegion(aspect);
             guideTexture = NewOverlayTexture(width, guideHeight, HumanMask.GuideOverlay(width, guideHeight, region));
-            rectangleTexture = NewOverlayTexture(width, guideHeight, HumanMask.RectangleGuideOverlay(width, guideHeight, region));
+            captureGuide.texture = guideTexture;
             guideAspect = aspect;
-
-            // 重ねる背景の写真は、枠の場所と同じ位置・大きさに置く
-            var ghost = captureGhost.rectTransform;
-            ghost.anchorMin = new Vector2(region.xMin, region.yMin);
-            ghost.anchorMax = new Vector2(region.xMax, region.yMax);
-            ghost.offsetMin = Vector2.zero;
-            ghost.offsetMax = Vector2.zero;
         }
 
         void OnConfirm()
@@ -442,13 +367,6 @@ namespace DeskStage.Merge
             captureFitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
             captureFitter.aspectRatio = 4f / 3f;
 
-            // 2 段階目で、撮った背景を、うすく重ねる場所（枠の場所。UpdateGuide で位置を決める）
-            var ghostRect = NewRect("Ghost", previewRect);
-            Stretch(ghostRect, Vector2.zero, Vector2.one);
-            captureGhost = ghostRect.gameObject.AddComponent<RawImage>();
-            captureGhost.raycastTarget = false;
-            captureGhost.enabled = false;
-
             // 映像と同じ大きさに、人型の枠の案内を重ねる（映像の子なので、映像の大きさに合わせて動く）
             var guideRect = NewRect("Guide", previewRect);
             Stretch(guideRect, Vector2.zero, Vector2.one);
@@ -459,14 +377,11 @@ namespace DeskStage.Merge
             captureHint = NewText("Hint", root, "", 40f, TextAlignmentOptions.Center);
             Anchor(captureHint.rectTransform, new Vector2(0.03f, 0.86f), new Vector2(0.97f, 0.98f));
 
-            var take = NewButton("Button_Take", root, "はいけいを とる", out takeLabel);
-            Anchor((RectTransform)take.transform, new Vector2(0.03f, 0.03f), new Vector2(0.35f, 0.17f));
+            var take = NewButton("Button_Take", root, "とる", out _);
+            Anchor((RectTransform)take.transform, new Vector2(0.2f, 0.03f), new Vector2(0.5f, 0.17f));
             take.onClick.AddListener(OnTake);
-            redoButton = NewButton("Button_Redo", root, "はいけいから やりなおす", out _);
-            Anchor((RectTransform)redoButton.transform, new Vector2(0.37f, 0.03f), new Vector2(0.68f, 0.17f));
-            redoButton.onClick.AddListener(ShowCapture);
             var cancel = NewButton("Button_Cancel", root, "やめる", out _);
-            Anchor((RectTransform)cancel.transform, new Vector2(0.7f, 0.03f), new Vector2(0.97f, 0.17f));
+            Anchor((RectTransform)cancel.transform, new Vector2(0.55f, 0.03f), new Vector2(0.85f, 0.17f));
             cancel.onClick.AddListener(() => ShowList(""));
         }
 

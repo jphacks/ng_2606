@@ -76,7 +76,7 @@ namespace DeskStage.Merge.EditorTools
 
             BuildScanUi(screenScan, font);
             BuildCheckUi(screenCheck, font);
-            var characterButton = BuildListUi(Find("Screen_List"), font);
+            var characterButton = BuildListUi(Find("Screen_List"), font, out var backdropButton);
 
             // まとめる
             var uiRoot = new GameObject("UI_System");
@@ -116,6 +116,12 @@ namespace DeskStage.Merge.EditorTools
             panelSo.FindProperty("openButton").objectReferenceValue = characterButton;
             panelSo.FindProperty("capture").objectReferenceValue = characterCapture;
             panelSo.ApplyModifiedPropertiesWithoutUndo();
+            var backdropPanel = uiRoot.AddComponent<BackdropPanelView>();
+            var backdropSo = new SerializedObject(backdropPanel);
+            backdropSo.FindProperty("font").objectReferenceValue = font;
+            backdropSo.FindProperty("openButton").objectReferenceValue = backdropButton;
+            backdropSo.FindProperty("capture").objectReferenceValue = characterCapture;
+            backdropSo.ApplyModifiedPropertiesWithoutUndo();
             var avatar = uiRoot.AddComponent<CharacterAvatar>();
             var avatarSo = new SerializedObject(avatar);
             avatarSo.FindProperty("cutoutMaterial").objectReferenceValue = EnsureCutoutMaterial();
@@ -174,8 +180,9 @@ namespace DeskStage.Merge.EditorTools
 
         // ---- 一覧画面：キャラをえらぶボタン ----
 
-        static Button BuildListUi(Transform screen, TMP_FontAsset font)
+        static Button BuildListUi(Transform screen, TMP_FontAsset font, out Button backdropButton)
         {
+            backdropButton = null;
             if (screen == null)
             {
                 Debug.LogWarning("[Merge] Test_D.unity に Screen_List がありません");
@@ -183,6 +190,8 @@ namespace DeskStage.Merge.EditorTools
             }
             var button = NewButton("Button_Characters", screen, "キャラを えらぶ", font, out _);
             Anchor((RectTransform)button.transform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(30f, 30f), new Vector2(520f, 120f));
+            backdropButton = NewButton("Button_Backdrop", screen, "はいけいを とる", font, out _);
+            Anchor((RectTransform)backdropButton.transform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(570f, 30f), new Vector2(520f, 120f));
             return button;
         }
 
