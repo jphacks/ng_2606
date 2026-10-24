@@ -1,0 +1,22 @@
+{
+    "name": "DeskStage.Merge.Editor",
+    "rootNamespace": "DeskStage.Merge.EditorTools",
+    "references": [
+        "DeskStage.Merge",
+        "DeskStage.Shared",
+        "DeskStage.UI",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
