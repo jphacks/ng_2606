@@ -30,6 +30,20 @@ namespace DeskStage.Gameplay
             }
         }
 
+        /// <summary>向きを直す相手のキャラを差し替える（GameFlow がキャラを出したり消したりしたとき）。</summary>
+        public void SetMotor(CharacterMotor newMotor)
+        {
+            if (motor != null)
+            {
+                motor.DirectionProvider = null;
+            }
+            motor = newMotor;
+            if (motor != null && isActiveAndEnabled)
+            {
+                motor.DirectionProvider = ToWorld;
+            }
+        }
+
         Vector3 ToWorld(Vector2 stick)
         {
             return Direction(viewCamera.forward, viewCamera.up, stick);

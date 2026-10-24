@@ -75,27 +75,31 @@ namespace DeskStage.Gameplay.EditorTools
             CreateGapPair(stageRoot, "Gap1cm", -0.15f, 0.01f);
             CreateGapPair(stageRoot, "Gap2cm", 0.12f, 0.02f);
 
-            var player = (GameObject)PrefabUtility.InstantiatePrefab(playerPrefab, stageRoot);
-            player.transform.localPosition = new Vector3(0f, 0.001f, -0.25f);
+            // 視点のカメラ（Step 6）：キャラを追う。マウスの右ドラッグで回り、Q・E で近づく・離れる
+            var viewCamera = camera.gameObject.AddComponent<ViewCamera>();
+            viewCamera.settings = AssetDatabase.LoadAssetAtPath<CharacterSettings>(CreateCharacterSettings.AssetPath);
+            camera.gameObject.AddComponent<ViewDebugInput>();
+
+            // カメラ基準の向き（Step 7）：スティックの上が画面の奥になる
+            var relative = camera.gameObject.AddComponent<CameraRelativeInput>();
+            relative.viewCamera = camera.transform;
+
+            // ゲームの進行（Step 11）：右上の仮のボタンで「ステージかんせい」→「あそぶ」と押すと、キャラがスタートに出る
+            var gameFlow = new GameObject("GameFlow").AddComponent<GameFlow>();
+            gameFlow.playerPrefab = playerPrefab;
+            gameFlow.viewCamera = viewCamera;
+            gameFlow.cameraRelativeInput = relative;
+            var panel = gameFlow.gameObject.AddComponent<GameFlowDebugPanel>();
+            panel.gameFlow = gameFlow;
+            panel.practiceRoot = stageRoot;
 
             // 瞬間移動の確かめ（Step 5）：ボタンで 6cm の箱の上へ移す
             var target = new GameObject("TeleportTarget").transform;
             target.SetParent(stageRoot, false);
             target.localPosition = new Vector3(-0.04f, 0.061f, 0f);
             var button = new GameObject("TeleportTestButton").AddComponent<TeleportTestButton>();
-            button.motor = player.GetComponent<CharacterMotor>();
+            button.gameFlow = gameFlow;
             button.target = target;
-
-            // 視点のカメラ（Step 6）：キャラを追う。マウスの右ドラッグで回り、Q・E で近づく・離れる
-            var viewCamera = camera.gameObject.AddComponent<ViewCamera>();
-            viewCamera.settings = AssetDatabase.LoadAssetAtPath<CharacterSettings>(CreateCharacterSettings.AssetPath);
-            viewCamera.target = player.transform;
-            camera.gameObject.AddComponent<ViewDebugInput>();
-
-            // カメラ基準の向き（Step 7）：スティックの上が画面の奥になる
-            var relative = camera.gameObject.AddComponent<CameraRelativeInput>();
-            relative.motor = player.GetComponent<CharacterMotor>();
-            relative.viewCamera = camera.transform;
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log($"[Gameplay] {ScenePath} を作りました");
@@ -138,12 +142,13 @@ namespace DeskStage.Gameplay.EditorTools
                 go.transform.localRotation = Quaternion.Euler(0f, box.yawDegrees, 0f);
             }
 
-            // キャラをお手本ステージのスタートへ移す
-            var player = GameObject.Find("Player");
-            if (player != null)
+            // 「ステージかんせい」でお手本ステージを使うようにする（キャラはお手本のスタートに出る）
+            var panel = Object.FindFirstObjectByType<GameFlowDebugPanel>();
+            if (panel != null)
             {
-                player.transform.position = sampleRoot.TransformPoint(Vec3.To(stage.spawn.position) + Vector3.up * 0.001f);
-                player.transform.rotation = Quaternion.Euler(0f, stage.spawn.yawDegrees, 0f);
+                panel.sampleRoot = sampleRoot;
+                panel.sampleStageId = stage.id;
+                EditorUtility.SetDirty(panel);
             }
 
             EditorSceneManager.MarkSceneDirty(scene);
