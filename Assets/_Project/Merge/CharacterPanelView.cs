@@ -42,6 +42,7 @@ namespace DeskStage.Merge
         RawImage captureGuide;
         RawImage captureGhost;
         Texture2D guideTexture;
+        Texture2D rectangleTexture;
         Texture2D ghostTexture;
         FrameResult backgroundFrame;
         int captureStep;
@@ -81,6 +82,11 @@ namespace DeskStage.Merge
                 Destroy(guideTexture);
                 guideTexture = null;
             }
+            if (rectangleTexture != null)
+            {
+                Destroy(rectangleTexture);
+                rectangleTexture = null;
+            }
             ReleaseGhost();
         }
 
@@ -119,7 +125,7 @@ namespace DeskStage.Merge
             captureGhost.enabled = false;
             redoButton.gameObject.SetActive(false);
             takeLabel.text = "はいけいを とる";
-            captureHint.text = "まず はいけいだけ とるよ。にんぎょうは どけて、スマホを うごかさないでね";
+            captureHint.text = "まず はいけいだけ とるよ。しかくい わくの なかに にんぎょうが ないように して、スマホを うごかさないでね";
             if (capture != null) capture.Open();
         }
 
@@ -174,6 +180,8 @@ namespace DeskStage.Merge
                 UpdateGuide(aspect);
             }
             captureGuide.enabled = preview != null;
+            // 背景を撮るときは四角い枠、人形を撮るときは人型の枠
+            captureGuide.texture = captureStep == 0 ? rectangleTexture : guideTexture;
             if (!string.IsNullOrEmpty(capture.Problem))
             {
                 captureHint.text = capture.Problem;
@@ -204,6 +212,18 @@ namespace DeskStage.Merge
             ShowReview(capture.TakeCutout(backgroundFrame));
         }
 
+        static Texture2D NewOverlayTexture(int width, int height, Color32[] pixels)
+        {
+            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            texture.SetPixels32(pixels);
+            texture.Apply();
+            return texture;
+        }
+
         /// <summary>撮った背景を、映像の上に、うすく重ねる（人型の枠と同じ場所）。</summary>
         void ShowGhost(FrameResult frame)
         {
@@ -232,25 +252,17 @@ namespace DeskStage.Merge
         /// <summary>映像の上に、人型の枠の案内の絵を重ねる（映像の縦横の比が変わったら、作り直す）。</summary>
         void UpdateGuide(float aspect)
         {
-            if (guideTexture != null && Mathf.Abs(aspect - guideAspect) < 0.001f)
+            if (guideTexture != null && rectangleTexture != null && Mathf.Abs(aspect - guideAspect) < 0.001f)
             {
                 return;
             }
             const int guideHeight = 240;
             var width = Mathf.Max(8, Mathf.RoundToInt(guideHeight * aspect));
-            if (guideTexture != null)
-            {
-                Destroy(guideTexture);
-            }
-            guideTexture = new Texture2D(width, guideHeight, TextureFormat.RGBA32, false)
-            {
-                filterMode = FilterMode.Bilinear,
-                wrapMode = TextureWrapMode.Clamp,
-            };
+            if (guideTexture != null) Destroy(guideTexture);
+            if (rectangleTexture != null) Destroy(rectangleTexture);
             var region = HumanMask.CropRegion(aspect);
-            guideTexture.SetPixels32(HumanMask.GuideOverlay(width, guideHeight, region));
-            guideTexture.Apply();
-            captureGuide.texture = guideTexture;
+            guideTexture = NewOverlayTexture(width, guideHeight, HumanMask.GuideOverlay(width, guideHeight, region));
+            rectangleTexture = NewOverlayTexture(width, guideHeight, HumanMask.RectangleGuideOverlay(width, guideHeight, region));
             guideAspect = aspect;
 
             // 重ねる背景の写真は、枠の場所と同じ位置・大きさに置く

@@ -98,5 +98,27 @@ namespace DeskStage.Merge.Tests
             // 映像の左下の隅（枠の外）は暗い
             Assert.Greater(overlay[0].a, 100);
         }
+
+        [Test]
+        public void 四角い枠の案内は中が透明で外が暗くふちが白い()
+        {
+            var w = 80;
+            var h = 60;
+            var region = HumanMask.CropRegion((float)w / h);
+            var overlay = HumanMask.RectangleGuideOverlay(w, h, region);
+
+            // 中央は透明（人型の枠のように、胴の形を描かない：中の角も透明）
+            Assert.AreEqual(0, overlay[(h / 2) * w + w / 2].a);
+            var insideCorner = overlay[Mathf.RoundToInt((region.yMin + 0.05f * region.height) * h) * w
+                + Mathf.RoundToInt((region.xMin + 0.05f * region.width) * w)];
+            Assert.AreEqual(0, insideCorner.a);
+            // 映像の左下の隅（範囲の外）は暗い
+            Assert.Greater(overlay[0].a, 100);
+            // 範囲の左のふち：白い線
+            var edgeX = Mathf.RoundToInt(region.xMin * w);
+            var edge = overlay[(h / 2) * w + edgeX];
+            Assert.Greater(edge.a, 150);
+            Assert.Greater(edge.r, 150);
+        }
     }
 }

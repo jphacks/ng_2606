@@ -120,6 +120,37 @@ namespace DeskStage.Merge
             return pixels;
         }
 
+        /// <summary>
+        /// 背景を撮るときの、撮る範囲の案内の絵（人型ではなく、四角い枠）。
+        /// 範囲（region）の外は暗く、ふちは白い線、中は透明。人形を撮るとき（GuideOverlay）と、同じ範囲を撮る。
+        /// </summary>
+        public static Color32[] RectangleGuideOverlay(int width, int height, Rect region)
+        {
+            var pixels = new Color32[width * height];
+            // 線の太さ（画素）。画像の大きさに合わせる
+            var lineWidth = Mathf.Max(1.5f, Mathf.Min(width, height) / 90f);
+            for (var y = 0; y < height; y++)
+            {
+                for (var x = 0; x < width; x++)
+                {
+                    var px = x + 0.5f;
+                    var py = y + 0.5f;
+                    var inside = px >= region.xMin * width && px <= region.xMax * width
+                        && py >= region.yMin * height && py <= region.yMax * height;
+                    // 範囲のふちまでの距離（画素）
+                    var edge = Mathf.Min(
+                        Mathf.Min(Mathf.Abs(px - region.xMin * width), Mathf.Abs(px - region.xMax * width)),
+                        Mathf.Min(Mathf.Abs(py - region.yMin * height), Mathf.Abs(py - region.yMax * height)));
+                    var line = Mathf.Clamp01(1f - edge / lineWidth);
+                    var dim = inside ? 0f : 0.65f;
+                    var gray = (byte)Mathf.RoundToInt(255f * line);
+                    var alpha = (byte)Mathf.RoundToInt(255f * Mathf.Max(dim, line * 0.95f));
+                    pixels[y * width + x] = new Color32(gray, gray, gray, alpha);
+                }
+            }
+            return pixels;
+        }
+
         /// <summary>枠の中に入る割合（箱に対する面積の割合）。枠が太めであることの確認用。</summary>
         public static float AreaFraction(int samples = 200)
         {
