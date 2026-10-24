@@ -55,7 +55,14 @@ namespace DeskStage.UI.Editor
             {
                 return;
             }
+            Build();
+        }
 
+        /// <summary>確認ダイアログなしで作る。バッチモード（-executeMethod）から呼ぶ用。</summary>
+        public static void RunBatch() => Build();
+
+        static void Build()
+        {
             FindFont();
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
