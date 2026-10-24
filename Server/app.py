@@ -8,6 +8,7 @@
 
 import base64
 import datetime
+import hmac
 import json
 import logging
 import os
@@ -41,6 +42,10 @@ DAILY_LIMIT = int(os.environ.get("DAILY_LIMIT", "100"))
 # キーがないとき、または MOCK=1 のときは Claude を呼ばず、決まった答えを返す
 MOCK = os.environ.get("MOCK") == "1" or not os.environ.get("ANTHROPIC_API_KEY")
 MAX_PHOTO_BYTES = 5 * 1024 * 1024
+
+# 本物のキーで動かすときは、合言葉を必ず決める（合言葉なしで誰でも API の料金を使えないように）
+if not MOCK and not APP_TOKEN:
+    raise RuntimeError("ANTHROPIC_API_KEY を入れたときは、.env の APP_TOKEN に合言葉も入れてください")
 
 PROMPT = (LLM_DIR / "scan_prompt.md").read_text(encoding="utf-8")
 SCHEMA = json.loads((LLM_DIR / "scan_result.schema.json").read_text(encoding="utf-8"))
@@ -102,9 +107,10 @@ def scan(
     side: UploadFile = File(..., description="手前から斜めに撮った写真（JPEG）"),
     x_app_token: str = Header(default=""),
 ):
-    # 合言葉のないリクエストは断る（APP_TOKEN を決めていないときは、手元の試しなので通す）
-    if APP_TOKEN and x_app_token != APP_TOKEN:
-        raise HTTPException(status_code=401, detail="合言葉が違います")
+    # 合言葉が違うリクエストは断る。合言葉なしで通すのは、試しのモードで APP_TOKEN を決めていないときだけ
+    if APP_TOKEN or not MOCK:
+        if not hmac.compare_digest(x_app_token.encode("utf-8"), APP_TOKEN.encode("utf-8")):
+            raise HTTPException(status_code=401, detail="合言葉が違います")
 
     photos = [read_photo(top, "top"), read_photo(side, "side")]
 

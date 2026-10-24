@@ -15,12 +15,12 @@ python -m venv .venv
 copy .env.example .env
 ```
 
-`.env` をメモ帳で開き、`ANTHROPIC_API_KEY=` のあとに API キーを貼って保存します。`.env` は Git に入りません。
+`.env` をメモ帳で開き、`ANTHROPIC_API_KEY=` のあとに API キーを、`APP_TOKEN=` のあとに自分で決めた合言葉（英数字で長めに）を入れて保存します。`.env` は Git に入りません。
 
 | 設定 | 意味 |
 | --- | --- |
 | `ANTHROPIC_API_KEY` | Anthropic の API キー。空なら「試しのモード」（Claude を呼ばず、決まった答えを返す） |
-| `APP_TOKEN` | アプリとの合言葉。アプリはヘッダー `X-App-Token` で送る。空なら合言葉なしで通す（手元の試しだけ） |
+| `APP_TOKEN` | アプリとの合言葉。アプリはヘッダー `X-App-Token` で送る。API キーを入れたときは必ず決める（空だとサーバーが起動しない）。試しのモードでは空でもよい |
 | `DAILY_LIMIT` | 1日の読み取りの上限の回数（初期値 100）。サーバーを止めると0に戻る |
 | `MOCK` | 1 にすると、キーがあっても試しのモードになる |
 
