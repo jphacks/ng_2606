@@ -39,6 +39,19 @@ namespace DeskStage.Gameplay
 
         void OnDestroy() => controls.Dispose();
 
+        /// <summary>
+        /// 瞬間移動（Step 5）。スタートやチェックポイントへ戻すときは必ずこれを使う。
+        /// Character Controller を有効のまま位置を書き換えると、元の場所に戻されてしまう。
+        /// </summary>
+        public void Teleport(Vector3 position, Quaternion rotation)
+        {
+            controller.enabled = false;
+            transform.SetPositionAndRotation(position, rotation);
+            controller.enabled = true;
+            verticalSpeed = 0f;
+            jumpTimer.Reset();
+        }
+
         void Update()
         {
             if (Paused)
