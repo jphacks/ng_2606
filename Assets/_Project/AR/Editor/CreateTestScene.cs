@@ -19,6 +19,27 @@ namespace DeskStage.AR.EditorTools
         const string ScenePath = "Assets/_Project/Scenes/Test_A.unity";
         const string SettingsPath = "Assets/_Project/AR/Settings/ScanSettings.asset";
 
+        /// <summary>
+        /// Test_A をビルド対象の先頭に入れる。入れ忘れるとビルドしても
+        /// 別のシーンが起動して、原因が分かりにくい。
+        /// </summary>
+        static void RegisterInBuildSettings()
+        {
+            var scenes = new System.Collections.Generic.List<EditorBuildSettingsScene>
+            {
+                new EditorBuildSettingsScene(ScenePath, true),
+            };
+            foreach (var s in EditorBuildSettings.scenes)
+            {
+                if (s.path != ScenePath)
+                {
+                    scenes.Add(new EditorBuildSettingsScene(s.path, false));
+                }
+            }
+            EditorBuildSettings.scenes = scenes.ToArray();
+            Debug.Log("[Step1] ビルド対象に入れました: " + ScenePath);
+        }
+
         [MenuItem("DeskStage/A/スキャンの設定アセットを作る")]
         public static ScanSettings CreateSettings()
         {
@@ -98,6 +119,8 @@ namespace DeskStage.AR.EditorTools
             Directory.CreateDirectory(Path.GetDirectoryName(ScenePath));
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.Refresh();
+
+            RegisterInBuildSettings();
 
             Debug.Log("[Step1] 作りました: " + ScenePath);
 
