@@ -16,7 +16,7 @@
 - － Step 4：平らな面の検出の実機検証（P0）
 - － Step 5：判定会議（P0の終わり）… 省略。案は 00_overview.md 8章の仮の決め方（案A）
 - ☑ Step 6：面の見張り（PlaneWatcher）（M1）
-- ☐ Step 7：長方形の当てはめ（共通の計算）（M1）
+- ☑ Step 7：長方形の当てはめ（共通の計算）（M1）
 - ☐ Step 8：机の決定とステージ座標（DeskFrame）（M1）
 - ☑ Step 9：スキャン状態の報告（ScanStatusReporter）（M1）
 - ☑ Step 10：スキャンの開始と終わり（ScanSession）（M1）
