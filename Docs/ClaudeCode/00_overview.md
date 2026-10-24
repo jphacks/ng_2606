@@ -174,6 +174,7 @@ BoxData（箱1つ）：
 | DeskDecided | A | B、D | 机を決め、StageRoot を置いたとき |
 | StageBuilt | B | C、D | 机の板と箱のオブジェクトを作り終えたとき |
 | SaveCompleted（成功か、理由） | B | D | 保存が終わったとき |
+| StageListChanged | B | D | ステージ一覧（StageList、1件ごとに id・表示名・作った日時・読み込めるか・理由）が変わったとき（2026-10-24 に足した） |
 | ThermalStateChanged（4段階） | A | D | 端末の発熱状態が変わったとき |
 
 ### 4.4 ScanContext（スキャン中の受け渡し）
@@ -225,6 +226,7 @@ BoxData（箱1つ）：
 | SetPaused | 止めるかどうか | C |
 | Retry | なし | C |
 | BackToList | なし | B、C |
+| DeleteStage | ステージID | B（2026-10-24 に足した） |
 
 ### 4.7 入力（DeskStageControls）
 

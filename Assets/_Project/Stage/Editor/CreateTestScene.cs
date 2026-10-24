@@ -58,6 +58,13 @@ namespace DeskStage.Stage.EditorTools
             answerSo.FindProperty("builder").objectReferenceValue = builder;
             answerSo.ApplyModifiedPropertiesWithoutUndo();
 
+            // ステージの一覧・読み込み・保存・消す（Step 10・11）と、その仮の画面
+            var library = system.AddComponent<StageLibrary>();
+            var librarySo = new SerializedObject(library);
+            librarySo.FindProperty("builder").objectReferenceValue = builder;
+            librarySo.ApplyModifiedPropertiesWithoutUndo();
+            system.AddComponent<StageLibraryDebugPanel>();
+
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log($"[Stage] {ScenePath} を作りました。再生してボタンを押してください");
         }

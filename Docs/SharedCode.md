@@ -61,6 +61,10 @@ Physics.Raycast(ray, out var hit, 10f, Layers.TerrainMask);
   - `ScanContext.ScanResultReceived` / `RaiseScanResultReceived(string json)`：Claude の答えの JSON（形は Docs/LlmScanFormat.md）を A から B へ渡す。中身の確かめは B が行う
   - `UiRequests.TakePhoto` / `RequestTakePhoto()`：D の「とる」ボタンで A が1枚撮る。1枚目は真上、2枚目は斜め
   - `Surfaces`、`SurfacesChanged`、`SetDesk` は写真の方式では使いません。消すかどうかは合流（M3）の前に決めます
+- **ステージの一覧と消す依頼（2026-10-24、B の Step 10）。**
+  - `StageSummary`：一覧の1件（id、name、createdAt、loadable、reason）
+  - `StageContext.StageList` / `SetStageList()` / `StageListChanged`：B が一覧を書き換えたら知らせる。D のステージ一覧はこれを表示する
+  - `UiRequests.DeleteStage` / `RequestDeleteStage(stageId)`：D の「けす」で B が消す
 - **asmdef を置いています。** EditMode テストを動かすのに必要です。`autoReferenced` が有効なので、A〜D のコードからは今までどおり参照できます。
 
 ## テスト
