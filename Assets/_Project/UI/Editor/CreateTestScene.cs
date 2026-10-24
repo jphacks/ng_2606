@@ -30,6 +30,7 @@ namespace DeskStage.UI.Editor
 
         static TMP_FontAsset font;
         static Wording wording;
+        static ViewGestureSettings viewSettings;
 
         struct ScreenSpec
         {
@@ -114,6 +115,9 @@ namespace DeskStage.UI.Editor
                 Debug.LogError("文言のアセットがありません。メニュー「DeskStage/D/文言の表を読み込む」を先に実行してください。");
                 return false;
             }
+
+            SetupAssets.CreateViewGestureSettings();
+            viewSettings = AssetDatabase.LoadAssetAtPath<ViewGestureSettings>(SetupAssets.ViewGestureSettingsPath);
             return true;
         }
 
@@ -184,13 +188,27 @@ namespace DeskStage.UI.Editor
         {
             var circle = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
 
+            // Step 4：視点の操作。画面いっぱいの透明な板を、スティックとジャンプより奥（先の子）に置く
+            var viewArea = new GameObject("ViewGesture", typeof(RectTransform));
+            viewArea.transform.SetParent(playScreen, false);
+            Stretch((RectTransform)viewArea.transform);
+            viewArea.AddComponent<Image>().color = Color.clear;
+            viewArea.AddComponent<ViewGesture>().SetSettings(viewSettings);
+
+            var readout = CreateLabel("DEV_ViewReadout", playScreen, "", 40);
+            readout.gameObject.AddComponent<DevMarker>();
+            readout.gameObject.AddComponent<DevViewReadout>();
+            readout.color = new Color(0f, 0f, 0f, 0.6f);
+            Anchor((RectTransform)readout.transform, new Vector2(0.5f, 1f), new Vector2(0f, -200f), new Vector2(1400, 80));
+
             // 左下：スティック。外周の中で取っ手を動かすと、仮想ゲームパッドの左スティックになる
             var stickBase = new GameObject("Stick", typeof(RectTransform));
             stickBase.transform.SetParent(playScreen, false);
             var baseImage = stickBase.AddComponent<Image>();
             baseImage.sprite = circle;
             baseImage.color = new Color(1f, 1f, 1f, 0.5f);
-            baseImage.raycastTarget = false;
+            // 外周の上で始まった指も受け止め、視点の操作に渡さない
+            baseImage.raycastTarget = true;
             Anchor((RectTransform)stickBase.transform, Vector2.zero, new Vector2(240f, 240f), Vector2.one * StickDiameter);
 
             var knob = new GameObject("Knob", typeof(RectTransform));

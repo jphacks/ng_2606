@@ -39,6 +39,22 @@ namespace DeskStage.UI.Editor
             CreateJapaneseFont();
             ConfigureInputAsset();
             ImportWording();
+            CreateViewGestureSettings();
+        }
+
+        public const string ViewGestureSettingsPath = "Assets/_Project/UI/ViewGestureSettings.asset";
+
+        /// <summary>視点の操作の設定アセットを作る（Step 4）。もうあれば何もしない（調整した値を消さない）。</summary>
+        [MenuItem("DeskStage/D/視点の操作の設定を作る")]
+        public static void CreateViewGestureSettings()
+        {
+            if (AssetDatabase.LoadAssetAtPath<ViewGestureSettings>(ViewGestureSettingsPath) != null)
+            {
+                return;
+            }
+            AssetDatabase.CreateAsset(ScriptableObject.CreateInstance<ViewGestureSettings>(), ViewGestureSettingsPath);
+            AssetDatabase.SaveAssets();
+            Debug.Log("視点の操作の設定を作りました: " + ViewGestureSettingsPath);
         }
 
         /// <summary>
