@@ -39,6 +39,10 @@ namespace DeskStage.UI.Editor
             look.BoxPlay = Material("BoxPlay", false, false, Color.white, null);
             look.DeskPlay = Material("DeskPlay", false, false, Color.white, deskTex);
             look.BoxSelected = Material("BoxSelected", true, true, Color.white, selectedTex);
+            look.ScanLine = Material("ScanLine", true, false, new Color(0.5f, 1f, 1f), null);
+            // 上面の板は下からも見えるように、裏も描く
+            look.ScanSurface.SetFloat("_Cull", 0f);
+            EditorUtility.SetDirty(look.ScanSurface);
 
             EditorUtility.SetDirty(look);
             AssetDatabase.SaveAssets();

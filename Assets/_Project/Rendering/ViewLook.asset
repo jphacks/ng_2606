@@ -18,6 +18,7 @@ MonoBehaviour:
   BoxPlay: {fileID: 2100000, guid: 6b86a74a1f792a347b6270560d4b6260, type: 2}
   DeskPlay: {fileID: 2100000, guid: a688aabf36cd3dd4d965db71b06284e2, type: 2}
   BoxSelected: {fileID: 2100000, guid: fe33f44cfb97aee4ea7f1656d83ea800, type: 2}
+  ScanLine: {fileID: 2100000, guid: e3eae8a48662c1e4fa652b3ff48c0bcf, type: 2}
   BoxPalette:
   - {r: 1, g: 0.55, b: 0.45, a: 1}
   - {r: 1, g: 0.82, b: 0.35, a: 1}

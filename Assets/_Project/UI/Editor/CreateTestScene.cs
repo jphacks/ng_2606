@@ -90,6 +90,7 @@ namespace DeskStage.UI.Editor
 
             CreatePlayControls(panels[(int)ScreenId.Play].transform);
             var guidance = CreateGuidance(panels[(int)ScreenId.Scan].transform);
+            CreateScanScreen(panels[(int)ScreenId.Scan].transform);
             CreateDevPanel(safeArea, router, guidance);
             CreateDebugOverlay();
             CreateStageLook();
@@ -128,6 +129,8 @@ namespace DeskStage.UI.Editor
         {
             var go = new GameObject("Main Camera") { tag = "MainCamera" };
             var cam = go.AddComponent<Camera>();
+            // 音を聞く役。ないと効果音が鳴らない
+            go.AddComponent<AudioListener>();
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.95f, 0.95f, 0.95f);
             cam.nearClipPlane = 0.01f;
@@ -300,6 +303,30 @@ namespace DeskStage.UI.Editor
             return guidance;
         }
 
+        static void CreateScanScreen(Transform scanScreen)
+        {
+            // Step 8：画面いっぱいの透明な板（タップで机を決める）を、ボタンより奥（最初の子）に置く
+            var tapArea = new GameObject("ScanTapArea", typeof(RectTransform));
+            tapArea.transform.SetParent(scanScreen, false);
+            tapArea.transform.SetAsFirstSibling();
+            Stretch((RectTransform)tapArea.transform);
+            tapArea.AddComponent<Image>().color = Color.clear;
+
+            var count = CreateLabel("BoxCount", scanScreen, "", 96);
+            Anchor((RectTransform)count.transform, new Vector2(0.5f, 1f), new Vector2(0f, -360f), new Vector2(1400, 140));
+
+            // 3Dの演出と音は Canvas の外に置く。スキャン画面が出ている間だけ ScanScreen が有効にする
+            var fxObject = new GameObject("ScanEffects");
+            fxObject.AddComponent<AudioSource>();
+            var sound = fxObject.AddComponent<SoundFx>();
+            var effects = fxObject.AddComponent<ScanEffects>();
+            effects.Set(AssetDatabase.LoadAssetAtPath<ViewLook>(CreateLookAssets.ViewLookPath), sound);
+            effects.enabled = false;
+
+            var done = scanScreen.Find("Button_Next").GetComponent<Button>();
+            tapArea.AddComponent<ScanScreen>().Set(wording, count, done, effects);
+        }
+
         static void CreateDevPanel(RectTransform parent, ScreenRouter router, GuidanceView guidance)
         {
             // 仮のボタン。画面の右上に縦に並べる。合流前に DevMarker の付いた物ごと消す。
@@ -308,7 +335,7 @@ namespace DeskStage.UI.Editor
             go.AddComponent<DevMarker>();
             Anchor((RectTransform)go.transform, new Vector2(1f, 1f), new Vector2(-190f, -400f), new Vector2(340, 760));
             var layout = go.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 12;
+            layout.spacing = 8;
             // ボタンの大きさを並びに合わせて決めさせる（決めさせないと既定の小さな四角のまま重なる）
             layout.childControlWidth = true;
             layout.childControlHeight = true;
@@ -320,6 +347,7 @@ namespace DeskStage.UI.Editor
 
             AddDevButton(go.transform, "DEV: スキャン状態 →", dev.NextScanStatus);
             AddDevButton(go.transform, "DEV: 仮の箱", dev.ToggleSampleBoxes);
+            AddDevButton(go.transform, "DEV: 箱が見つかった", dev.RaiseBoxFound);
             AddDevButton(go.transform, "DEV: DeskDecided", dev.RaiseDeskDecided);
             AddDevButton(go.transform, "DEV: StageBuilt", dev.RaiseStageBuilt);
             AddDevButton(go.transform, "DEV: SaveOk", dev.RaiseSaveOk);

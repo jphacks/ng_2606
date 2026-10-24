@@ -16,6 +16,15 @@ namespace DeskStage.UI
 
         public void SetGuidance(GuidanceView value) => guidance = value;
 
+        void Awake()
+        {
+            // このプロジェクトは再生を止めても共通コードの値が残る設定（Domain Reload なし）。
+            // テスト用シーンでは、前の再生の箱や状態が残らないよう、始めに空にする
+            ScanContext.Clear();
+            StageContext.StageRoot = null;
+            StageContext.SetScanStatus(ScanStatus.NotStarted);
+        }
+
         // スキャン状態を順に変えて、案内の表示を確かめる（Step 5）。本当は A が書く。
         static readonly (ScanStatus status, ScanReason reason, bool deskFound)[] ScanSteps =
         {
@@ -95,7 +104,67 @@ namespace DeskStage.UI
             }
         }
 
-        public void RaiseDeskDecided() => StageContext.RaiseDeskDecided();
+        // A が机を決めると StageRoot と机の大きさができる。まだなければ仮の物を用意する
+        void EnsureDesk()
+        {
+            if (StageContext.StageRoot == null)
+            {
+                var root = new GameObject("DEV_StageRoot");
+                root.AddComponent<DevMarker>();
+                StageContext.StageRoot = root.transform;
+            }
+            if (ScanContext.DeskSize == Vector2.zero)
+            {
+                ScanContext.DeskSize = new Vector2(0.8f, 0.5f);
+            }
+        }
+
+        public void RaiseDeskDecided()
+        {
+            EnsureDesk();
+            StageContext.RaiseDeskDecided();
+        }
+
+        int foundCount;
+
+        /// <summary>
+        /// 上面が1つ見つかり、箱が1つ足されたことにする（Step 8：スキャン画面の演出を確かめるため）。
+        /// 本当は A が Surfaces に書き、B が WorkingBoxes に箱を足して BoxesChanged を出す。
+        /// </summary>
+        public void RaiseBoxFound()
+        {
+            EnsureDesk();
+            if (ScanContext.WorkingBoxes.Count == 0)
+            {
+                foundCount = 0;
+            }
+            foundCount++;
+            var x = -0.3f + 0.15f * ((foundCount - 1) % 5);
+            var z = (foundCount - 1) / 5 % 2 == 0 ? -0.05f : 0.12f;
+            var height = 0.02f + 0.015f * (foundCount % 4);
+            var half = 0.05f;
+            ScanContext.Surfaces.Add(new SurfaceData
+            {
+                Id = 1000 + foundCount,
+                Height = height,
+                Outline = new[]
+                {
+                    new Vector2(x - half, z - half), new Vector2(x + half, z - half),
+                    new Vector2(x + half, z + half), new Vector2(x - half, z + half),
+                },
+                UpdatedAt = Time.time,
+            });
+            ScanContext.RaiseSurfacesChanged();
+            var id = "box-" + (90 + foundCount).ToString("00");
+            ScanContext.WorkingBoxes.Add(new BoxData
+            {
+                id = id,
+                center = new[] { x, height * 0.5f, z },
+                size = new[] { half * 2f, height, half * 2f },
+                source = BoxData.SourceAuto,
+            });
+            ScanContext.RaiseBoxesChanged(id, BoxChange.Added, BoxData.SourceAuto);
+        }
 
         public void RaiseStageBuilt() => StageContext.RaiseStageBuilt();
 

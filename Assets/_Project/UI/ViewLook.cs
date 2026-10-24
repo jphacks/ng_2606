@@ -22,6 +22,8 @@ namespace DeskStage.UI
         public Material DeskPlay;
         [Tooltip("補助で選んだ箱。太い黄色のふち")]
         public Material BoxSelected;
+        [Tooltip("机が決まったときに、机のふちをなぞる光の線（Step 8）")]
+        public Material ScanLine;
 
         [Header("遊ぶ画面の箱の色（隣どうしが同じ色にならないように順に使う）")]
         public Color[] BoxPalette =
