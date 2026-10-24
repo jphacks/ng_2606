@@ -102,6 +102,12 @@ namespace DeskStage.Merge.EditorTools
             texturerSo.FindProperty("photoMaterial").objectReferenceValue = EnsurePhotoMaterial();
             texturerSo.ApplyModifiedPropertiesWithoutUndo();
 
+            // サーバーの答えを待つ間の画面（クルクル、秒数、撮った写真）
+            var generating = uiRoot.AddComponent<GeneratingView>();
+            var generatingSo = new SerializedObject(generating);
+            generatingSo.FindProperty("font").objectReferenceValue = font;
+            generatingSo.ApplyModifiedPropertiesWithoutUndo();
+
             // 写真のキャラクター：撮る（CharacterCapture）、撮る・選ぶ画面（CharacterPanelView）、遊ぶときに立てる（CharacterAvatar）
             var characterCapture = uiRoot.AddComponent<CharacterCapture>();
             var panel = uiRoot.AddComponent<CharacterPanelView>();
