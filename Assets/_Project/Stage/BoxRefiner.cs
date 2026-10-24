@@ -12,7 +12,7 @@ namespace DeskStage.Stage
     /// </summary>
     public static class BoxRefiner
     {
-        /// <summary>回転の差がこれ以内なら「同じ向き」としてすき間を測る（度）。</summary>
+        /// <summary>回転の差が 90度の倍数からこれ以内なら「同じ向き」としてすき間を測る（度）。</summary>
         const float SameYawTolerance = 1f;
 
         public static List<BoxData> Refine(IReadOnlyList<BoxData> boxes, float heightMergeThreshold, float gapCloseThreshold)
@@ -57,7 +57,11 @@ namespace DeskStage.Stage
             }
         }
 
-        /// <summary>同じ向きの2つの箱の、向かい合う辺のすき間が threshold 未満なら、低い方の箱を広げてふさぐ。</summary>
+        /// <summary>
+        /// 同じ向き（回転の差が 90度の倍数）の2つの箱の、向かい合う辺のすき間が threshold 未満なら、低い方の箱を広げてふさぐ。
+        /// RectFit は長い方の辺を幅にするので、まっすぐ置いた箱どうしでも 0度と 90度に分かれることがある。
+        /// 斜めにずれた箱どうしは扱わない。
+        /// </summary>
         static void CloseGaps(List<BoxData> boxes, float threshold)
         {
             for (var i = 0; i < boxes.Count; i++)
@@ -66,18 +70,23 @@ namespace DeskStage.Stage
                 {
                     var a = boxes[i];
                     var b = boxes[j];
-                    if (Mathf.Abs(Mathf.DeltaAngle(a.yawDegrees, b.yawDegrees)) > SameYawTolerance)
+                    var relative = Mathf.DeltaAngle(a.yawDegrees, b.yawDegrees);
+                    var quarterTurns = Mathf.RoundToInt(relative / 90f);
+                    if (Mathf.Abs(relative - quarterTurns * 90f) > SameYawTolerance)
                     {
-                        // 【仮】向きの違う箱どうしは扱わない。RectFit ができて回った箱が出てきたら見直す
                         continue;
                     }
+                    // 90度ずれているときは、a の座標で見ると b の幅と奥行きが入れかわる
+                    var swapped = (quarterTurns & 1) != 0;
 
                     // a の向きにそろえた座標で、b の範囲を測る
                     var toLocal = Quaternion.Euler(0f, -a.yawDegrees, 0f);
                     var ac = Vec3.To(a.center);
                     var bc = toLocal * (Vec3.To(b.center) - ac);
                     var aHalf = new Vector2(a.size[0], a.size[2]) / 2f;
-                    var bHalf = new Vector2(b.size[0], b.size[2]) / 2f;
+                    var bHalf = swapped
+                        ? new Vector2(b.size[2], b.size[0]) / 2f
+                        : new Vector2(b.size[0], b.size[2]) / 2f;
 
                     var gapX = Mathf.Abs(bc.x) - aHalf.x - bHalf.x;
                     var gapZ = Mathf.Abs(bc.z) - aHalf.y - bHalf.y;
@@ -88,13 +97,16 @@ namespace DeskStage.Stage
                     var lower = a.size[1] <= b.size[1] ? a : b;
                     var towardB = lower == a ? 1f : -1f;
 
+                    // 広げる辺：a の座標の X 方向なら、a は幅（0）、入れかわった b は奥行き（2）
+                    var lowerSwapped = lower == b && swapped;
+
                     if (gapX > 0f && gapX < threshold && overlapZ > 0f)
                     {
-                        Widen(lower, a.yawDegrees, new Vector3(Mathf.Sign(bc.x) * towardB, 0f, 0f), gapX, 0);
+                        Widen(lower, a.yawDegrees, new Vector3(Mathf.Sign(bc.x) * towardB, 0f, 0f), gapX, lowerSwapped ? 2 : 0);
                     }
                     else if (gapZ > 0f && gapZ < threshold && overlapX > 0f)
                     {
-                        Widen(lower, a.yawDegrees, new Vector3(0f, 0f, Mathf.Sign(bc.z) * towardB), gapZ, 2);
+                        Widen(lower, a.yawDegrees, new Vector3(0f, 0f, Mathf.Sign(bc.z) * towardB), gapZ, lowerSwapped ? 0 : 2);
                     }
                 }
             }

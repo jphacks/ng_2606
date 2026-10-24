@@ -48,13 +48,14 @@ namespace DeskStage.Stage.Tests
             Assert.That(box.id, Is.EqualTo("box-01"));
             Assert.That(box.source, Is.EqualTo(BoxData.SourceAuto));
             AssertVector(new Vector3(-0.22f, 0.01f, 0f), box.center);
-            AssertVector(new Vector3(0.15f, 0.02f, 0.22f), box.size);
+            // 長い方の辺（前後の 22cm）が幅になり、90度回る
+            AssertVector(new Vector3(0.22f, 0.02f, 0.15f), box.size);
+            Assert.That(box.yawDegrees, Is.EqualTo(90f).Within(1e-3f));
             Assert.That(changes.Count, Is.EqualTo(1));
             Assert.That(changes[0].change, Is.EqualTo(BoxChange.Added));
         }
 
         [Test]
-        [Ignore("仮の計算は回転を求めない。A の RectFit に差し替えたら有効にする")]
         public void 回した上面から回した箱ができる()
         {
             // 15cm×22cm の上面を 30度回した形
