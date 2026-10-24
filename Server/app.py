@@ -16,7 +16,8 @@ import pathlib
 import threading
 
 import anthropic
-from fastapi import FastAPI, File, Header, HTTPException, UploadFile
+from fastapi import FastAPI, File, Header, HTTPException, Request, UploadFile
+from fastapi.responses import JSONResponse
 
 HERE = pathlib.Path(__file__).resolve().parent
 
@@ -70,6 +71,17 @@ log = logging.getLogger("scan")
 
 app = FastAPI(title="DeskStage scan server")
 client = None if MOCK else anthropic.Anthropic()
+
+# 写真2枚と、フォームの区切りの分の上限。これより大きいと言うリクエストは、受け取る前に断る
+MAX_REQUEST_BYTES = 2 * MAX_PHOTO_BYTES + 64 * 1024
+
+
+@app.middleware("http")
+async def limit_request_size(request: Request, call_next):
+    length = request.headers.get("content-length")
+    if length is not None and (not length.isdigit() or int(length) > MAX_REQUEST_BYTES):
+        return JSONResponse(status_code=413, content={"detail": "送られたデータが大きすぎます"})
+    return await call_next(request)
 
 
 class DailyCounter:
@@ -125,12 +137,15 @@ def scan(
 
 
 def read_photo(upload: UploadFile, name: str) -> bytes:
-    data = upload.file.read()
+    # 少しずつ読み、上限を超えたらすぐにやめる（大きなファイルでメモリを使い切らないように）
+    data = bytearray()
+    while chunk := upload.file.read(64 * 1024):
+        data.extend(chunk)
+        if len(data) > MAX_PHOTO_BYTES:
+            raise HTTPException(status_code=413, detail=f"{name} の写真が大きすぎます（5MB まで）")
     if not data:
         raise HTTPException(status_code=400, detail=f"{name} の写真が空です")
-    if len(data) > MAX_PHOTO_BYTES:
-        raise HTTPException(status_code=413, detail=f"{name} の写真が大きすぎます（5MB まで）")
-    return data
+    return bytes(data)
 
 
 def image_block(data: bytes) -> dict:
