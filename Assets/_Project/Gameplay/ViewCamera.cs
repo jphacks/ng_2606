@@ -24,8 +24,17 @@ namespace DeskStage.Gameplay
         [Tooltip("遊び始めにキャラの近くへ寄るまでの時間（秒）")]
         public float introDuration = 1f;
 
-        [Tooltip("箱に近づけるときに、箱の表面から離す距離（m）")]
-        public float wallMargin = 0.005f;
+        [Tooltip("箱に近づけるときに、箱の表面から離す距離（m）。Near Clip Plane より大きくして、箱の中が見えないようにする")]
+        public float wallMargin = 0.015f;
+
+        [Tooltip("箱を探す見えない棒の太さ（半径 m）。キャラの半径より細くして、壁ぎわでも箱を見落とさない")]
+        public float castRadius = 0.002f;
+
+        [Tooltip("これより近づかないと箱をよけられないときは、近づけずにカメラを上へ持ち上げる（m）")]
+        public float minCloseDistance = 0.06f;
+
+        [Tooltip("箱がなくなったあと、持ち上げたカメラを元の角度へ戻す速さ（度/秒）")]
+        public float pitchReturnSpeed = 90f;
 
         [Tooltip("ステージデータがないとき（練習用シーン）の机の大きさ（m）")]
         public Vector2 fallbackDeskSize = new Vector2(0.6f, 0.6f);
@@ -33,6 +42,8 @@ namespace DeskStage.Gameplay
         float yaw;
         float pitch;
         float distance;
+        // 箱をよけるために持ち上げた後の、実際の見下ろす角度
+        float shownPitch;
         Vector3 focus;
         Vector3 focusVelocity;
 
@@ -74,6 +85,7 @@ namespace DeskStage.Gameplay
         {
             yaw = target != null ? target.eulerAngles.y : 0f;
             pitch = settings.cameraPitch;
+            shownPitch = pitch;
             distance = settings.cameraDistance;
             focus = FocusPoint();
             focusVelocity = Vector3.zero;
@@ -108,17 +120,36 @@ namespace DeskStage.Gameplay
                 wantDistance = Mathf.Lerp(introDistance, distance, t);
             }
 
-            // カメラとキャラの間に箱があれば、キャラ側に近づける（箱の中に入らない）
-            Vector3 wanted = OrbitMath.CameraPosition(lookAt, yaw, pitch, wantDistance);
-            Vector3 toCamera = wanted - lookAt;
-            float actualDistance = wantDistance;
-            if (Physics.SphereCast(lookAt, cam.nearClipPlane, toCamera.normalized, out var hit, wantDistance, Layers.TerrainMask, QueryTriggerInteraction.Ignore))
+            // カメラとキャラの間に箱があれば、キャラ側に近づける（箱の中に入らない）。
+            // 近づきすぎてキャラの体に入ってしまうときは、近づけずにカメラを上へ持ち上げて箱の上から見る
+            float neededPitch = pitch;
+            float actualDistance = ClearDistance(lookAt, neededPitch, wantDistance);
+            while (actualDistance < minCloseDistance && neededPitch < 89f)
             {
-                actualDistance = Mathf.Max(hit.distance - wallMargin, cam.nearClipPlane);
+                neededPitch = Mathf.Min(neededPitch + 5f, 89f);
+                actualDistance = ClearDistance(lookAt, neededPitch, wantDistance);
             }
 
-            transform.position = lookAt + toCamera.normalized * actualDistance;
+            // 持ち上げるときはすぐ、戻すときはゆっくり
+            shownPitch = neededPitch > shownPitch
+                ? neededPitch
+                : Mathf.MoveTowards(shownPitch, neededPitch, pitchReturnSpeed * Time.deltaTime);
+            actualDistance = ClearDistance(lookAt, shownPitch, wantDistance);
+
+            Vector3 direction = (OrbitMath.CameraPosition(lookAt, yaw, shownPitch, 1f) - lookAt).normalized;
+            transform.position = lookAt + direction * actualDistance;
             transform.rotation = Quaternion.LookRotation(lookAt - transform.position, Vector3.up);
+        }
+
+        // 見る点からカメラの向きへ見えない棒を伸ばし、箱に当たらずに置ける距離を返す
+        float ClearDistance(Vector3 lookAt, float pitchDegrees, float wantDistance)
+        {
+            Vector3 direction = (OrbitMath.CameraPosition(lookAt, yaw, pitchDegrees, 1f) - lookAt).normalized;
+            if (Physics.SphereCast(lookAt, castRadius, direction, out var hit, wantDistance + wallMargin, Layers.TerrainMask, QueryTriggerInteraction.Ignore))
+            {
+                return Mathf.Max(hit.distance - wallMargin, cam.nearClipPlane);
+            }
+            return wantDistance;
         }
 
         Vector3 FocusPoint()
