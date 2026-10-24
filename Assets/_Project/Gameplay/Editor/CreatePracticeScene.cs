@@ -86,7 +86,7 @@ namespace DeskStage.Gameplay.EditorTools
             button.motor = player.GetComponent<CharacterMotor>();
             button.target = target;
 
-            // 視点のカメラ（Step 6）：キャラを追う。マウスの右ドラッグで回り、ホイールで近づく
+            // 視点のカメラ（Step 6）：キャラを追う。マウスの右ドラッグで回り、Q・E で近づく・離れる
             var viewCamera = camera.gameObject.AddComponent<ViewCamera>();
             viewCamera.settings = AssetDatabase.LoadAssetAtPath<CharacterSettings>(CreateCharacterSettings.AssetPath);
             viewCamera.target = player.transform;
