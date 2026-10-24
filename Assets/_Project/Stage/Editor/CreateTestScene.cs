@@ -47,6 +47,17 @@ namespace DeskStage.Stage.EditorTools
             buttonSo.FindProperty("builder").objectReferenceValue = builder;
             buttonSo.ApplyModifiedPropertiesWithoutUndo();
 
+            // 写真の答えから箱を作る部品と、保存した答えを読み込むボタン（Step 7）
+            var reader = system.AddComponent<StageReader>();
+            var readerSo = new SerializedObject(reader);
+            readerSo.FindProperty("settings").objectReferenceValue = AssetDatabase.LoadAssetAtPath<BoxSettings>(SettingsPath);
+            readerSo.ApplyModifiedPropertiesWithoutUndo();
+
+            var answerButton = system.AddComponent<AnswerFileButton>();
+            var answerSo = new SerializedObject(answerButton);
+            answerSo.FindProperty("builder").objectReferenceValue = builder;
+            answerSo.ApplyModifiedPropertiesWithoutUndo();
+
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log($"[Stage] {ScenePath} を作りました。再生してボタンを押してください");
         }

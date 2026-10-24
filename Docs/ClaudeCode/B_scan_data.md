@@ -18,7 +18,7 @@
 - ☐ Step 4：お手本ステージ（M1）… 途中：stage.json は作った。本物を置いて写真を撮るのはまだ
 - ☑ Step 5：ステージの組み立て（StageBuilder）（M1）
 - ☐ Step 6：答えの形と指示文（LlmScanFormat）（M1）… 途中：指示文とスキーマはできた。紙なしの写真2枚からステージを作れた（photo-test-01）。紙がなくても箱を作る決まりに変えた。本物の Claude での確認がまだ
-- ☐ Step 7：答えから箱を作る（StageReader）（M1〜M2）… 途中：整える計算（BoxRefiner）とテストはできた
+- ☐ Step 7：答えから箱を作る（StageReader）（M1〜M2）… 途中：テストと Test_B（本物の答えから箱3つ）は確認した。実機で撮った写真からの確認がまだ
 - ☐ Step 8：もういちど撮る（M2）… 途中：箱とコースの物を消す処理とテストはできた
 - ☐ Step 9：読み取りの補助（BoxAssist）（M2）
 - ☐ Step 10：ステージ一覧と読み込み（StageCatalog、StageLoader）（M2）
