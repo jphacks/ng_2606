@@ -4,9 +4,11 @@
 
 ## Aの仕事
 
-子どもが机の上に並べた物を、スマホで映して読み取る「土台」を作ります。ARKit が見つけた平らな面を、B が箱を作りやすい「整えた上面の一覧」（ScanContext.Surfaces）にします。机の天面を決めて、ステージ座標（StageRoot）を本物の机の上に置きます。物を並べ直したときの「もういちどスキャン」と、iPhone へのビルドも A の担当です。
+子どもが机の上に並べた物を、スマホで撮って読み取る「土台」を作ります。カメラで机の写真を2枚撮り、明るさとぶれを確かめて、サーバーに送ります。サーバーは写真を Claude に渡し、物ごとの位置と大きさの答え（JSON）を返します。その答えを B に渡すまでと、サーバー自体、iPhone へのビルドが A の担当です（00_overview.md 9章）。
 
-完成の姿：子どもが並べた机を映して机をタップすると、数秒で机が決まり、並べた物の上面が見つかるたびに Surfaces に出てくる。高さは実物との差が±1cm以内。並べ直したら、もういちどスキャンで60秒以内に新しい並べ方がそろう。
+> 2026-10-24：読み取りの方式を「写真と Claude」に変えた（00_overview.md 9章）。面の検出の Step（6〜13、19）は使わない。写真の方式の Step を 21〜25 として足した。同じ日から、A と B は同じ人が担当する。
+
+完成の姿：子どもが机を2枚撮ると、30秒以内に答えが B に届く。写真が暗い・ぶれているときは、送る前に撮り直しを頼める。通信が失敗しても、アプリが止まらない。
 
 ## 進み具合
 
@@ -20,16 +22,24 @@
 - ☑ Step 8：机の決定とステージ座標（DeskFrame）（M1）
 - ☑ Step 9：スキャン状態の報告（ScanStatusReporter）（M1）
 - ☑ Step 10：スキャンの開始と終わり（ScanSession）（M1）
-- ☐ Step 11：面の安定化（SurfaceStabilizer）（M1〜M2）
-- ☐ Step 12：もういちどスキャン（M2）
-- ☐ Step 13：B と高さの誤差を確かめる（M2）
+- － Step 11：面の安定化（SurfaceStabilizer）（M1〜M2）… 使わない（方式変更）。コードは main にある
+- － Step 12：もういちどスキャン（M2）… 使わない（方式変更）。Step 25 で写真の方式にする
+- － Step 13：B と高さの誤差を確かめる（M2）… 使わない（方式変更）。B の Step 12 で測る
 - ☐ Step 14：AR_System プレハブと合流（M3）
 - ☐ Step 15：アプリが裏に回ったときの復帰（M4）
-- ☐ Step 16：照明ごとの検出のしやすさ（M4）
+- ☐ Step 16：照明ごとの検出のしやすさ（M4）… 写真の方式では「照明ごとの答えの正しさ」として行う
 - ☐ Step 17：端末の温度の監視（M5）
 - ☐ Step 18：連続プレイとスキャンの連続（M5）
-- ☐ Step 19：上面の画像の切り出し（M5、任意）
+- － Step 19：上面の画像の切り出し（M5、任意）… 使わない。B の Step 17 で真上の写真から切り出す
 - ☐ Step 20：完成版のビルド（M5）
+
+写真の方式（2026-10-24 から。Step 14 の合流より先に行う）：
+
+- ☐ Step 21：共通コードに足す（ScanResultReceived、TakePhoto、CameraPreview）
+- ☐ Step 22：カメラと撮影（PhotoCapture）
+- ☐ Step 23：写真の確認（PhotoCheck）
+- ☐ Step 24：サーバー（Server/）
+- ☐ Step 25：サーバーとの送受信と、もういちど撮る（ScanClient）
 
 > 2026-10-24 西垣さんの判断：P0 の検証（Step 4・5）はしない（B の省略と同じ）。Step 1・3・6・9・10 は実装まで済ませ、実機での確認は省略して ☑ にした。実機（iPhone 17）で AR が起動しなかった原因は、iOS のスクリプトシンボル UNITY_XR_ARKIT_LOADER_ENABLED が ProjectSettings に無く、バッチ実行のビルドで libUnityARKit.a が組み込まれなかったこと。ProjectSettings に入れて直した（メニュー「DeskStage/A/2. ARKit のビルド設定をそろえる」）。直した後は、実機で AR が起動し、面が見つかることを確かめた。
 >
@@ -50,6 +60,10 @@
 | AppLifecycle | AR/ | 裏に回ったときの扱い、端末の温度 |
 | SurfaceImageCapture | AR/ | 上面の画像の切り出し（任意） |
 | AR_System プレハブ | AR/Prefabs/ | 合流用 |
+| PhotoCapture | AR/ | カメラと撮影（写真の方式） |
+| PhotoCheck（計算） | AR/ | 写真の明るさとぶれの確認 |
+| ScanClient | AR/ | サーバーへの送信と受信 |
+| サーバー | Server/ | 写真を Claude に渡し、答えを返す（Python） |
 
 ## P0
 
@@ -305,6 +319,68 @@
 
 - やること：Development Build のチェックを外してビルドし、ビルド番号を上げ、全員の iPhone に入れて品質目標を確かめる。Docs/BuildGuide.md を最新にし、Mac を持つ他の人がその手順だけでビルドできるか確かめる
 - 確認：デバッグ表示が出ない版が全員の iPhone に入っている
+
+## 写真の方式（2026-10-24 から）
+
+00_overview.md 9章の流れを作ります。A と B は同じ人が担当しますが、A と B の部品の間は、これまでどおり共通コードだけでやり取りします。
+
+### Step 21：共通コードに足す【CC＋人】
+
+- 目的：写真の方式で使う知らせと依頼を、全員が使えるようにする
+- やること
+  1. 【CC】00_overview.md 9.3 のとおり、ScanContext に `ScanResultReceived`（string）と `RaiseScanResultReceived`、`CameraPreview`（Texture）を、UiRequests に `TakePhoto` と `RequestTakePhoto` を足す
+  2. 【CC】Docs/SharedCode.md に足した物を書く
+  3. 【人】共通コードの変更なので、C と D に見てもらってから合流する（2.2）
+- 確認：コンパイルエラーがない。EditMode テストがすべて通る
+
+### Step 22：カメラと撮影（PhotoCapture）【CC＋人】
+
+- 目的：撮影画面のボタンで、机の写真を2枚撮る
+- やること
+  1. StartScan を受けたら、背面カメラを WebCamTexture で開き、ScanContext.CameraPreview に入れる。スキャンの状態を FindingDesk にする
+  2. TakePhoto を受けたら、今の画面を写真にする。1枚目は真上、2枚目は斜め。1枚目のあとは状態を Scanning にする
+  3. 写真は JPEG（品質 85）にし、長い辺が 1568px より大きければ縮める（大きすぎると送るのに時間がかかるため）
+  4. 2枚そろったら、Step 23 の確認をしてから Step 25 で送る。FinishScan ではなく、2枚目を撮ったら自動で送る
+  5. 前の方式の ScanSession（Step 10）と DeskFrame（Step 8）は、写真の方式のシーンには置かない
+  6. 数値（写真の品質、長い辺の上限など）は ScanSettings に足す
+- 確認：【人】PC のカメラ（Unity エディタ）と実機の両方で、2枚撮れて、写真がログの場所に保存される（開発中だけ）
+
+### Step 23：写真の確認（PhotoCheck）【CC】
+
+- 目的：使えない写真を送らない（時間と API の料金のむだを防ぐ）
+- 作るもの：計算の部分（普通のクラス）と EditMode テスト
+- やること
+  1. 明るさ：写真の平均の明るさが低すぎたら、状態を Limited、理由を Dark にする
+  2. ぶれ：写真のくっきりさ（明るさの変化の大きさ）が低すぎたら、状態を Limited、理由を FastMotion にする
+  3. どちらかに当てはまったら送らず、その写真だけ撮り直してもらう（D が「もういちど とってね」と出す）
+  4. しきい値は ScanSettings に入れる。仮の値は、テスト用の写真で決める
+  5. テスト：真っ黒の画像は暗い、ぼかした画像はぶれ、ふつうの写真は通る
+- 確認：テストが通る
+
+### Step 24：サーバー（Server/）【CC＋人】
+
+- 目的：API キーを iPhone に置かずに、写真を Claude に渡す
+- 作るもの：リポジトリの一番上の Server/ に、Python の小さなサーバー。Unity の外なので .meta はない
+- やること
+  1. 【人】使うもの（Python、Web サーバーのライブラリ、Anthropic の Python SDK）を入れてよいか、確認する（2.2 の新しいパッケージ）
+  2. 【CC】POST /scan：2枚の写真（真上と斜め）を受け取り、Claude（モデル ID `claude-opus-5-5`）に画像と指示文（B の Stage/Llm/scan_prompt.md）を渡す。答えの形は構造化出力（output_config.format）に B のスキーマ（Stage/Llm/scan_result.schema.json）を渡して固定する
+  3. 【CC】Claude が答えを断ったとき（stop_reason が refusal）に備え、サーバー側の代わりのモデルの設定（fallbacks）を入れる。入れたことを人に伝える
+  4. 【CC】API キーは環境変数 ANTHROPIC_API_KEY から読む。リポジトリにもアプリにも書かない。.env は .gitignore に入れる
+  5. 【CC】アプリからの合言葉（ヘッダー）がないリクエストは断る。1日の回数の上限を超えたら断る（00_overview.md 8章）
+  6. 【CC】写真は保存しない。ログにも写真を書かない（00_overview.md 9.5）
+  7. 【CC】Server/README.md に、PC での動かし方と、置き場所（00_overview.md 8章）へのデプロイの仕方を書く
+- 確認：【人】PC でサーバーを動かし、お手本ステージの2枚の写真を送ると、スキーマどおりの JSON が返る。合言葉なしでは断られる
+
+### Step 25：サーバーとの送受信と、もういちど撮る（ScanClient）【CC＋人】
+
+- 目的：アプリから写真を送り、答えを B に渡す
+- やること
+  1. 2枚の写真を UnityWebRequest で POST /scan に送る。サーバーの URL と合言葉は ScanSettings に入れる（合言葉はリポジトリに入れない設定ファイルから読む）
+  2. 待っている間は状態を Scanning のままにする。90 秒で打ち切る
+  3. 答えが届いたら、ScanContext.RaiseScanResultReceived に JSON を渡し、状態を Finished にする
+  4. 通信の失敗、サーバーの断り、答えの形が違うときは、状態を Lost にして、理由をログに残す
+  5. Rescan を受けたら、撮った写真を捨てて、Step 22 の1 からやり直す（B は箱を消す。B の Step 8）
+- 確認：【人】実機で2枚撮ると、30秒以内に B の箱が出る。機内モードで撮ると Lost になり、アプリが止まらない
 
 ## 困ったとき
 
