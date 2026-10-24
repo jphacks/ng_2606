@@ -10,8 +10,9 @@ namespace DeskStage.AR
     /// </summary>
     public class DeskFrameDebug : MonoBehaviour
     {
-        // 下の仮ボタン（ScanSessionDebugPanel）の上のタップは、机のタップとして扱わない
-        const float ButtonAreaRatio = 0.2f;
+        // 下の仮ボタン（ScanSessionDebugPanel）の上のタップは、机のタップとして扱わない。
+        // ボタンは画面の下から 114pt（ラベルを含む）までに出る。画面の向きで割合が変わるので、pt で持つ
+        const float ButtonAreaPoints = 120f;
 
         GameObject m_Cube;
 
@@ -33,7 +34,8 @@ namespace DeskStage.AR
             }
 
             var position = touch.primaryTouch.position.ReadValue();
-            if (position.y < Screen.height * ButtonAreaRatio)
+            var scale = Screen.dpi > 0 ? Screen.dpi / 160f : 2f;
+            if (position.y < ButtonAreaPoints * scale)
             {
                 return;
             }
