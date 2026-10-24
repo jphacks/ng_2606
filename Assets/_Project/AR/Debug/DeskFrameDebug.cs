@@ -1,6 +1,7 @@
 using DeskStage.Shared;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.XR.ARFoundation;
 
 namespace DeskStage.AR
 {
@@ -10,10 +11,17 @@ namespace DeskStage.AR
     /// </summary>
     public class DeskFrameDebug : MonoBehaviour
     {
-        // 下の仮ボタン（ScanSessionDebugPanel）の上のタップは、机のタップとして扱わない
-        const float ButtonAreaRatio = 0.2f;
+        // 下の仮ボタン（ScanSessionDebugPanel）の上のタップは、机のタップとして扱わない。
+        // ボタンは画面の下から 114pt（ラベルを含む）までに出る。画面の向きで割合が変わるので、pt で持つ
+        const float ButtonAreaPoints = 120f;
 
         GameObject m_Cube;
+        DeskFrame m_DeskFrame;
+        string m_LastTap = "タップ：まだ";
+
+        float m_NextStateLog;
+
+        void Awake() => m_DeskFrame = FindFirstObjectByType<DeskFrame>();
 
         void OnEnable() => StageContext.DeskDecided += OnDeskDecided;
 
@@ -21,9 +29,11 @@ namespace DeskStage.AR
 
         void Update()
         {
-            if (StageContext.ScanStatus != ScanStatus.FindingDesk)
+            // 実機のログ（xcrun devicectl --console）で状態を追えるように、2 秒ごとに出す
+            if (Time.realtimeSinceStartup >= m_NextStateLog)
             {
-                return;
+                m_NextStateLog = Time.realtimeSinceStartup + 2f;
+                Debug.Log($"[DeskDebug] AR={ARSession.state} 理由={ARSession.notTrackingReason} 状態={StageContext.ScanStatus} 画面={Screen.width}x{Screen.height} dpi={Screen.dpi}");
             }
 
             var touch = Touchscreen.current;
@@ -33,12 +43,22 @@ namespace DeskStage.AR
             }
 
             var position = touch.primaryTouch.position.ReadValue();
-            if (position.y < Screen.height * ButtonAreaRatio)
+            if (StageContext.ScanStatus != ScanStatus.FindingDesk)
+            {
+                Debug.Log($"[DeskDebug] タップ位置={position} → 無視（状態 {StageContext.ScanStatus}）");
+                m_LastTap = $"タップ：無視（状態が {StageContext.ScanStatus}。FindingDesk のときだけ受ける）";
+                return;
+            }
+
+            var scale = Screen.dpi > 0 ? Screen.dpi / 160f : 2f;
+            if (position.y < ButtonAreaPoints * scale)
             {
                 return;
             }
 
             UiRequests.RequestSetDesk(position);
+            Debug.Log($"[DeskDebug] タップ位置={position} → " + (m_DeskFrame != null ? m_DeskFrame.LastTapResult : "DeskFrame が無い"));
+            m_LastTap = "タップ：" + (m_DeskFrame != null ? m_DeskFrame.LastTapResult : "DeskFrame が無い");
         }
 
         void OnDeskDecided()
@@ -60,10 +80,13 @@ namespace DeskStage.AR
             var scale = Screen.dpi > 0 ? Screen.dpi / 160f : 2f;
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
             var size = ScanContext.DeskSize;
-            GUI.Label(new Rect(8f, 56f, Screen.width / scale - 16f, 22f),
-                StageContext.StageRoot == null
-                    ? "机：まだ（面をタップ）"
-                    : $"机：幅 {size.x:F2} m × 奥行き {size.y:F2} m");
+            var desk = StageContext.StageRoot == null
+                ? "机：まだ（面をタップ）"
+                : $"机：幅 {size.x:F2} m × 奥行き {size.y:F2} m";
+            // 明るい背景（段ボールなど）でも読めるように、背景の箱を敷く
+            GUI.Box(new Rect(8f, 88f, 420f, 46f), "");
+            GUI.Label(new Rect(16f, 90f, 404f, 22f), desk);
+            GUI.Label(new Rect(16f, 110f, 404f, 22f), m_LastTap);
         }
     }
 }
