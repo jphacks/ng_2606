@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5babc74756f4d4311852881d7d6c2b7c, type: 3}
+  m_Name: ScanSettings
+  m_EditorClassIdentifier: DeskStage.AR::DeskStage.AR.ScanSettings
+  outsideDeskMargin: 0.05
+  deskSurfaceHeight: 0.008
+  maxSurfaceHeight: 0.4
+  minSurfaceArea: 0.0016
+  heightSmoothingTime: 1
+  mergeHeightTolerance: 0.01
+  mergeGapTolerance: 0.01
+  edgeExpansion: 0.005
+  settleTime: 1
+  notifyInterval: 0.25
+  relocalizingTimeout: 3
