@@ -20,15 +20,41 @@ namespace DeskStage.Gameplay
 
         public string sampleStageId = "sample-01";
 
+        // 最後のゴールの結果（Goal の知らせから）
+        string lastGoal = "";
+
+        void OnEnable()
+        {
+            GameEvents.Goal += OnGoal;
+            GameEvents.GameStarted += OnGameStarted;
+        }
+
+        void OnDisable()
+        {
+            GameEvents.Goal -= OnGoal;
+            GameEvents.GameStarted -= OnGameStarted;
+        }
+
+        void OnGoal(float seconds, bool isBest)
+        {
+            lastGoal = $"ゴール！ {seconds:0.00} 秒{(isBest ? "（さいそく きろく！）" : "")}";
+        }
+
+        void OnGameStarted() => lastGoal = "";
+
         void OnGUI()
         {
             if (gameFlow == null)
             {
                 return;
             }
-            GUILayout.BeginArea(new Rect(Screen.width - 236, 16, 220, 420), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(Screen.width - 236, 16, 220, 500), GUI.skin.box);
             GUILayout.Label($"じょうたい：{gameFlow.State}");
             GUILayout.Label($"タイム：{gameFlow.ElapsedSeconds:0.00} 秒");
+            string stageId = StageContext.CurrentStage != null ? StageContext.CurrentStage.id : "";
+            var best = gameFlow.recordStore != null && stageId != "" ? gameFlow.recordStore.GetBest(stageId) : null;
+            GUILayout.Label($"さいそく：{(best.HasValue ? best.Value.ToString("0.00") + " 秒" : "まだ なし")}");
+            if (lastGoal != "") GUILayout.Label(lastGoal);
             if (GUILayout.Button("ステージかんせい（仮 StageBuilt）", GUILayout.Height(32))) BuildStage();
             if (GUILayout.Button("あそぶ（Play）", GUILayout.Height(32))) UiRequests.RequestPlay();
             if (GUILayout.Button("いちじていし", GUILayout.Height(32))) UiRequests.RequestSetPaused(true);
@@ -36,6 +62,10 @@ namespace DeskStage.Gameplay
             if (GUILayout.Button("ゴールに ふれた（仮）", GUILayout.Height(32))) gameFlow.ReachGoal();
             if (GUILayout.Button("もういちど（Retry）", GUILayout.Height(32))) UiRequests.RequestRetry();
             if (GUILayout.Button("いちらんへ（BackToList）", GUILayout.Height(32))) UiRequests.RequestBackToList();
+            if (GUILayout.Button("きろくを けす（確かめ用）", GUILayout.Height(24)) && gameFlow.recordStore != null && stageId != "")
+            {
+                gameFlow.recordStore.Clear(stageId);
+            }
             GUILayout.EndArea();
         }
 
