@@ -25,6 +25,11 @@ namespace DeskStage.Gameplay.EditorTools
         [MenuItem("DeskStage/C/3. 練習用シーンを作る")]
         public static void Run()
         {
+            if (EditorApplication.isPlaying)
+            {
+                Debug.LogError("[Gameplay] ▶（Play）を止めてから実行してください");
+                return;
+            }
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             {
                 return;
@@ -103,6 +108,12 @@ namespace DeskStage.Gameplay.EditorTools
             var guard = gameFlow.gameObject.AddComponent<SafetyGuard>();
             guard.gameFlow = gameFlow;
             guard.settings = viewCamera.settings;
+            // コースの配置（Step 12）：1・2・3 を押しながら左クリックで、スタート・ゴール・チェックポイントを置く
+            var placer = gameFlow.gameObject.AddComponent<CoursePlacer>();
+            placer.placementCamera = camera;
+            placer.courseMarkers = markers;
+            placer.settings = viewCamera.settings;
+            gameFlow.gameObject.AddComponent<PlacementDebugInput>();
             var panel = gameFlow.gameObject.AddComponent<GameFlowDebugPanel>();
             panel.gameFlow = gameFlow;
             panel.practiceRoot = stageRoot;
@@ -122,6 +133,11 @@ namespace DeskStage.Gameplay.EditorTools
         [MenuItem("DeskStage/C/4. お手本ステージを練習用シーンに置く")]
         public static void PlaceSampleStage()
         {
+            if (EditorApplication.isPlaying)
+            {
+                Debug.LogError("[Gameplay] ▶（Play）を止めてから実行してください");
+                return;
+            }
             var scene = SceneManager.GetActiveScene();
             if (scene.path != ScenePath)
             {
