@@ -61,16 +61,44 @@ namespace DeskStage.Gameplay
             cam.nearClipPlane = 0.01f;
         }
 
+        CharacterMotor targetMotor;
+
         void OnEnable()
         {
             UiRequests.OrbitView += OnOrbitView;
             UiRequests.ZoomView += OnZoomView;
+            targetMotor = target != null ? target.GetComponent<CharacterMotor>() : null;
+            if (targetMotor != null)
+            {
+                targetMotor.Teleported += SnapBehindTarget;
+            }
         }
 
         void OnDisable()
         {
             UiRequests.OrbitView -= OnOrbitView;
             UiRequests.ZoomView -= OnZoomView;
+            if (targetMotor != null)
+            {
+                targetMotor.Teleported -= SnapBehindTarget;
+            }
+        }
+
+        /// <summary>
+        /// キャラの背中側へすぐに回り、キャラが向いている方を見る。瞬間移動の後に呼ばれる。
+        /// 近づく・離れるの距離はそのまま。
+        /// </summary>
+        public void SnapBehindTarget()
+        {
+            if (target == null)
+            {
+                return;
+            }
+            yaw = target.eulerAngles.y;
+            pitch = settings.cameraPitch;
+            shownPitch = pitch;
+            focus = FocusPoint();
+            focusVelocity = Vector3.zero;
         }
 
         void Start()

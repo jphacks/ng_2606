@@ -22,6 +22,9 @@ namespace DeskStage.Gameplay
         /// </summary>
         public Func<Vector2, Vector3> DirectionProvider { get; set; }
 
+        /// <summary>瞬間移動したとき。視点のカメラがキャラの背中側に回り直す</summary>
+        public event Action Teleported;
+
         CharacterController controller;
         DeskStageControls controls;
         readonly JumpTimer jumpTimer = new JumpTimer();
@@ -51,6 +54,7 @@ namespace DeskStage.Gameplay
             controller.enabled = true;
             verticalSpeed = 0f;
             jumpTimer.Reset();
+            Teleported?.Invoke();
         }
 
         void Update()
