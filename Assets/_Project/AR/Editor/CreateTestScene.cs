@@ -81,6 +81,9 @@ namespace DeskStage.AR.EditorTools
             planeManager.requestedDetectionMode = PlaneDetectionMode.Horizontal;
             originGo.AddComponent<ARRaycastManager>();
 
+            // Step 6：上向きの水平な面だけを覚えておく
+            originGo.AddComponent<PlaneWatcher>();
+
             var probe = originGo.AddComponent<PlaneProbe>();
             var serialized = new SerializedObject(probe);
             serialized.FindProperty("m_Settings").objectReferenceValue = settings;
@@ -97,6 +100,13 @@ namespace DeskStage.AR.EditorTools
             AssetDatabase.Refresh();
 
             Debug.Log("[Step1] 作りました: " + ScenePath);
+
+            // バッチ実行では自分で終了しないと、エディタがプロジェクトの
+            // ロックを握ったまま残り続ける
+            if (Application.isBatchMode)
+            {
+                EditorApplication.Exit(0);
+            }
         }
     }
 }

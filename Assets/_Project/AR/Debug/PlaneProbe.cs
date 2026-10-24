@@ -42,6 +42,7 @@ namespace DeskStage.AR
         ARPlaneManager m_PlaneManager;
         ARRaycastManager m_RaycastManager;
         ARSession m_Session;
+        PlaneWatcher m_Watcher;
         Material m_PlaneMaterial;
 
         float m_StartedAt;
@@ -55,6 +56,7 @@ namespace DeskStage.AR
             m_PlaneManager = GetComponent<ARPlaneManager>();
             m_RaycastManager = GetComponent<ARRaycastManager>();
             m_Session = FindFirstObjectByType<ARSession>();
+            m_Watcher = GetComponent<PlaneWatcher>();
             m_PlaneMaterial = CreateTransparentMaterial();
             m_StartedAt = Time.realtimeSinceStartup;
         }
@@ -306,7 +308,10 @@ namespace DeskStage.AR
 
             GUI.Box(new Rect(8f, 8f, 230f, 76f), "");
             GUI.Label(new Rect(16f, 12f, 220f, 20f), $"面：{m_Records.Count} 枚");
-            GUI.Label(new Rect(16f, 32f, 220f, 20f), $"経過：{Elapsed:F0} 秒");
+            GUI.Label(new Rect(16f, 32f, 220f, 20f),
+                m_Watcher != null
+                    ? $"経過：{Elapsed:F0} 秒　見張り：{m_Watcher.Planes.Count} 枚"
+                    : $"経過：{Elapsed:F0} 秒");
             GUI.Label(new Rect(16f, 52f, 220f, 20f), m_LastMessage);
 
             if (GUI.Button(new Rect(w - 180f, 8f, 80f, 44f), "記録"))
