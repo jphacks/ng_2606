@@ -10,7 +10,7 @@ using UnityEngine.XR.ARSubsystems;
 namespace DeskStage.AR.EditorTools
 {
     /// <summary>
-    /// A_ar.md Step 1 の1、Step 2、Step 3 の1。
+    /// A_ar.md Step 1 の1、Step 2、Step 3 の1、Step 6、9、10、8。
     /// Test_A シーンと ScanSettings アセットを作る。
     /// シーンを手で組むと人によって中身がずれるので、ここから作る（CLAUDE.md の決まり）。
     /// </summary>
@@ -127,10 +127,13 @@ namespace DeskStage.AR.EditorTools
             // Step 3 の1：平らな面の検出とレイキャスト
             var planeManager = originGo.AddComponent<ARPlaneManager>();
             planeManager.requestedDetectionMode = PlaneDetectionMode.Horizontal;
-            originGo.AddComponent<ARRaycastManager>();
+            var raycastManager = originGo.AddComponent<ARRaycastManager>();
+
+            // Step 8：StageRoot に付ける AR Anchor を作る管理役
+            var anchorManager = originGo.AddComponent<ARAnchorManager>();
 
             // Step 6：上向きの水平な面だけを覚えておく
-            originGo.AddComponent<PlaneWatcher>();
+            var watcher = originGo.AddComponent<PlaneWatcher>();
 
             var probe = originGo.AddComponent<PlaneProbe>();
             var serialized = new SerializedObject(probe);
@@ -155,6 +158,16 @@ namespace DeskStage.AR.EditorTools
             sessionSerialized.FindProperty("m_Reporter").objectReferenceValue = reporter;
             sessionSerialized.FindProperty("m_DisableOnAwake").boolValue = false;
             sessionSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+            // Step 8：机を決めて StageRoot を置く。確認用に、タップと立方体の仮部品も付ける
+            var deskFrame = scanGo.AddComponent<DeskFrame>();
+            scanGo.AddComponent<DeskFrameDebug>();
+            var deskSerialized = new SerializedObject(deskFrame);
+            deskSerialized.FindProperty("m_Watcher").objectReferenceValue = watcher;
+            deskSerialized.FindProperty("m_RaycastManager").objectReferenceValue = raycastManager;
+            deskSerialized.FindProperty("m_AnchorManager").objectReferenceValue = anchorManager;
+            deskSerialized.FindProperty("m_Settings").objectReferenceValue = settings;
+            deskSerialized.ApplyModifiedPropertiesWithoutUndo();
 
             // 動作確認用：前方50cm に一辺5cm の立方体
             var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
