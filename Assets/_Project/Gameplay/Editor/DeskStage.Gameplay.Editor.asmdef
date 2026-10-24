@@ -1,0 +1,19 @@
+{
+    "name": "DeskStage.Gameplay.Editor",
+    "rootNamespace": "DeskStage.Gameplay.EditorTools",
+    "references": [
+        "DeskStage.Gameplay",
+        "DeskStage.Shared"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

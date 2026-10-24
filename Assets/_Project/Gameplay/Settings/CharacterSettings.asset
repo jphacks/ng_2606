@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e06d4c981fdddb4ab1e3e2bd0515a87, type: 3}
+  m_Name: CharacterSettings
+  m_EditorClassIdentifier: DeskStage.Gameplay::DeskStage.Gameplay.CharacterSettings
+  height: 0.03
+  radius: 0.008
+  centerY: 0.015
+  skinWidth: 0.0008
+  stepOffset: 0.008
+  slopeLimit: 45
+  minMoveDistance: 0
+  walkSpeed: 0.15
+  gravity: 9.8
+  jumpHeight: 0.05
+  jumpBufferTime: 0.1
+  coyoteTime: 0.1
+  maxFallSpeed: 1
+  turnSpeed: 720
+  jumpableStepMax: 0.045
+  walkableStepMax: 0.008
+  cameraDistance: 0.35
+  cameraDistanceMin: 0.2
+  cameraDistanceMax: 0.8
+  cameraPitch: 40
+  cameraPitchMin: 20
+  cameraPitchMax: 80

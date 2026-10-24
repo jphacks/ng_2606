@@ -1,0 +1,17 @@
+{
+    "name": "DeskStage.Gameplay",
+    "rootNamespace": "DeskStage.Gameplay",
+    "references": [
+        "DeskStage.Shared",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
