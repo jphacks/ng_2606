@@ -92,6 +92,7 @@ namespace DeskStage.UI.Editor
             var guidance = CreateGuidance(panels[(int)ScreenId.Scan].transform);
             CreateDevPanel(safeArea, router, guidance);
             CreateDebugOverlay();
+            CreateStageLook();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log("Test_D.unity を作りました: " + ScenePath);
@@ -134,10 +135,35 @@ namespace DeskStage.UI.Editor
             go.transform.position = new Vector3(0f, 0.45f, -0.6f);
             go.transform.LookAt(Vector3.zero);
 
-            // 仮の光源（本当の光源は Step 7 で作る）
-            var light = new GameObject("DEV_Light").AddComponent<Light>();
+            CreatePlayLight();
+        }
+
+        // Step 7 の3：遊ぶ画面の光源。斜め上から、柔らかい影。影のずれ（Bias）は小さめ
+        static void CreatePlayLight()
+        {
+            var go = new GameObject("PlayLight");
+            go.transform.rotation = Quaternion.Euler(55f, -35f, 0f);
+            var light = go.AddComponent<Light>();
             light.type = LightType.Directional;
-            light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+            light.intensity = 1.1f;
+            light.color = new Color(1f, 0.97f, 0.92f);
+            light.shadows = LightShadows.Soft;
+            light.shadowStrength = 0.75f;
+            // 描画設定の Bias（Mobile は 1）は机の大きさには大きすぎるので、この光源だけの値を使う
+            var data = go.AddComponent<UnityEngine.Rendering.Universal.UniversalAdditionalLightData>();
+            data.usePipelineSettings = false;
+            light.shadowBias = 0.05f;
+            light.shadowNormalBias = 0.3f;
+        }
+
+        static void CreateStageLook()
+        {
+            var look = AssetDatabase.LoadAssetAtPath<ViewLook>(CreateLookAssets.ViewLookPath);
+            if (look == null)
+            {
+                Debug.LogWarning("ViewLook がありません。メニュー「DeskStage/D/見た目の素材を作る」を先に実行してください。");
+            }
+            new GameObject("StageLook").AddComponent<StageLook>().SetLook(look);
         }
 
         static void CreateDebugOverlay()

@@ -58,16 +58,21 @@ namespace DeskStage.UI
             {
                 Destroy(sampleBoxes);
                 ScanContext.WorkingBoxes.Clear();
+                StageContext.StageRoot = null;
                 return;
             }
             // 再生をまたいで前の箱が残っていることがあるので、先に空にする（Domain Reload なしの設定のため）
             ScanContext.WorkingBoxes.Clear();
+            // B の StageBuilder と同じ形にする：StageRoot の子に「Desk」と「box-…」
             sampleBoxes = new GameObject("DEV_SampleBoxes");
             sampleBoxes.AddComponent<DevMarker>();
-            AddSampleBox("desk", new Vector3(0f, -0.005f, 0f), new Vector3(0.8f, 0.01f, 0.5f), null);
+            StageContext.StageRoot = sampleBoxes.transform;
+            AddSampleBox("Desk", new Vector3(0f, -0.005f, 0f), new Vector3(0.8f, 0.01f, 0.5f), null);
+            // box-01 と box-02 は接して並べ、隣どうしで色が違うかを確かめられるようにする
             AddSampleBox("box-01", new Vector3(-0.2f, 0.03f, 0f), new Vector3(0.12f, 0.06f, 0.12f), BoxData.SourceAuto);
-            AddSampleBox("box-02", new Vector3(0f, 0.04f, 0.05f), new Vector3(0.1f, 0.08f, 0.15f), BoxData.SourceAuto);
+            AddSampleBox("box-02", new Vector3(-0.09f, 0.04f, 0.02f), new Vector3(0.1f, 0.08f, 0.15f), BoxData.SourceAuto);
             AddSampleBox("box-03", new Vector3(0.2f, 0.015f, -0.05f), new Vector3(0.15f, 0.03f, 0.1f), BoxData.SourceManual);
+            StageContext.RaiseStageBuilt();
         }
 
         void AddSampleBox(string id, Vector3 center, Vector3 size, string source)
