@@ -3,6 +3,7 @@
     "rootNamespace": "DeskStage.Gameplay",
     "references": [
         "DeskStage.Shared",
+        "DeskStage.Shared.Input",
         "Unity.InputSystem"
     ],
     "includePlatforms": [],
