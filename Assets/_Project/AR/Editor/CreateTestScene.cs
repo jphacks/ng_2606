@@ -10,7 +10,7 @@ using UnityEngine.XR.ARSubsystems;
 namespace DeskStage.AR.EditorTools
 {
     /// <summary>
-    /// A_ar.md Step 1 の1、Step 2、Step 3 の1、Step 6、9、10、8。
+    /// A_ar.md Step 1 の1、Step 2、Step 3 の1、Step 6、9、10、8、11。
     /// Test_A シーンと ScanSettings アセットを作る。
     /// シーンを手で組むと人によって中身がずれるので、ここから作る（CLAUDE.md の決まり）。
     /// </summary>
@@ -168,6 +168,14 @@ namespace DeskStage.AR.EditorTools
             deskSerialized.FindProperty("m_AnchorManager").objectReferenceValue = anchorManager;
             deskSerialized.FindProperty("m_Settings").objectReferenceValue = settings;
             deskSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+            // Step 11：面を整えて ScanContext.Surfaces に書く
+            var stabilizer = scanGo.AddComponent<SurfaceStabilizer>();
+            var stabilizerSerialized = new SerializedObject(stabilizer);
+            stabilizerSerialized.FindProperty("m_Watcher").objectReferenceValue = watcher;
+            stabilizerSerialized.FindProperty("m_Settings").objectReferenceValue = settings;
+            stabilizerSerialized.ApplyModifiedPropertiesWithoutUndo();
+            scanGo.AddComponent<SurfaceDebugPanel>();
 
             // 動作確認用：前方50cm に一辺5cm の立方体
             var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
