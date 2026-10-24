@@ -60,6 +60,8 @@ namespace DeskStage.UI
                 ScanContext.WorkingBoxes.Clear();
                 return;
             }
+            // 再生をまたいで前の箱が残っていることがあるので、先に空にする（Domain Reload なしの設定のため）
+            ScanContext.WorkingBoxes.Clear();
             sampleBoxes = new GameObject("DEV_SampleBoxes");
             sampleBoxes.AddComponent<DevMarker>();
             AddSampleBox("desk", new Vector3(0f, -0.005f, 0f), new Vector3(0.8f, 0.01f, 0.5f), null);

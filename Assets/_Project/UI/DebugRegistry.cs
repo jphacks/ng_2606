@@ -50,6 +50,10 @@ namespace DeskStage.UI
 
         public static void Clear() => items.Clear();
 
+        // このプロジェクトは再生のたびに static を作り直さない設定（Domain Reload なし）なので、再生の始めに空にする
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetOnPlay() => items.Clear();
+
         static void Put(Item item)
         {
             var index = items.FindIndex(i => i.Name == item.Name);
