@@ -1,0 +1,38 @@
+{
+  "paperFound": false,
+  "scaleReference": "三菱鉛筆プロッキー10色セットの箱の横幅を約19cmとした",
+  "desk": null,
+  "blocks": [
+    {
+      "label": "マーカーの箱（プロッキー10色）",
+      "centerXCm": 11.1,
+      "centerZCm": 7.0,
+      "widthCm": 19.0,
+      "depthCm": 14.0,
+      "heightCm": 2.0,
+      "yawDegrees": 0,
+      "confidence": 0.6
+    },
+    {
+      "label": "細長い段ボール箱",
+      "centerXCm": 14.0,
+      "centerZCm": 18.8,
+      "widthCm": 28.0,
+      "depthCm": 9.5,
+      "heightCm": 5.0,
+      "yawDegrees": 0,
+      "confidence": 0.5
+    },
+    {
+      "label": "大きな段ボール箱",
+      "centerXCm": 15.0,
+      "centerZCm": 37.5,
+      "widthCm": 26.0,
+      "depthCm": 22.0,
+      "heightCm": 26.0,
+      "yawDegrees": 0,
+      "confidence": 0.35
+    }
+  ],
+  "notes": "A4の紙が写っていないため、マーカーの箱を基準に推定しました。真上の写真は少し斜めで、大きな段ボール箱は背が高く上面が大きく見えるため、大きさと高さの推定に自信がありません。机の右端と奥の端が見えないため机の大きさは答えていません。"
+}
