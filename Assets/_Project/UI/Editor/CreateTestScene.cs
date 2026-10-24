@@ -129,6 +129,8 @@ namespace DeskStage.UI.Editor
         {
             var go = new GameObject("Main Camera") { tag = "MainCamera" };
             var cam = go.AddComponent<Camera>();
+            // 音を聞く役。ないと効果音が鳴らない
+            go.AddComponent<AudioListener>();
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.95f, 0.95f, 0.95f);
             cam.nearClipPlane = 0.01f;

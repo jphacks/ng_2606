@@ -16,6 +16,15 @@ namespace DeskStage.UI
 
         public void SetGuidance(GuidanceView value) => guidance = value;
 
+        void Awake()
+        {
+            // このプロジェクトは再生を止めても共通コードの値が残る設定（Domain Reload なし）。
+            // テスト用シーンでは、前の再生の箱や状態が残らないよう、始めに空にする
+            ScanContext.Clear();
+            StageContext.StageRoot = null;
+            StageContext.SetScanStatus(ScanStatus.NotStarted);
+        }
+
         // スキャン状態を順に変えて、案内の表示を確かめる（Step 5）。本当は A が書く。
         static readonly (ScanStatus status, ScanReason reason, bool deskFound)[] ScanSteps =
         {
