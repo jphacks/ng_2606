@@ -92,6 +92,8 @@ namespace DeskStage.UI.Editor
             var guidance = CreateGuidance(panels[(int)ScreenId.Scan].transform);
             CreateScanScreen(panels[(int)ScreenId.Scan].transform);
             CreateTipsScreen(panels[(int)ScreenId.Tips].transform);
+            var dialog = CreateConfirmDialog(safeArea);
+            CreateCheckScreen(panels[(int)ScreenId.Check].transform, router, dialog);
             CreateDevPanel(safeArea, router, guidance);
             CreateDebugOverlay();
             CreateStageLook();
@@ -367,6 +369,52 @@ namespace DeskStage.UI.Editor
                 Debug.LogWarning("コツの絵の一覧がありません。メニュー「DeskStage/D/コツの絵を作る」を先に実行してください。");
             }
             area.AddComponent<TipsScreen>().Set(wording, pages, image, text, dots, scan, show, group);
+        }
+
+        // Step 10：「いい？」と確かめる小さな画面。後ろを半透明でおおう。ふだんは隠しておく
+        static ConfirmDialog CreateConfirmDialog(RectTransform parent)
+        {
+            var go = new GameObject("ConfirmDialog", typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            Stretch((RectTransform)go.transform);
+            go.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.45f);
+
+            var box = new GameObject("Box", typeof(RectTransform));
+            box.transform.SetParent(go.transform, false);
+            box.AddComponent<Image>().color = Color.white;
+            Anchor((RectTransform)box.transform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1300, 560));
+
+            var message = CreateLabel("Message", box.transform, "", 64);
+            Anchor((RectTransform)message.transform, new Vector2(0.5f, 1f), new Vector2(0f, -150f), new Vector2(1200, 220));
+            var yes = CreateButton("Button_Yes", box.transform, "common.yes");
+            Anchor((RectTransform)yes.transform, new Vector2(0.5f, 0f), new Vector2(280f, 130f), new Vector2(420, 170));
+            yes.GetComponent<Image>().color = new Color(0.7f, 0.9f, 1f);
+            var no = CreateButton("Button_No", box.transform, "common.no");
+            Anchor((RectTransform)no.transform, new Vector2(0.5f, 0f), new Vector2(-280f, 130f), new Vector2(420, 170));
+            no.GetComponent<Image>().color = new Color(0.92f, 0.92f, 0.92f);
+
+            var dialog = go.AddComponent<ConfirmDialog>();
+            dialog.Set(wording, message, yes, no);
+            go.SetActive(false);
+            return dialog;
+        }
+
+        static void CreateCheckScreen(Transform checkScreen, ScreenRouter router, ConfirmDialog dialog)
+        {
+            // 段の印は画面いっぱいの板の中に置く（ボタンより奥）
+            var marks = new GameObject("StepMarks", typeof(RectTransform));
+            marks.transform.SetParent(checkScreen, false);
+            marks.transform.SetAsFirstSibling();
+            Stretch((RectTransform)marks.transform);
+            marks.AddComponent<StepMarksView>().Set(wording, font, AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd"));
+
+            var question = CreateWordingLabel("Question", checkScreen, "check.question", 72);
+            Anchor((RectTransform)question.transform, new Vector2(0.5f, 1f), new Vector2(0f, -210f), new Vector2(1400, 120));
+
+            var rescan = CreateButton("Button_Rescan", checkScreen, "check.rescan");
+            Anchor((RectTransform)rescan.transform, new Vector2(0f, 1f), new Vector2(290f, -220f), new Vector2(500, 160));
+
+            marks.AddComponent<CheckScreen>().Set(router, dialog, rescan);
         }
 
         static void CreateDevPanel(RectTransform parent, ScreenRouter router, GuidanceView guidance)

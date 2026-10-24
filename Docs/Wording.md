@@ -65,6 +65,8 @@
 | check.question | ほんものと おなじかな？ | 上の中央 |
 | check.rescan | もういちどスキャン | 左上のボタン |
 | check.rescanConfirm | はこを ぜんぶ つくりなおすよ。いい？ | もういちどスキャンの確かめ |
+| common.yes | うん | 確かめの画面の「はい」 |
+| common.no | やめる | 確かめの画面の「いいえ」 |
 | check.wallHint | とどかないよ。ひくい ものを となりに おいて、もういちど スキャンしてね | Wall の箱のそば（小さく） |
 | check.fix | なおす | 左下のボタン（補助の開閉） |
 | check.addBox | ＋はこ | 補助 |

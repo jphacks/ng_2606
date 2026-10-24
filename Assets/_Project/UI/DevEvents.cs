@@ -80,7 +80,8 @@ namespace DeskStage.UI
             // box-01 と box-02 は接して並べ、隣どうしで色が違うかを確かめられるようにする
             AddSampleBox("box-01", new Vector3(-0.2f, 0.03f, 0f), new Vector3(0.12f, 0.06f, 0.12f), BoxData.SourceAuto);
             AddSampleBox("box-02", new Vector3(-0.09f, 0.04f, 0.02f), new Vector3(0.1f, 0.08f, 0.15f), BoxData.SourceAuto);
-            AddSampleBox("box-03", new Vector3(0.2f, 0.015f, -0.05f), new Vector3(0.15f, 0.03f, 0.1f), BoxData.SourceManual);
+            // box-03 は高さ 8cm で離して置き、たしかめ画面で赤の印（Wall）が出ることを確かめる
+            AddSampleBox("box-03", new Vector3(0.2f, 0.04f, -0.05f), new Vector3(0.15f, 0.08f, 0.1f), BoxData.SourceManual);
             StageContext.RaiseStageBuilt();
         }
 
