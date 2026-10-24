@@ -1,0 +1,39 @@
+{
+  "version": 2,
+  "id": "sample-01",
+  "name": "おてほん",
+  "createdAt": "2026-10-24T12:00:00+09:00",
+  "desk": { "width": 0.90, "depth": 0.44 },
+  "boxes": [
+    {
+      "id": "box-01",
+      "center": [-0.22, 0.01, 0.0],
+      "size": [0.15, 0.02, 0.22],
+      "yawDegrees": 0,
+      "source": "auto",
+      "texture": ""
+    },
+    {
+      "id": "box-02",
+      "center": [-0.095, 0.015, 0.0],
+      "size": [0.10, 0.03, 0.35],
+      "yawDegrees": 0,
+      "source": "auto",
+      "texture": ""
+    },
+    {
+      "id": "box-03",
+      "center": [0.21, 0.07, 0.0],
+      "size": [0.22, 0.14, 0.20],
+      "yawDegrees": 0,
+      "source": "auto",
+      "texture": ""
+    }
+  ],
+  "spawn": { "position": [-0.38, 0.0, 0.0], "yawDegrees": 90 },
+  "goal": { "position": [0.40, 0.0, 0.0], "radius": 0.03 },
+  "checkpoints": [
+    { "position": [-0.095, 0.03, 0.0], "radius": 0.03 }
+  ],
+  "fallDepth": 0.10
+}

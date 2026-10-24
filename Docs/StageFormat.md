@@ -20,6 +20,16 @@
 
 表面の画像（任意）は、stage.json と同じフォルダに置きます。
 
+index.json は、同梱するステージの id と更新番号（revision）の一覧です。同梱のステージを直したら revision を1つ上げます（端末に古い版が残っているときに上書きするため。B の Step 10）。
+
+```json
+{
+  "stages": [
+    { "id": "sample-01", "revision": 1 }
+  ]
+}
+```
+
 ## 項目
 
 | 項目 | 型 | 単位 | 意味 | 範囲 |
@@ -62,6 +72,50 @@
 | checkpoints の数 | 0〜5個 |
 | fallDepth | 0より大きい |
 
-## まだ決まっていないこと
+## 中の項目の名前
 
-- desk・spawn・goal・checkpoints の中の項目の名前（例：幅を width と書くか）は、A が全体 Step 3 で作る共通コード StageData で決まります。決まったら、この説明に名前と例のファイルを書き足します
+共通コード StageData（Assets/_Project/Shared/StageData.cs）の名前と同じです。
+
+| 項目 | 中の名前 |
+| --- | --- |
+| desk | width（幅）、depth（奥行き） |
+| spawn | position（長さ3）、yawDegrees |
+| goal、checkpoints の1つ | position（長さ3）、radius |
+
+## 例
+
+箱2つのステージです。
+
+```json
+{
+  "version": 2,
+  "id": "sample-01",
+  "name": "おてほん",
+  "createdAt": "2026-10-23T14:05:00+09:00",
+  "desk": { "width": 1.2, "depth": 0.6 },
+  "boxes": [
+    {
+      "id": "box-01",
+      "center": [-0.2, 0.05, 0.0],
+      "size": [0.2, 0.1, 0.15],
+      "yawDegrees": 0,
+      "source": "auto",
+      "texture": ""
+    },
+    {
+      "id": "box-02",
+      "center": [0.1, 0.02, 0.05],
+      "size": [0.1, 0.04, 0.1],
+      "yawDegrees": 30,
+      "source": "manual",
+      "texture": ""
+    }
+  ],
+  "spawn": { "position": [-0.45, 0.0, 0.0], "yawDegrees": 90 },
+  "goal": { "position": [-0.2, 0.1, 0.0], "radius": 0.03 },
+  "checkpoints": [
+    { "position": [0.1, 0.04, 0.05], "radius": 0.03 }
+  ],
+  "fallDepth": 0.1
+}
+```
