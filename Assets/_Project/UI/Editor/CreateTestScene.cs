@@ -5,46 +5,51 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.OnScreen;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
 namespace DeskStage.UI.Editor
 {
     /// <summary>
-    /// メニュー「DeskStage/D/テスト用シーンを作る」。Scenes/Test_D.unity を作る（Step 1）。
-    /// Canvas、SafeArea、7つの画面、ScreenRouter、仮のボタンを組み立てる。
+    /// メニュー「DeskStage/D/テスト用シーンを作る」。Scenes/Test_D.unity を作る（Step 1〜3）。
+    /// Canvas、SafeArea、7つの画面、ScreenRouter、仮のボタン、プレイ画面のスティックとジャンプを組み立てる。
+    /// 先に「日本語フォントを作る」と「文言の表を読み込む」を実行しておく。
     /// </summary>
     public static class CreateTestScene
     {
         const string ScenePath = "Assets/_Project/Scenes/Test_D.unity";
-        const string FontFolder = "Assets/_Project/UI/Fonts";
 
         // 基準の解像度（横2532・縦1170）。ボタンは直径160以上
         static readonly Vector2 ReferenceResolution = new Vector2(2532, 1170);
         static readonly Vector2 ButtonSize = new Vector2(520, 180);
 
+        // Step 2：スティックの外周は直径約240、ジャンプは直径約200
+        const float StickDiameter = 240f;
+        const float JumpDiameter = 200f;
+
         static TMP_FontAsset font;
+        static Wording wording;
 
         struct ScreenSpec
         {
-            public ScreenId Id;
             public string Name;
-            public string Title;
-            public string NextLabel;
+            public string DevTitle;
+            public string NextKey;
             public ScreenId Next;
             public Color Color;
         }
 
-        // 画面の文は Step 3 で Wording に置き換える。ここは流れを確かめるための仮の文。
+        // 画面の名前（DevTitle）は流れを確かめるための開発用の表示。ボタンの文は Wording のキーで指定する。
         static readonly ScreenSpec[] Specs =
         {
-            new ScreenSpec { Id = ScreenId.Title, Name = "Screen_Title", Title = "タイトル", NextLabel = "はじめる", Next = ScreenId.List, Color = new Color(0.85f, 0.93f, 1f) },
-            new ScreenSpec { Id = ScreenId.List, Name = "Screen_List", Title = "ステージ いちらん", NextLabel = "あたらしくつくる", Next = ScreenId.Tips, Color = new Color(0.88f, 1f, 0.88f) },
-            new ScreenSpec { Id = ScreenId.Tips, Name = "Screen_Tips", Title = "ならべかたの コツ", NextLabel = "スキャンする", Next = ScreenId.Scan, Color = new Color(1f, 0.96f, 0.82f) },
-            new ScreenSpec { Id = ScreenId.Scan, Name = "Screen_Scan", Title = "スキャン", NextLabel = "できた", Next = ScreenId.Check, Color = new Color(0.82f, 0.95f, 1f) },
-            new ScreenSpec { Id = ScreenId.Check, Name = "Screen_Check", Title = "たしかめ", NextLabel = "あそぶ", Next = ScreenId.Play, Color = new Color(1f, 0.9f, 0.9f) },
-            new ScreenSpec { Id = ScreenId.Play, Name = "Screen_Play", Title = "プレイ", NextLabel = null, Next = ScreenId.Play, Color = new Color(0.92f, 0.9f, 1f) },
-            new ScreenSpec { Id = ScreenId.Clear, Name = "Screen_Clear", Title = "クリア", NextLabel = "ステージ いちらんへ", Next = ScreenId.List, Color = new Color(1f, 0.93f, 0.75f) },
+            new ScreenSpec { Name = "Screen_Title", DevTitle = "タイトル", NextKey = "title.start", Next = ScreenId.List, Color = new Color(0.85f, 0.93f, 1f) },
+            new ScreenSpec { Name = "Screen_List", DevTitle = "ステージ いちらん", NextKey = "list.new", Next = ScreenId.Tips, Color = new Color(0.88f, 1f, 0.88f) },
+            new ScreenSpec { Name = "Screen_Tips", DevTitle = "ならべかたの コツ", NextKey = "tips.scan", Next = ScreenId.Scan, Color = new Color(1f, 0.96f, 0.82f) },
+            new ScreenSpec { Name = "Screen_Scan", DevTitle = "スキャン", NextKey = "scan.done", Next = ScreenId.Check, Color = new Color(0.82f, 0.95f, 1f) },
+            new ScreenSpec { Name = "Screen_Check", DevTitle = "たしかめ", NextKey = "check.play", Next = ScreenId.Play, Color = new Color(1f, 0.9f, 0.9f) },
+            new ScreenSpec { Name = "Screen_Play", DevTitle = "プレイ", NextKey = null, Next = ScreenId.Play, Color = new Color(0.92f, 0.9f, 1f) },
+            new ScreenSpec { Name = "Screen_Clear", DevTitle = "クリア", NextKey = "clear.toList", Next = ScreenId.List, Color = new Color(1f, 0.93f, 0.75f) },
         };
 
         [MenuItem("DeskStage/D/テスト用シーンを作る")]
@@ -63,7 +68,10 @@ namespace DeskStage.UI.Editor
 
         static void Build()
         {
-            FindFont();
+            if (!LoadAssets())
+            {
+                return;
+            }
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             CreateCamera();
@@ -79,25 +87,34 @@ namespace DeskStage.UI.Editor
             }
             router.SetScreens(panels);
 
+            CreatePlayControls(panels[(int)ScreenId.Play].transform);
             CreateDevPanel(safeArea, router);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log("Test_D.unity を作りました: " + ScenePath);
         }
 
-        static void FindFont()
+        static bool LoadAssets()
         {
             font = null;
-            var guids = AssetDatabase.FindAssets("t:TMP_FontAsset", new[] { FontFolder });
+            var guids = AssetDatabase.FindAssets("t:TMP_FontAsset", new[] { SetupAssets.FontFolder });
             if (guids.Length > 0)
             {
                 font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(AssetDatabase.GUIDToAssetPath(guids[0]));
             }
             if (font == null)
             {
-                Debug.LogWarning("日本語フォントのアセットが " + FontFolder + " にありません。文字が四角になります。" +
-                                 "フォントを作ってから、もう一度このメニューを実行してください。");
+                Debug.LogWarning("日本語フォントのアセットが " + SetupAssets.FontFolder + " にありません。文字が四角になります。" +
+                                 "メニュー「DeskStage/D/日本語フォントを作る」を先に実行してください。");
             }
+
+            wording = AssetDatabase.LoadAssetAtPath<Wording>(SetupAssets.WordingAssetPath);
+            if (wording == null)
+            {
+                Debug.LogError("文言のアセットがありません。メニュー「DeskStage/D/文言の表を読み込む」を先に実行してください。");
+                return false;
+            }
+            return true;
         }
 
         static void CreateCamera()
@@ -148,16 +165,61 @@ namespace DeskStage.UI.Editor
             bg.color = spec.Color;
             bg.raycastTarget = false;
 
-            var title = CreateLabel("Title", go.transform, spec.Title, 96);
-            Anchor((RectTransform)title.transform, new Vector2(0.5f, 1f), new Vector2(0f, -140f), new Vector2(1600, 160));
+            // 画面の名前は開発用の表示（子どもには見せない）
+            var title = CreateLabel("DEV_Title", go.transform, "[DEV] " + spec.DevTitle, 64);
+            title.gameObject.AddComponent<DevMarker>();
+            title.color = new Color(0f, 0f, 0f, 0.4f);
+            Anchor((RectTransform)title.transform, new Vector2(0.5f, 1f), new Vector2(0f, -100f), new Vector2(1600, 120));
 
-            if (spec.NextLabel != null)
+            if (spec.NextKey != null)
             {
-                var button = CreateButton("Button_Next", go.transform, spec.NextLabel);
+                var button = CreateButton("Button_Next", go.transform, spec.NextKey);
                 Anchor((RectTransform)button.transform, new Vector2(1f, 0f), new Vector2(-320f, 140f), ButtonSize);
                 UnityEventTools.AddIntPersistentListener(button.onClick, router.ShowByIndex, (int)spec.Next);
             }
             return go;
+        }
+
+        static void CreatePlayControls(Transform playScreen)
+        {
+            var circle = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+
+            // 左下：スティック。外周の中で取っ手を動かすと、仮想ゲームパッドの左スティックになる
+            var stickBase = new GameObject("Stick", typeof(RectTransform));
+            stickBase.transform.SetParent(playScreen, false);
+            var baseImage = stickBase.AddComponent<Image>();
+            baseImage.sprite = circle;
+            baseImage.color = new Color(1f, 1f, 1f, 0.5f);
+            baseImage.raycastTarget = false;
+            Anchor((RectTransform)stickBase.transform, Vector2.zero, new Vector2(240f, 240f), Vector2.one * StickDiameter);
+
+            var knob = new GameObject("Knob", typeof(RectTransform));
+            knob.transform.SetParent(stickBase.transform, false);
+            var knobImage = knob.AddComponent<Image>();
+            knobImage.sprite = circle;
+            knobImage.color = Color.white;
+            Anchor((RectTransform)knob.transform, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.one * (StickDiameter / 2f));
+            var stick = knob.AddComponent<OnScreenStick>();
+            // controlPath の setter は仮想デバイスを作り直すので、保存する値だけを書く
+            var stickSo = new SerializedObject(stick);
+            stickSo.FindProperty("m_ControlPath").stringValue = "<Gamepad>/leftStick";
+            stickSo.FindProperty("m_MovementRange").floatValue = StickDiameter / 2f;
+            stickSo.ApplyModifiedPropertiesWithoutUndo();
+
+            // 右下：ジャンプ。仮想ゲームパッドの下のボタン
+            var jump = new GameObject("Jump", typeof(RectTransform));
+            jump.transform.SetParent(playScreen, false);
+            var jumpImage = jump.AddComponent<Image>();
+            jumpImage.sprite = circle;
+            jumpImage.color = new Color(1f, 0.85f, 0.4f);
+            Anchor((RectTransform)jump.transform, new Vector2(1f, 0f), new Vector2(-240f, 220f), Vector2.one * JumpDiameter);
+            var jumpButton = jump.AddComponent<OnScreenButton>();
+            var jumpSo = new SerializedObject(jumpButton);
+            jumpSo.FindProperty("m_ControlPath").stringValue = "<Gamepad>/buttonSouth";
+            jumpSo.ApplyModifiedPropertiesWithoutUndo();
+
+            var jumpLabel = CreateWordingLabel("Label", jump.transform, "play.jump", 44);
+            Stretch((RectTransform)jumpLabel.transform);
         }
 
         static void CreateDevPanel(RectTransform parent, ScreenRouter router)
@@ -182,13 +244,24 @@ namespace DeskStage.UI.Editor
 
         static void AddDevButton(Transform parent, string label, UnityAction action)
         {
-            var button = CreateButton(label, parent, label, 34);
-            button.gameObject.AddComponent<DevMarker>();
-            button.GetComponent<Image>().color = new Color(1f, 0.8f, 0.2f);
-            UnityEventTools.AddPersistentListener(button.onClick, action);
+            // 開発用なので Wording を通さない
+            var go = CreateButtonBase(label, parent);
+            go.AddComponent<DevMarker>();
+            go.GetComponent<Image>().color = new Color(1f, 0.8f, 0.2f);
+            var text = CreateLabel("Label", go.transform, label, 34);
+            Stretch((RectTransform)text.transform);
+            UnityEventTools.AddPersistentListener(go.GetComponent<Button>().onClick, action);
         }
 
-        static Button CreateButton(string name, Transform parent, string label, float fontSize = 56)
+        static Button CreateButton(string name, Transform parent, string wordingKey)
+        {
+            var go = CreateButtonBase(name, parent);
+            var text = CreateWordingLabel("Label", go.transform, wordingKey, 56);
+            Stretch((RectTransform)text.transform);
+            return go.GetComponent<Button>();
+        }
+
+        static GameObject CreateButtonBase(string name, Transform parent)
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
@@ -196,10 +269,18 @@ namespace DeskStage.UI.Editor
             image.color = Color.white;
             var button = go.AddComponent<Button>();
             button.targetGraphic = image;
+            return go;
+        }
 
-            var text = CreateLabel("Label", go.transform, label, fontSize);
-            Stretch((RectTransform)text.transform);
-            return button;
+        static TextMeshProUGUI CreateWordingLabel(string name, Transform parent, string key, float size)
+        {
+            if (!wording.Has(key))
+            {
+                Debug.LogError("文言の表にキーがありません: " + key);
+            }
+            var tmp = CreateLabel(name, parent, wording.Get(key), size);
+            tmp.gameObject.AddComponent<WordingLabel>().Set(wording, key);
+            return tmp;
         }
 
         static TextMeshProUGUI CreateLabel(string name, Transform parent, string text, float size)
