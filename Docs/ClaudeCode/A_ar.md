@@ -36,7 +36,7 @@
 写真の方式（2026-10-24 から。Step 14 の合流より先に行う）：
 
 - ☑ Step 21：共通コードに足す（ScanResultReceived、TakePhoto、CameraPreview）… C・D の了承はプルリクエストで
-- ☐ Step 22：カメラと撮影（PhotoCapture）
+- ☐ Step 22：カメラと撮影（PhotoCapture）… 途中：エディタで保存した写真から2枚撮れて、1568px に縮んだ。実機（背面カメラ、映像の向き）の確認がまだ
 - ☐ Step 23：写真の確認（PhotoCheck）
 - ☑ Step 24：サーバー（Server/）… 本物の Claude で、スキーマどおりの JSON が返った（8秒、入力 12,944・出力 173 トークン）
 - ☐ Step 25：サーバーとの送受信と、もういちど撮る（ScanClient）

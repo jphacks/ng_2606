@@ -47,5 +47,15 @@ namespace DeskStage.AR
 
         [Tooltip("位置の再推定がこれ以上続いたら Lost とする（秒）")]
         public float relocalizingTimeout = 3.0f;
+
+        [Header("写真（00_overview.md 9章）")]
+        [Tooltip("送る写真の長い辺の上限（px）。これより大きい写真は縮める")]
+        public int photoMaxLongSide = 1568;
+
+        [Tooltip("送る写真の JPEG の品質（1〜100）")]
+        [Range(1, 100)] public int photoJpegQuality = 85;
+
+        [Tooltip("エディタでカメラの代わりに使う写真のフォルダ（プロジェクトからの位置）。top.jpg と side.jpg を置く。Git に入らない場所にする")]
+        public string testPhotoFolder = "UserSettings/TestPhotos";
     }
 }
