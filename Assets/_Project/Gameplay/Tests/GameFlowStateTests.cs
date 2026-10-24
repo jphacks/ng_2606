@@ -88,11 +88,25 @@ namespace DeskStage.Gameplay.Tests
         }
 
         [Test]
-        public void プレイ中はRetryできない()
+        public void プレイ中と一時停止中もRetryで準備に戻る()
         {
             var flow = Playing();
+            Assert.IsTrue(flow.TryRetry());
+            Assert.AreEqual(GameState.Preparing, flow.State);
+
+            flow = Playing();
+            flow.TrySetPaused(true);
+            Assert.IsTrue(flow.TryRetry());
+            Assert.AreEqual(GameState.Preparing, flow.State);
+        }
+
+        [Test]
+        public void ステージ待ちではRetryできない()
+        {
+            var flow = new GameFlowState();
+            flow.OnStageBuilt();
             Assert.IsFalse(flow.TryRetry());
-            Assert.AreEqual(GameState.Playing, flow.State);
+            Assert.AreEqual(GameState.WaitingStage, flow.State);
         }
 
         [Test]

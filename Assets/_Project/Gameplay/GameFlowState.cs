@@ -69,10 +69,12 @@ namespace DeskStage.Gameplay
             return true;
         }
 
-        /// <summary>クリア →（Retry）→ 準備</summary>
+        /// <summary>
+        /// クリア・プレイ中・一時停止 →（Retry）→ 準備。D の一時停止メニューにも「もういちど」があるため、プレイ中と一時停止中からも戻れる
+        /// </summary>
         public bool TryRetry()
         {
-            if (State != GameState.Cleared) return false;
+            if (State != GameState.Cleared && State != GameState.Playing && State != GameState.Paused) return false;
             State = GameState.Preparing;
             return true;
         }
