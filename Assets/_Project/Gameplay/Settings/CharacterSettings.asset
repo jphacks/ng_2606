@@ -20,13 +20,13 @@ MonoBehaviour:
   slopeLimit: 45
   minMoveDistance: 0
   walkSpeed: 0.15
-  gravity: 9.8
-  jumpHeight: 0.04
+  gravity: 4.9
+  jumpHeight: 0.12
   jumpBufferTime: 0.1
   coyoteTime: 0.1
-  maxFallSpeed: 1
+  maxFallSpeed: 0.5
   turnSpeed: 720
-  jumpableStepMax: 0.045
+  jumpableStepMax: 0.125
   walkableStepMax: 0.008
   cameraDistance: 0.35
   cameraDistanceMin: 0.2
