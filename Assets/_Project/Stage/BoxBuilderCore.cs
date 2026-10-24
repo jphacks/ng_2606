@@ -9,6 +9,8 @@ namespace DeskStage.Stage
     {
         public string boxId;
         public BoxChange change;
+        /// <summary>その箱の source（auto か manual）。</summary>
+        public string source;
     }
 
     /// <summary>
@@ -98,12 +100,12 @@ namespace DeskStage.Stage
                 if (index < 0)
                 {
                     boxes.Add(made);
-                    changes.Add(new BoxChangeEntry { boxId = made.id, change = BoxChange.Added });
+                    changes.Add(new BoxChangeEntry { boxId = made.id, change = BoxChange.Added, source = BoxData.SourceAuto });
                 }
                 else if (!SameShape(boxes[index], made))
                 {
                     boxes[index] = made;
-                    changes.Add(new BoxChangeEntry { boxId = made.id, change = BoxChange.Modified });
+                    changes.Add(new BoxChangeEntry { boxId = made.id, change = BoxChange.Modified, source = BoxData.SourceAuto });
                 }
             }
 
@@ -122,7 +124,7 @@ namespace DeskStage.Stage
                 surfaceToBox.Remove(surfaceId);
                 if (boxes.RemoveAll(b => b.id == boxId && b.source == BoxData.SourceAuto) > 0)
                 {
-                    changes.Add(new BoxChangeEntry { boxId = boxId, change = BoxChange.Removed });
+                    changes.Add(new BoxChangeEntry { boxId = boxId, change = BoxChange.Removed, source = BoxData.SourceAuto });
                 }
             }
 
@@ -134,6 +136,22 @@ namespace DeskStage.Stage
         {
             surfaceToBox.Clear();
             nextNumber = 1;
+        }
+
+        /// <summary>
+        /// もういちどスキャン（B の Step 8）：作業中の箱をすべて消し（manual の箱も）、上面と箱の対応も忘れる。
+        /// 消した箱ごとの変化を返す。
+        /// </summary>
+        public List<BoxChangeEntry> ClearAll(List<BoxData> boxes)
+        {
+            var changes = new List<BoxChangeEntry>(boxes.Count);
+            foreach (var b in boxes)
+            {
+                changes.Add(new BoxChangeEntry { boxId = b.id, change = BoxChange.Removed, source = b.source });
+            }
+            boxes.Clear();
+            Reset();
+            return changes;
         }
 
         static BoxData MakeBox(SurfaceData surface)

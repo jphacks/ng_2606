@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DeskStage.Shared;
 using UnityEngine;
 
@@ -29,6 +30,7 @@ namespace DeskStage.Stage
             ScanContext.SurfacesChanged += OnSurfacesChanged;
             UiRequests.StartScan += OnStartScan;
             UiRequests.FinishScan += OnFinishScan;
+            UiRequests.Rescan += OnRescan;
         }
 
         void OnDisable()
@@ -36,6 +38,7 @@ namespace DeskStage.Stage
             ScanContext.SurfacesChanged -= OnSurfacesChanged;
             UiRequests.StartScan -= OnStartScan;
             UiRequests.FinishScan -= OnFinishScan;
+            UiRequests.Rescan -= OnRescan;
         }
 
         void OnStartScan()
@@ -50,20 +53,30 @@ namespace DeskStage.Stage
             finished = true;
         }
 
+        /// <summary>もういちどスキャン（B の Step 8）：箱とコースの物を消し、A の新しい上面から作り直す。</summary>
+        void OnRescan()
+        {
+            Raise(core.ClearAll(ScanContext.WorkingBoxes));
+            ScanContext.SelectedBoxId = "";
+            StageCourse.Clear(StageContext.CurrentStage);
+            finished = false;
+        }
+
         void OnSurfacesChanged()
         {
             if (finished)
             {
                 return;
             }
-            var changes = core.Apply(ScanContext.Surfaces, ScanContext.WorkingBoxes);
-            foreach (var c in changes)
-            {
-                ScanContext.RaiseBoxesChanged(c.boxId, c.change, BoxData.SourceAuto);
-            }
+            Raise(core.Apply(ScanContext.Surfaces, ScanContext.WorkingBoxes));
         }
 
-        /// <summary>上面と箱の対応を忘れる（もういちどスキャンのとき。B の Step 8 で使う）。</summary>
-        public void ResetMapping() => core.Reset();
+        static void Raise(List<BoxChangeEntry> changes)
+        {
+            foreach (var c in changes)
+            {
+                ScanContext.RaiseBoxesChanged(c.boxId, c.change, c.source);
+            }
+        }
     }
 }
