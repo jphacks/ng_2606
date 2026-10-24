@@ -40,18 +40,17 @@ namespace DeskStage.Gameplay.EditorTools
                 return;
             }
 
-            var playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(CreatePlayerPrefab.PrefabPath);
-            if (playerPrefab == null)
+            // 本番と同じ組み立てで試すため、Game_System プレハブを置く（いまの値で作り直す）
+            CreateGameSystemPrefab.Run();
+            var systemPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(CreateGameSystemPrefab.PrefabPath);
+            if (systemPrefab == null)
             {
-                playerPrefab = CreatePlayerPrefab.Build();
-                if (playerPrefab == null)
-                {
-                    return;
-                }
+                return;
             }
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
 
+            // Main Camera は、本番の A の AR のカメラの代わり（たしかめ画面でコースの物を置くときに使う）。
             // 小さな世界なので、近くの物が切れないよう Near Clip Plane を小さくする
             var camera = Camera.main;
             camera.nearClipPlane = 0.01f;
@@ -84,39 +83,24 @@ namespace DeskStage.Gameplay.EditorTools
             CreateBox(stageRoot, "Corner_Back", new Vector3(0.25f, 0.04f, 0.005f), new Vector3(0.1f, 0.08f, 0.01f));
             CreateBox(stageRoot, "Corner_Left", new Vector3(0.195f, 0.04f, -0.05f), new Vector3(0.01f, 0.08f, 0.1f));
 
-            // 視点のカメラ（Step 6）：キャラを追う。マウスの右ドラッグで回り、Q・E で近づく・離れる
-            var viewCamera = camera.gameObject.AddComponent<ViewCamera>();
-            viewCamera.settings = AssetDatabase.LoadAssetAtPath<CharacterSettings>(CreateCharacterSettings.AssetPath);
-            camera.gameObject.AddComponent<ViewDebugInput>();
+            // Game_System（Step 13）：GameFlow、CourseMarkers、CoursePlacer、SafetyGuard、RecordStore と、遊ぶ画面の PlayCamera
+            var system = (GameObject)PrefabUtility.InstantiatePrefab(systemPrefab);
+            var gameFlow = system.GetComponent<GameFlow>();
 
-            // カメラ基準の向き（Step 7）：スティックの上が画面の奥になる
-            var relative = camera.gameObject.AddComponent<CameraRelativeInput>();
-            relative.viewCamera = camera.transform;
-
-            // ゲームの進行（Step 11）：右上の仮のボタンで「ステージかんせい」→「あそぶ」と押すと、キャラがスタートに出る
-            var gameFlow = new GameObject("GameFlow").AddComponent<GameFlow>();
-            gameFlow.playerPrefab = playerPrefab;
-            gameFlow.viewCamera = viewCamera;
-            gameFlow.cameraRelativeInput = relative;
-            // ステージごとの最速記録（Step 16）
-            gameFlow.recordStore = gameFlow.gameObject.AddComponent<RecordStore>();
-            // スタート・ゴール・チェックポイント（Step 14）：「ステージかんせい」で目印が出て、触れると反応する
-            var markers = gameFlow.gameObject.AddComponent<CourseMarkers>();
-            markers.gameFlow = gameFlow;
-            markers.settings = viewCamera.settings;
-            // 落下とはさまりからの復帰（Step 15）
-            var guard = gameFlow.gameObject.AddComponent<SafetyGuard>();
-            guard.gameFlow = gameFlow;
-            guard.settings = viewCamera.settings;
-            // コースの配置（Step 12）：1・2・3 を押しながら左クリックで、スタート・ゴール・チェックポイントを置く
-            var placer = gameFlow.gameObject.AddComponent<CoursePlacer>();
-            placer.placementCamera = camera;
-            placer.courseMarkers = markers;
-            placer.settings = viewCamera.settings;
-            gameFlow.gameObject.AddComponent<PlacementDebugInput>();
-            var panel = gameFlow.gameObject.AddComponent<GameFlowDebugPanel>();
+            // 練習用だけの仮の操作は、プレハブを変えないよう別の物に付ける
+            var debug = new GameObject("PracticeDebug");
+            // 右上の仮のボタン（Step 11）：「ステージかんせい」→「あそぶ」でキャラが出る
+            var panel = debug.AddComponent<GameFlowDebugPanel>();
             panel.gameFlow = gameFlow;
             panel.practiceRoot = stageRoot;
+            // マウスの右ドラッグで視点を回し、Q・E で近づく・離れる（Step 6）
+            debug.AddComponent<ViewDebugInput>();
+            // 1・2・3 を押しながら左クリックで、スタート・ゴール・チェックポイントを置く（Step 12）
+            debug.AddComponent<PlacementDebugInput>();
+            // 遊んでいる間は、見えている PlayCamera から置けるようにする
+            var placer = system.GetComponent<CoursePlacer>();
+            placer.placementCamera = gameFlow.playCamera.GetComponent<Camera>();
+            PrefabUtility.RecordPrefabInstancePropertyModifications(placer);
 
             // 瞬間移動の確かめ（Step 5）：ボタンで 6cm の箱の上へ移す
             var target = new GameObject("TeleportTarget").transform;
