@@ -38,6 +38,9 @@ namespace DeskStage.AR
         [Tooltip("形が大きく変わらなくなってから一覧に出すまでの時間（秒）")]
         public float settleTime = 1.0f;
 
+        [Tooltip("「形が大きく変わった」とみなす割合。面積の変化、または重心の移動（面の大きさに対する割合）がこれを超えたら、安定した時間を数え直す")]
+        public float settleChangeRatio = 0.1f;
+
         [Header("知らせ")]
         [Tooltip("SurfacesChanged の最小間隔（秒）。1秒に4回まで")]
         public float notifyInterval = 0.25f;
