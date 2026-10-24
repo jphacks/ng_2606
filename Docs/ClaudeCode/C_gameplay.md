@@ -12,7 +12,7 @@
 
 - ☐ Step 1：箱の高さの決まり（P0）
 - ☑ Step 2：キャラの設定アセット（P0）
-- ☐ Step 3：練習用シーン（P0）
+- ☑ Step 3：練習用シーン（P0）
 - ☐ Step 4：キャラの移動（CharacterMotor）（P0〜M1）
 - ☐ Step 5：瞬間移動（P0〜M1）
 - ☐ Step 6：視点のカメラ（ViewCamera）（M1）
