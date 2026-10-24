@@ -30,15 +30,15 @@ namespace DeskStage.Gameplay.Tests
         }
 
         [Test]
-        public void ジャンプの初速は約0_99()
+        public void ジャンプの初速は約0_89()
         {
-            Assert.AreEqual(0.99f, settings.JumpVelocity, 0.005f);
+            Assert.AreEqual(0.885f, settings.JumpVelocity, 0.005f);
         }
 
         [Test]
-        public void 跳べる段の上限はジャンプの高さから0_5cm引いた値()
+        public void 跳べる段の上限はジャンプの高さに0_5cm足した値()
         {
-            Assert.AreEqual(settings.jumpHeight - 0.005f, settings.jumpableStepMax, 0.00001f);
+            Assert.AreEqual(settings.jumpHeight + 0.005f, settings.jumpableStepMax, 0.00001f);
         }
 
         [Test]

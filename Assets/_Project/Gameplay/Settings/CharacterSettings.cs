@@ -41,7 +41,7 @@ namespace DeskStage.Gameplay
         [Min(0f)] public float gravity = 9.8f;
 
         [Tooltip("ジャンプの高さ（m）。変えたら跳べる段の上限と Docs/StepRules.md も直す")]
-        [Min(0f)] public float jumpHeight = 0.05f;
+        [Min(0f)] public float jumpHeight = 0.04f;
 
         [Tooltip("着地の前に押したジャンプを覚えておく時間（秒）")]
         [Min(0f)] public float jumpBufferTime = 0.1f;
@@ -57,7 +57,7 @@ namespace DeskStage.Gameplay
 
         [Header("箱の高さの決まり（StepRules の境目）")]
 
-        [Tooltip("跳べる段の上限（m）。ジャンプの高さ − 足の余裕 0.5cm")]
+        [Tooltip("跳べる段の上限（m）。ジャンプの高さ＋丸い足元で乗り上げる分 約0.5cm（Step 8 で測定）")]
         [Min(0f)] public float jumpableStepMax = StepRules.DefaultJumpMax;
 
         [Tooltip("歩ける段の上限（m）。Step Offset と同じ")]
@@ -83,7 +83,7 @@ namespace DeskStage.Gameplay
         [Tooltip("カメラの見下ろす角度の上限（度）")]
         [Range(0f, 90f)] public float cameraPitchMax = 80f;
 
-        /// <summary>ジャンプの初速（m/秒）。「2×重力×高さ」の平方根。初期値で約 0.99</summary>
+        /// <summary>ジャンプの初速（m/秒）。「2×重力×高さ」の平方根。初期値で約 0.89</summary>
         public float JumpVelocity => Mathf.Sqrt(2f * gravity * jumpHeight);
 
         /// <summary>この設定の境目を使う StepRules を作る。</summary>
