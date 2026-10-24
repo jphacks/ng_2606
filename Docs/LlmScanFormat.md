@@ -9,10 +9,13 @@ B の Step 6 で作った、Claude への指示文と答えの JSON の形です
 
 ## 答えの項目
 
+2026-10-24：A4 の紙がなくても箱を作る決まりに変えた。紙があると正確になる。紙がないときは、Claude が身の回りの物の大きさから推定し、何を基準にしたかを scaleReference に書く。
+
 | 項目 | 型 | 単位 | 意味 | 範囲（B が確かめる） |
 | --- | --- | --- | --- | --- |
-| paperFound | true / false | ― | 基準の紙が写っていて、長さの基準に使えたか | false なら箱を作らない |
-| desk | 幅と奥行き、または null | cm | 机の天面の大きさ。机の端が写っていなければ null | 20〜300 |
+| paperFound | true / false | ― | 基準の紙が写っていて、長さの基準に使えたか | false でも箱は作る（大きさは推定） |
+| scaleReference | 文字列 | ― | 長さの基準に使った物 | ― |
+| desk | 幅と奥行き、または null | cm | 机の天面の大きさ。紙があり、机の端が写っているときだけ。それ以外は null | 20〜300 |
 | blocks | 物の一覧 | ― | 机の上の物。紙は入れない | 0〜100件 |
 | notes | 文字列 | ― | 人が読むメモ | ― |
 
@@ -21,7 +24,7 @@ blocks の1件：
 | 項目 | 単位 | 意味 | 範囲（B が確かめる） |
 | --- | --- | --- | --- |
 | label | ― | 何の物か | ― |
-| centerXCm、centerZCm | cm | 上から見た中心。紙の左手前の角から右（X）と奥（Z）へ | 机の中 |
+| centerXCm、centerZCm | cm | 上から見た中心。原点（紙の左手前の角。紙がなければ物を全部囲む長方形の左手前の角）から右（X）と奥（Z）へ | 机の中 |
 | widthCm、depthCm | cm | 上から見た長い方の辺、短い方の辺 | 1〜60 |
 | heightCm | cm | 机の天面からこの物の上面まで（積んだ物は机から） | 0.5〜40 |
 | yawDegrees | 度 | 長い方の辺が +X から反時計回りに何度か | 0 以上 180 未満 |
@@ -63,7 +66,7 @@ claude.ai の新しいチャットに、2枚の写真（真上を先に）と、
 ```
 答えは、次の形の JSON だけにしてください。
 
-{"paperFound": true, "desk": {"widthCm": 0, "depthCm": 0}, "blocks": [{"label": "", "centerXCm": 0, "centerZCm": 0, "widthCm": 0, "depthCm": 0, "heightCm": 0, "yawDegrees": 0, "confidence": 0}], "notes": ""}
+{"paperFound": true, "scaleReference": "", "desk": {"widthCm": 0, "depthCm": 0}, "blocks": [{"label": "", "centerXCm": 0, "centerZCm": 0, "widthCm": 0, "depthCm": 0, "heightCm": 0, "yawDegrees": 0, "confidence": 0}], "notes": ""}
 ```
 
 ### 正しい答え（比べる相手）

@@ -54,6 +54,7 @@ SCHEMA = json.loads((LLM_DIR / "scan_result.schema.json").read_text(encoding="ut
 # 試しのモードの答え（Docs/LlmScanFormat.md の「試した結果 その1」と同じ）
 MOCK_RESULT = {
     "paperFound": False,
+    "scaleReference": "マーカーの箱の横幅を約19.5cmとした",
     "desk": None,
     "blocks": [
         {"label": "プロッキーの箱", "centerXCm": 16.3, "centerZCm": 6.5, "widthCm": 19.5, "depthCm": 13.0,
