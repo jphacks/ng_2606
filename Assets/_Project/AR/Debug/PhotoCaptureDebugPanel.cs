@@ -57,6 +57,16 @@ namespace DeskStage.AR
             var shot = capture == null ? 0 : (capture.SideJpeg != null ? 2 : capture.TopJpeg != null ? 1 : 0);
             var next = shot == 0 ? "1枚目（真上）" : shot == 1 ? "2枚目（斜め）" : "おわり";
             GUI.Label(new Rect(20, 230, 600, 30), $"状態：{StageContext.ScanStatus}　次に撮るのは：{next}");
+            if (StageContext.ScanStatus == ScanStatus.Limited)
+            {
+                var why = StageContext.ScanReason == ScanReason.Dark ? "くらい" : "ぶれている";
+                GUI.Label(new Rect(20, 320, 600, 30), $"写真が{why}ので、もういちど とってね");
+            }
+            if (capture != null && (shot > 0 || StageContext.ScanStatus == ScanStatus.Limited))
+            {
+                var q = capture.LastQuality;
+                GUI.Label(new Rect(20, 350, 600, 30), $"最後の写真：明るさ {q.brightness:0.000}、くっきりさ {q.sharpness:0.000000}");
+            }
             GUI.Label(new Rect(20, 260, 900, 60), message);
 
             // カメラの映像（D の撮影画面では RawImage で映す）
