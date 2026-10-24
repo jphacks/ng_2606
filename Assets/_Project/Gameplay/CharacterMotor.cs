@@ -116,7 +116,10 @@ namespace DeskStage.Gameplay
             // 6：重力
             verticalSpeed = MotorMath.ApplyGravity(verticalSpeed, settings.gravity, settings.maxFallSpeed, dt);
 
-            // 7：水平と上下を合わせて1回だけ動かす
+            // 7：水平と上下を合わせて1回だけ動かす。
+            // 段差を自動で登る機能（Step Offset）は地面にいるときだけ使う。空中でも働くと、
+            // ジャンプの頂点（5cm）に 0.8cm が足されて、壁のはずの 5cm の箱に乗れてしまう（Step 8）
+            controller.stepOffset = grounded ? settings.stepOffset : 0f;
             controller.Move((horizontal + Vector3.up * verticalSpeed) * dt);
 
             // 8：動いているときは進む方向へなめらかに向く

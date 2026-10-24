@@ -198,7 +198,40 @@ namespace DeskStage.Gameplay.PlayTests
             Assert.Greater(maxY, yAtPress + 0.01f, "出た直後に押したのに跳ばなかった");
         }
 
+        [UnityTest]
+        public IEnumerator 登れる高さの上限を測る()
+        {
+            // 合否ではなく、数値を決めるための測定。4.0〜6.0cm を 0.25cm ごとに試し、結果をログに出す
+            float highestClimbed = 0f;
+            var log = new System.Text.StringBuilder("[Step 8] 登れる高さ：");
+            for (float h = 0.04f; h <= 0.0601f; h += 0.0025f)
+            {
+                yield return ResetWorld();
+                CreateStep(h);
+                yield return Spawn(new Vector3(0f, 0f, -0.05f));
+                yield return WalkForwardJumpingWhenBlocked(2f, h - 0.003f);
+                bool climbed = motor.transform.position.y > h - 0.003f;
+                if (climbed)
+                {
+                    highestClimbed = h;
+                }
+                log.Append($" {h * 100f:0.00}cm={(climbed ? "○" : "×")}");
+            }
+            Debug.Log(log.ToString());
+            Debug.Log($"[Step 8] 登れた一番高い箱：{highestClimbed * 100f:0.00}cm（決まりでは 4.5cm まで）");
+            Assert.Pass(log.ToString());
+        }
+
         // ---- 手順 ----
+
+        // 床だけの世界に作り直す
+        IEnumerator ResetWorld()
+        {
+            Object.Destroy(world);
+            yield return null;
+            world = new GameObject("TestWorld");
+            CreateBox(new Vector3(0f, -0.005f, 0f), new Vector3(0.6f, 0.01f, 0.6f));
+        }
 
         IEnumerator ClimbsOnto(float height)
         {
