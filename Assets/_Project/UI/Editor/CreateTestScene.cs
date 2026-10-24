@@ -260,6 +260,9 @@ namespace DeskStage.UI.Editor
             Anchor((RectTransform)go.transform, new Vector2(1f, 1f), new Vector2(-190f, -360f), new Vector2(340, 650));
             var layout = go.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 12;
+            // ボタンの大きさを並びに合わせて決めさせる（決めさせないと既定の小さな四角のまま重なる）
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = true;
             var dev = go.AddComponent<DevEvents>();
