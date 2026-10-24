@@ -22,7 +22,7 @@
 - ☐ Step 10：箱の地形での確かめと報告（M2）※ お手本 sample-01 は PlayMode テスト StageTerrainTests で済（問題0件）。実機でスキャンしたステージ（B の3つの並べ方）は、StreamingAssets/Stages に置かれたら同じテストで確かめる
 - ☐ Step 11：ゲームの進行（GameFlow）（M3）※ PC の練習用シーンで、仮のボタンから表のすべての行を起こせた（2026-10-24）。実機での確認は、A のビルドのときにまとめて行う
 - ☐ Step 12：コースの配置（CoursePlacer）（M3）※ PC の練習用シーンで、クリックで置く・側面は置けない・5個まで・消す・「とどかないかも」を確かめた（2026-10-24）。実機（本物の物の上に置く）は、A のビルドのときにまとめて行う
-- ☐ Step 13：Game_System プレハブと合流、数値の調整（M3）
+- ☐ Step 13：Game_System プレハブと合流、数値の調整（M3）※ メニュー「DeskStage/C/5. Game_System プレハブを作る」と Game_System.prefab はできた。練習用シーンもこのプレハブで組み立てて PC で確かめた（2026-10-24）。Main に置いて実機で遊ぶ・数値の調整・CharacterParams.md は、A の宣言のもとでまとめて行う
 - ☑ Step 14：スタート・ゴール・チェックポイント（M4）
 - ☑ Step 15：落下とはさまりからの復帰（SafetyGuard）（M4）
 - ☑ Step 16：タイムと最速記録（RecordStore）（M4）
