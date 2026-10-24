@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7116289754352936216}
   - component: {fileID: 5875853599921869660}
+  - component: {fileID: 8903507805380857194}
   m_Layer: 10
   m_Name: Player
   m_TagString: Untagged
@@ -59,6 +60,19 @@ CharacterController:
   m_SkinWidth: 0.0008
   m_MinMoveDistance: 0
   m_Center: {x: 0, y: 0.015, z: 0}
+--- !u!114 &8903507805380857194
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1118591390927748612}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af0090a416ab7534bb097b27af748351, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DeskStage.Gameplay::DeskStage.Gameplay.CharacterMotor
+  settings: {fileID: 11400000, guid: a14371b55d8585c40a1131e9ff1f476c, type: 2}
 --- !u!1 &4012387210502960682
 GameObject:
   m_ObjectHideFlags: 0

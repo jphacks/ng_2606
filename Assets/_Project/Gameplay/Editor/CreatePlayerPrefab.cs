@@ -41,6 +41,8 @@ namespace DeskStage.Gameplay.EditorTools
             var root = new GameObject("Player");
             var controller = root.AddComponent<CharacterController>();
             settings.ApplyTo(controller);
+            var motor = root.AddComponent<CharacterMotor>();
+            motor.settings = settings;
 
             // 見た目の体。Capsule は高さ2・半径0.5 なので、身長と太さに合わせて縮める
             var body = CreateVisual(PrimitiveType.Capsule, "Body", root.transform);
