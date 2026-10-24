@@ -170,6 +170,13 @@ namespace DeskStage.UI
 
         public void RaiseSaveOk() => StageContext.RaiseSaveCompleted(true);
 
+        /// <summary>コツの絵を「まだ見ていない」に戻す（Step 9：1回目の見え方を確かめ直すため）。</summary>
+        public void ResetTipsSeen()
+        {
+            PlayerPrefs.DeleteKey(TipsScreen.SeenKey);
+            Debug.Log("DEV コツの絵を、まだ見ていないことにしました");
+        }
+
         /// <summary>ゴールした知らせを出して、クリア画面へ移る。</summary>
         public void RaiseGoal()
         {

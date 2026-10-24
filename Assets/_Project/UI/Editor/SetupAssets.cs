@@ -41,6 +41,7 @@ namespace DeskStage.UI.Editor
             ImportWording();
             CreateViewGestureSettings();
             CreateLookAssets.Run();
+            CreateTipsAssets.Run();
         }
 
         public const string ViewGestureSettingsPath = "Assets/_Project/UI/ViewGestureSettings.asset";

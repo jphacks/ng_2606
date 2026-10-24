@@ -91,6 +91,7 @@ namespace DeskStage.UI.Editor
             CreatePlayControls(panels[(int)ScreenId.Play].transform);
             var guidance = CreateGuidance(panels[(int)ScreenId.Scan].transform);
             CreateScanScreen(panels[(int)ScreenId.Scan].transform);
+            CreateTipsScreen(panels[(int)ScreenId.Tips].transform);
             CreateDevPanel(safeArea, router, guidance);
             CreateDebugOverlay();
             CreateStageLook();
@@ -327,6 +328,47 @@ namespace DeskStage.UI.Editor
             tapArea.AddComponent<ScanScreen>().Set(wording, count, done, effects);
         }
 
+        static void CreateTipsScreen(Transform tipsScreen)
+        {
+            // Step 9：画面いっぱいの透明な板でなぞる操作を受け、その子に絵・文・印を置く
+            var area = new GameObject("TipsArea", typeof(RectTransform));
+            area.transform.SetParent(tipsScreen, false);
+            area.transform.SetAsFirstSibling();
+            Stretch((RectTransform)area.transform);
+            area.AddComponent<Image>().color = Color.clear;
+
+            var group = new GameObject("PageGroup", typeof(RectTransform));
+            group.transform.SetParent(area.transform, false);
+            Stretch((RectTransform)group.transform);
+
+            var imageGo = new GameObject("PageImage", typeof(RectTransform));
+            imageGo.transform.SetParent(group.transform, false);
+            var image = imageGo.AddComponent<Image>();
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            Anchor((RectTransform)imageGo.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, 90f), new Vector2(900, 562));
+
+            var text = CreateLabel("PageText", group.transform, "", 64);
+            Anchor((RectTransform)text.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, -250f), new Vector2(1900, 110));
+            var dots = CreateLabel("PageDots", group.transform, "", 44);
+            Anchor((RectTransform)dots.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, -330f), new Vector2(600, 70));
+
+            // 「スキャンする」の上に、物を並べてから押すように書く
+            var hint = CreateWordingLabel("BeforeScan", tipsScreen, "tips.beforeScan", 40);
+            Anchor((RectTransform)hint.transform, new Vector2(1f, 0f), new Vector2(-320f, 270f), new Vector2(700, 70));
+
+            var show = CreateButton("Button_ShowTips", tipsScreen, "tips.show");
+            Anchor((RectTransform)show.transform, new Vector2(0f, 0f), new Vector2(260f, 140f), new Vector2(400, 160));
+
+            var scan = tipsScreen.Find("Button_Next").GetComponent<Button>();
+            var pages = AssetDatabase.LoadAssetAtPath<TipsPages>(CreateTipsAssets.TipsPagesPath);
+            if (pages == null)
+            {
+                Debug.LogWarning("コツの絵の一覧がありません。メニュー「DeskStage/D/コツの絵を作る」を先に実行してください。");
+            }
+            area.AddComponent<TipsScreen>().Set(wording, pages, image, text, dots, scan, show, group);
+        }
+
         static void CreateDevPanel(RectTransform parent, ScreenRouter router, GuidanceView guidance)
         {
             // 仮のボタン。画面の右上に縦に並べる。合流前に DevMarker の付いた物ごと消す。
@@ -348,6 +390,7 @@ namespace DeskStage.UI.Editor
             AddDevButton(go.transform, "DEV: スキャン状態 →", dev.NextScanStatus);
             AddDevButton(go.transform, "DEV: 仮の箱", dev.ToggleSampleBoxes);
             AddDevButton(go.transform, "DEV: 箱が見つかった", dev.RaiseBoxFound);
+            AddDevButton(go.transform, "DEV: コツを未読に", dev.ResetTipsSeen);
             AddDevButton(go.transform, "DEV: DeskDecided", dev.RaiseDeskDecided);
             AddDevButton(go.transform, "DEV: StageBuilt", dev.RaiseStageBuilt);
             AddDevButton(go.transform, "DEV: SaveOk", dev.RaiseSaveOk);

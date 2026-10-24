@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14c7d9f0f87a6ad4fbcc367d8195457e, type: 3}
+  m_Name: TipsPages
+  m_EditorClassIdentifier: DeskStage.UI::DeskStage.UI.TipsPages
+  Pages:
+  - Key: tips.flat
+    Image: {fileID: 6542720827669890897, guid: 0c70089629ff5b8419e15001a4930980, type: 3}
+    Enabled: 1
+  - Key: tips.height
+    Image: {fileID: 2774547714030672760, guid: 5c7f912ece26d754287bfd073190ae2e, type: 3}
+    Enabled: 1
+  - Key: tips.stairs
+    Image: {fileID: 4400329656951080640, guid: 9179bd134d15160498dd26f642933ad7, type: 3}
+    Enabled: 1
+  - Key: tips.planB
+    Image: {fileID: -4428194033478959856, guid: 5bad1ced1c9a2d5438e1224f3080e917, type: 3}
+    Enabled: 0
+  - Key: tips.planC
+    Image: {fileID: -303170096609046847, guid: d01698c5e19dd9044bc85ecf949e8f6e, type: 3}
+    Enabled: 0
+  - Key: tips.hard
+    Image: {fileID: -3308647423243207039, guid: eaf107f0d01760249a3a24d5c4a5299b, type: 3}
+    Enabled: 0
