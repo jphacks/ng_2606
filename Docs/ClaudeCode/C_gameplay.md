@@ -19,7 +19,7 @@
 - ☑ Step 7：カメラ基準の向き（CameraRelativeInput）（M1）
 - ☑ Step 8：小さな世界での物理の確かめ（M1）
 - ☐ Step 9：たかさものさしの案（M2）
-- ☐ Step 10：箱の地形での確かめと報告（M2）
+- ☐ Step 10：箱の地形での確かめと報告（M2）※ お手本 sample-01 は PlayMode テスト StageTerrainTests で済（問題0件）。実機でスキャンしたステージ（B の3つの並べ方）は、StreamingAssets/Stages に置かれたら同じテストで確かめる
 - ☐ Step 11：ゲームの進行（GameFlow）（M3）
 - ☐ Step 12：コースの配置（CoursePlacer）（M3）
 - ☐ Step 13：Game_System プレハブと合流、数値の調整（M3）
