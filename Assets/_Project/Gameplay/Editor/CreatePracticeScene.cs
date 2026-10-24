@@ -107,6 +107,7 @@ namespace DeskStage.Gameplay.EditorTools
             var placer = gameFlow.gameObject.AddComponent<CoursePlacer>();
             placer.placementCamera = camera;
             placer.courseMarkers = markers;
+            placer.settings = viewCamera.settings;
             gameFlow.gameObject.AddComponent<PlacementDebugInput>();
             var panel = gameFlow.gameObject.AddComponent<GameFlowDebugPanel>();
             panel.gameFlow = gameFlow;

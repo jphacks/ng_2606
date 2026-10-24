@@ -15,6 +15,9 @@ namespace DeskStage.Gameplay
 
         public CourseMarkers courseMarkers;
 
+        [Tooltip("行けるかの判定に使う段の境目（StepRules）。空なら初期値")]
+        public CharacterSettings settings;
+
         [Tooltip("光線の長さ（m）")]
         public float maxDistance = 3f;
 
@@ -57,6 +60,17 @@ namespace DeskStage.Gameplay
 
             // 6：スタートとゴールは1つずつ（置き直すと動く）。チェックポイントは最大5個、近くをタップしたら消す
             var (result, why) = CoursePlacement.Apply(stage, item, local, yaw);
+
+            // 7：スタートからゴールへ、Wall の段を通らないと行けないときも置くのは止めず、「とどかないかも」を返す
+            if (result == PlacementResult.Placed && item != CourseItem.Checkpoint)
+            {
+                var rules = settings != null ? settings.CreateStepRules() : new StepRules();
+                if (!CourseReachability.CanReach(stage, rules, Vec3.To(stage.spawn.position), Vec3.To(stage.goal.position)))
+                {
+                    result = PlacementResult.MayBeUnreachable;
+                    why = CoursePlacement.ReasonMayBeUnreachable;
+                }
+            }
 
             // 8：置いた場所に目印を出し直す
             if (courseMarkers != null)
