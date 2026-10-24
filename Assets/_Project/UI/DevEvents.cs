@@ -173,7 +173,16 @@ namespace DeskStage.UI
         /// <summary>コツの絵を「まだ見ていない」に戻す（Step 9：1回目の見え方を確かめ直すため）。</summary>
         public void ResetTipsSeen()
         {
-            PlayerPrefs.DeleteKey(TipsScreen.SeenKey);
+            // コツの画面を表示中なら、その場で絵の見え方に戻す
+            var tips = FindAnyObjectByType<TipsScreen>(FindObjectsInactive.Include);
+            if (tips != null)
+            {
+                tips.ResetSeen();
+            }
+            else
+            {
+                PlayerPrefs.DeleteKey(TipsScreen.SeenKey);
+            }
             Debug.Log("DEV コツの絵を、まだ見ていないことにしました");
         }
 

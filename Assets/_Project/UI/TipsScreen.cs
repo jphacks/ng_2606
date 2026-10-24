@@ -82,6 +82,16 @@ namespace DeskStage.UI
             }
         }
 
+        /// <summary>「まだ見ていない」に戻し、表示中なら絵の見え方に戻す（開発用）。</summary>
+        public void ResetSeen()
+        {
+            PlayerPrefs.DeleteKey(SeenKey);
+            if (isActiveAndEnabled)
+            {
+                ShowPages(true);
+            }
+        }
+
         void OnScan()
         {
             PlayerPrefs.SetInt(SeenKey, 1);
