@@ -33,6 +33,9 @@ namespace DeskStage.AR
         /// <summary>決めた机の StageRoot。まだなら null。</summary>
         public Transform Root => m_Root;
 
+        /// <summary>直近のタップの結果（確認用の表示に使う）。</summary>
+        public string LastTapResult { get; private set; } = "";
+
         void Awake()
         {
             if (m_Watcher == null) m_Watcher = FindFirstObjectByType<PlaneWatcher>();
@@ -57,6 +60,7 @@ namespace DeskStage.AR
             // 机が決まった後の SetDesk は無視する（決め直しは Rescan で）
             if (m_Decided || m_Deciding || m_Watcher == null || m_RaycastManager == null)
             {
+                LastTapResult = m_Decided ? "机は決まっている" : "準備中（部品が足りない）";
                 return;
             }
 
@@ -71,7 +75,7 @@ namespace DeskStage.AR
                 var plane = FindTappedPlane(screenPosition);
                 if (plane == null)
                 {
-                    return; // 当たらなければ何もしない
+                    return; // 当たらなければ何もしない（理由は LastTapResult に残る）
                 }
 
                 var fit = DeskFrameMath.FitDesk(plane.Boundary, plane.Height);
@@ -101,6 +105,7 @@ namespace DeskStage.AR
             m_Hits.Clear();
             if (!m_RaycastManager.Raycast(screenPosition, m_Hits, TrackableType.PlaneWithinPolygon))
             {
+                LastTapResult = $"面に当たらず（見張り {m_Watcher.Planes.Count} 枚）";
                 return null;
             }
 
@@ -110,10 +115,12 @@ namespace DeskStage.AR
                 var plane = FindWatched(hit.trackableId);
                 if (plane != null && plane.Boundary.Length >= DeskFrameMath.MinBoundaryPoints)
                 {
+                    LastTapResult = "面に当たった";
                     return plane;
                 }
             }
 
+            LastTapResult = $"面に当たったが、見張りの面ではない（当たり {m_Hits.Count} 件、見張り {m_Watcher.Planes.Count} 枚）";
             return null;
         }
 
