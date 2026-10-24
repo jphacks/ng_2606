@@ -21,6 +21,7 @@ namespace DeskStage.Merge.EditorTools
         const string SourceScenePath = "Assets/_Project/Scenes/Test_D.unity";
         const string FontPath = "Assets/_Project/UI/Fonts/NotoSansJP-Regular SDF.asset";
         const string PhotoMaterialPath = "Assets/_Project/Merge/Materials/PhotoUnlit.mat";
+        const string CutoutMaterialPath = "Assets/_Project/Merge/Materials/CharacterCutout.mat";
 
         static readonly string[] RootNames =
         {
@@ -75,6 +76,7 @@ namespace DeskStage.Merge.EditorTools
 
             BuildScanUi(screenScan, font);
             BuildCheckUi(screenCheck, font);
+            var characterButton = BuildListUi(Find("Screen_List"), font);
 
             // まとめる
             var uiRoot = new GameObject("UI_System");
@@ -99,6 +101,19 @@ namespace DeskStage.Merge.EditorTools
             var texturerSo = new SerializedObject(texturer);
             texturerSo.FindProperty("photoMaterial").objectReferenceValue = EnsurePhotoMaterial();
             texturerSo.ApplyModifiedPropertiesWithoutUndo();
+
+            // 写真のキャラクター：撮る（CharacterCapture）、撮る・選ぶ画面（CharacterPanelView）、遊ぶときに立てる（CharacterAvatar）
+            var characterCapture = uiRoot.AddComponent<CharacterCapture>();
+            var panel = uiRoot.AddComponent<CharacterPanelView>();
+            var panelSo = new SerializedObject(panel);
+            panelSo.FindProperty("font").objectReferenceValue = font;
+            panelSo.FindProperty("openButton").objectReferenceValue = characterButton;
+            panelSo.FindProperty("capture").objectReferenceValue = characterCapture;
+            panelSo.ApplyModifiedPropertiesWithoutUndo();
+            var avatar = uiRoot.AddComponent<CharacterAvatar>();
+            var avatarSo = new SerializedObject(avatar);
+            avatarSo.FindProperty("cutoutMaterial").objectReferenceValue = EnsureCutoutMaterial();
+            avatarSo.ApplyModifiedPropertiesWithoutUndo();
 
             Directory.CreateDirectory(Path.GetDirectoryName(PrefabPath));
             PrefabUtility.SaveAsPrefabAsset(uiRoot, PrefabPath);
@@ -127,6 +142,42 @@ namespace DeskStage.Merge.EditorTools
             AssetDatabase.CreateAsset(material, PhotoMaterialPath);
             AssetDatabase.SaveAssets();
             return material;
+        }
+
+        /// <summary>切り抜いたキャラを貼る素材（URP の Unlit。透明な所は抜く）。無ければ作る。</summary>
+        static Material EnsureCutoutMaterial()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<Material>(CutoutMaterialPath);
+            if (existing != null)
+            {
+                return existing;
+            }
+            var shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Transparent Cutout");
+            Directory.CreateDirectory(Path.GetDirectoryName(CutoutMaterialPath));
+            var material = new Material(shader) { name = "CharacterCutout" };
+            material.SetFloat("_AlphaClip", 1f);
+            material.SetFloat("_Cutoff", 0.5f);
+            material.SetFloat("_Cull", 0f); // 両面
+            material.EnableKeyword("_ALPHATEST_ON");
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.AlphaTest;
+            material.SetOverrideTag("RenderType", "TransparentCutout");
+            AssetDatabase.CreateAsset(material, CutoutMaterialPath);
+            AssetDatabase.SaveAssets();
+            return material;
+        }
+
+        // ---- 一覧画面：キャラをえらぶボタン ----
+
+        static Button BuildListUi(Transform screen, TMP_FontAsset font)
+        {
+            if (screen == null)
+            {
+                Debug.LogWarning("[Merge] Test_D.unity に Screen_List がありません");
+                return null;
+            }
+            var button = NewButton("Button_Characters", screen, "キャラを えらぶ", font, out _);
+            Anchor((RectTransform)button.transform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(30f, 30f), new Vector2(520f, 120f));
+            return button;
         }
 
         // ---- 撮影画面 ----

@@ -6,6 +6,7 @@
         "DeskStage.UI",
         "DeskStage.AR",
         "DeskStage.Stage",
+        "DeskStage.Gameplay",
         "Unity.TextMeshPro",
         "UnityEngine.UI",
         "Unity.InputSystem"
