@@ -38,7 +38,7 @@
 - ☑ Step 21：共通コードに足す（ScanResultReceived、TakePhoto、CameraPreview）… C・D の了承はプルリクエストで
 - ☐ Step 22：カメラと撮影（PhotoCapture）
 - ☐ Step 23：写真の確認（PhotoCheck）
-- ☐ Step 24：サーバー（Server/）… 途中：コードはでき、試しのモードで動いた。本物の Claude での確認がまだ
+- ☑ Step 24：サーバー（Server/）… 本物の Claude で、スキーマどおりの JSON が返った（8秒、入力 12,944・出力 173 トークン）
 - ☐ Step 25：サーバーとの送受信と、もういちど撮る（ScanClient）
 
 > 2026-10-24 西垣さんの判断：P0 の検証（Step 4・5）はしない（B の省略と同じ）。Step 1・3・6・9・10 は実装まで済ませ、実機での確認は省略して ☑ にした。実機（iPhone 17）で AR が起動しなかった原因は、iOS のスクリプトシンボル UNITY_XR_ARKIT_LOADER_ENABLED が ProjectSettings に無く、バッチ実行のビルドで libUnityARKit.a が組み込まれなかったこと。ProjectSettings に入れて直した（メニュー「DeskStage/A/2. ARKit のビルド設定をそろえる」）。直した後は、実機で AR が起動し、面が見つかることを確かめた。
