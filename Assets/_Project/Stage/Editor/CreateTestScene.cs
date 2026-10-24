@@ -1,0 +1,54 @@
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+
+namespace DeskStage.Stage.EditorTools
+{
+    /// <summary>
+    /// B の Step 5：Test_B.unity を作る。
+    /// お手本ステージを組み立てるボタンと、机全体が見えるカメラを置く。
+    /// </summary>
+    public static class CreateTestScene
+    {
+        const string ScenePath = "Assets/_Project/Scenes/Test_B.unity";
+        const string SettingsPath = "Assets/_Project/Stage/Settings/BoxSettings.asset";
+
+        [MenuItem("DeskStage/B/2. テスト用シーンを作る")]
+        public static void Run()
+        {
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null &&
+                !EditorUtility.DisplayDialog("Test_B", $"{ScenePath} はすでにあります。作り直しますか？", "作り直す", "やめる"))
+            {
+                return;
+            }
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                return;
+            }
+
+            // カメラと光だけの新しいシーン
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+
+            // 机（90cm くらい）全体を手前斜め上から見る
+            var camera = Camera.main;
+            camera.transform.position = new Vector3(0f, 0.45f, -0.65f);
+            camera.transform.LookAt(Vector3.zero);
+            camera.nearClipPlane = 0.01f;
+
+            var system = new GameObject("Stage_System");
+            var builder = system.AddComponent<StageBuilder>();
+            var button = system.AddComponent<SampleStageButton>();
+
+            var builderSo = new SerializedObject(builder);
+            builderSo.FindProperty("settings").objectReferenceValue = AssetDatabase.LoadAssetAtPath<BoxSettings>(SettingsPath);
+            builderSo.ApplyModifiedPropertiesWithoutUndo();
+
+            var buttonSo = new SerializedObject(button);
+            buttonSo.FindProperty("builder").objectReferenceValue = builder;
+            buttonSo.ApplyModifiedPropertiesWithoutUndo();
+
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            Debug.Log($"[Stage] {ScenePath} を作りました。再生してボタンを押してください");
+        }
+    }
+}
