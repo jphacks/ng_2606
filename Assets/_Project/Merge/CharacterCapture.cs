@@ -4,11 +4,22 @@ using UnityEngine;
 
 namespace DeskStage.Merge
 {
+    /// <summary>枠の場所を撮った写真。添字 0 が左下の行。</summary>
+    public struct FrameResult
+    {
+        public bool Ok;
+        public string Reason;
+        public Color32[] Pixels;
+        public int Width;
+        public int Height;
+    }
+
     /// <summary>
-    /// 人形を、人型の枠（HumanMask）に合わせて撮り、枠の形に切り抜く（キャラクターを写真で作る）。
+    /// 人形を撮って、人形だけを取り出す（キャラクターを写真で作る）。
     /// カメラ（WebCamTexture）を開き、端末の向きに合わせて起こした映像を Preview に出す。
-    /// TakeFramed で、今の映像の、枠を置く場所（HumanMask.CropRegion）を撮り、枠の外を透明にする。
-    /// 背景を自動で切り抜く方法（CutoutMath）は、うまく切れなかったので、使わない。
+    /// 2 回撮る：先に「背景だけ」（CaptureFrame）、次に、同じ場所に人形を置いて撮る（TakeCutout）。
+    /// 2 枚の差から人形を取り出す（計算は BackgroundSubtraction）。撮る場所は、人型の枠（HumanMask.CropRegion）の中。
+    /// 背景の色で自動で切り抜く方法（CutoutMath）は、うまく切れなかったので、使わない。
     /// 机の写真を撮る PhotoCapture と、同じカメラを使うので、同時には開かない（撮影の画面では、これを閉じておく）。
     /// </summary>
     public class CharacterCapture : MonoBehaviour
@@ -109,13 +120,13 @@ namespace DeskStage.Merge
             Graphics.Blit(webcam, upright, scale, offset);
         }
 
-        /// <summary>いまの映像の、枠の場所を撮って、枠の外を透明にする。映像がまだなら、失敗の結果を返す。</summary>
-        public CutoutResult TakeFramed()
+        /// <summary>いまの映像の、枠の場所を、写真として撮る（切り抜きはしない）。映像がまだなら、失敗の結果を返す。</summary>
+        public FrameResult CaptureFrame()
         {
             var source = Preview;
             if (source == null || source.width <= 16)
             {
-                return new CutoutResult { Ok = false, Reason = "カメラの えいぞうが まだ きていません" };
+                return new FrameResult { Ok = false, Reason = "カメラの えいぞうが まだ きていません" };
             }
 
             var region = HumanMask.CropRegion((float)source.width / source.height);
@@ -130,15 +141,33 @@ namespace DeskStage.Merge
                 var tex = new Texture2D(outWidth, OutHeight, TextureFormat.RGB24, false);
                 tex.ReadPixels(new Rect(0, 0, outWidth, OutHeight), 0, 0);
                 tex.Apply();
-                var pixels = HumanMask.Apply(tex.GetPixels32(), outWidth, OutHeight);
+                var pixels = tex.GetPixels32();
                 Destroy(tex);
-                return new CutoutResult { Ok = true, Reason = "", Pixels = pixels, Width = outWidth, Height = OutHeight };
+                return new FrameResult { Ok = true, Reason = "", Pixels = pixels, Width = outWidth, Height = OutHeight };
             }
             finally
             {
                 RenderTexture.active = before;
                 RenderTexture.ReleaseTemporary(rt);
             }
+        }
+
+        /// <summary>
+        /// 人形を置いた写真（いまの映像の枠の場所）を撮り、先に撮った背景との差から、人形を取り出す。
+        /// 背景と大きさが合わないとき、映像がまだのときは、失敗の結果を返す。
+        /// </summary>
+        public CutoutResult TakeCutout(FrameResult background)
+        {
+            var photo = CaptureFrame();
+            if (!photo.Ok)
+            {
+                return new CutoutResult { Ok = false, Reason = photo.Reason };
+            }
+            if (!background.Ok || background.Width != photo.Width || background.Height != photo.Height)
+            {
+                return new CutoutResult { Ok = false, Reason = "はいけいの しゃしんが ありません。はいけいから とりなおしてね" };
+            }
+            return BackgroundSubtraction.Cut(background.Pixels, photo.Pixels, photo.Width, photo.Height);
         }
     }
 }

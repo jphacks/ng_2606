@@ -14,6 +14,9 @@ namespace DeskStage.Merge
     {
         const string CutoutName = "Cutout";
 
+        // 見た目の大きさ。C のキャラの当たり判定の高さ（3cm）の何倍にするか（2026-10-24：1.5 倍）。当たり判定は変えない
+        const float SizeScale = 1.5f;
+
         [SerializeField] Material cutoutMaterial;
 
         CharacterStore store;
@@ -75,9 +78,9 @@ namespace DeskStage.Merge
             material.SetTexture("_BaseMap", texture);
             material.mainTexture = texture;
 
-            // 身長は、C のキャラの当たり判定の高さ（3cm）。横は、切り抜きの縦横の比
+            // 身長は、C のキャラの当たり判定の高さ（3cm）の SizeScale 倍。横は、切り抜きの縦横の比
             var controller = motor.GetComponent<CharacterController>();
-            var height = controller != null ? controller.height : 0.03f;
+            var height = (controller != null ? controller.height : 0.03f) * SizeScale;
             var aspect = info.aspect > 0f ? info.aspect : (float)texture.width / texture.height;
 
             var cutout = GameObject.CreatePrimitive(PrimitiveType.Quad);

@@ -29,13 +29,20 @@ namespace DeskStage.Merge
         const float Edge = 0.06f;
 
         /// <summary>枠の箱の中の点 (x, y) が、枠の中か。0（外）〜1（中）。ふちは、少しぼかす。</summary>
-        public static float Coverage(float x, float y)
+        public static float Coverage(float x, float y) => Coverage(x, y, 0f);
+
+        /// <summary>
+        /// Coverage の、枠を grow だけ広げる版（0.1 なら、各部分の半径を 1.1 倍）。
+        /// 背景との差で人形を取り出すとき、枠のふちで人形が欠けないよう、少し広い枠で区切る。
+        /// </summary>
+        public static float Coverage(float x, float y, float grow)
         {
             var best = float.MaxValue;
+            var scale = 1f + grow;
             foreach (var p in Parts)
             {
-                var dx = (x - p.x) / p.z;
-                var dy = (y - p.y) / p.w;
+                var dx = (x - p.x) / (p.z * scale);
+                var dy = (y - p.y) / (p.w * scale);
                 var f = Mathf.Sqrt(dx * dx + dy * dy);
                 if (f < best) best = f;
             }
