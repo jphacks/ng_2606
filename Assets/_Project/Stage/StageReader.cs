@@ -9,15 +9,25 @@ namespace DeskStage.Stage
     /// 計算は StageReaderCore。ここは知らせを受けて、結果を書き、知らせるだけ。
     /// ・新しい答えが来たら、前の auto の箱を消して作り直す。補助で直した manual の箱は残す
     /// ・Rescan（もういちど撮る）を受けたら、箱をすべて消し、コースの物も消す
+    /// ・builder があれば、答えを受けるたびに、机の板と箱を組み立てて StageBuilt を出す（たしかめ画面と遊ぶ画面が机の板を必要とし、
+    ///   C の GameFlow が StageBuilt を待つため）。Rescan では、組み立てた物を片付ける
     /// </summary>
     public class StageReader : MonoBehaviour
     {
         [SerializeField] BoxSettings settings;
 
+        [Tooltip("答えを受けたあとに、机の板と箱を組み立てて StageBuilt を出す。空なら同じシーンの StageBuilder を探す。無ければ組み立てない")]
+        [SerializeField] StageBuilder builder;
+
         StageReaderCore core;
 
         void Awake()
         {
+            if (builder == null)
+            {
+                builder = FindFirstObjectByType<StageBuilder>();
+            }
+
             core = settings != null ? new StageReaderCore(settings) : new StageReaderCore();
             if (settings == null)
             {
@@ -74,6 +84,12 @@ namespace DeskStage.Stage
 
             ScanContext.DeskSize = result.DeskSize;
             UpdateCurrentStage(result.DeskSize);
+
+            // 机の板と箱を組み立てて、StageBuilt を出す
+            if (builder != null)
+            {
+                builder.Build(StageContext.CurrentStage);
+            }
         }
 
         /// <summary>もういちど撮る（B の Step 8）：箱をすべて消し（manual も）、コースの物も消す。</summary>
@@ -87,6 +103,12 @@ namespace DeskStage.Stage
             }
             ScanContext.SelectedBoxId = "";
             StageCourse.Clear(StageContext.CurrentStage);
+
+            // 組み立てた机の板と箱を片付ける（次の答えで、また組み立てる）
+            if (builder != null)
+            {
+                builder.Clear();
+            }
         }
 
         /// <summary>今のステージデータに、机と作業中の箱を入れる（保存とたしかめ画面で使う）。</summary>

@@ -6,11 +6,11 @@ namespace DeskStage.AR.EditorTools
 {
     /// <summary>
     /// A の Step 25：サーバーの設定（ServerConfig.asset）を作る。合言葉は Server/.env の APP_TOKEN から写す。
-    /// このアセットは Git に入らない（AR/Settings/.gitignore）。合言葉を変えたら、もう一度実行する。
+    /// このアセットは Git に入らない（AR/Resources/.gitignore）。実行時は ScanClient が Resources から探す。合言葉を変えたら、もう一度実行する。
     /// </summary>
     public static class CreateServerConfig
     {
-        public const string AssetPath = "Assets/_Project/AR/Settings/ServerConfig.asset";
+        public const string AssetPath = "Assets/_Project/AR/Resources/ServerConfig.asset";
 
         [MenuItem("DeskStage/A/5. サーバーの設定を作る")]
         public static void Run()
@@ -18,6 +18,7 @@ namespace DeskStage.AR.EditorTools
             var config = AssetDatabase.LoadAssetAtPath<ServerConfig>(AssetPath);
             if (config == null)
             {
+                Directory.CreateDirectory(Path.GetDirectoryName(AssetPath));
                 config = ScriptableObject.CreateInstance<ServerConfig>();
                 AssetDatabase.CreateAsset(config, AssetPath);
             }

@@ -31,6 +31,16 @@ namespace DeskStage.AR
         string AppToken => config != null ? config.appToken : "";
         int TimeoutSeconds => config != null ? config.timeoutSeconds : 90;
 
+        void Awake()
+        {
+            // 設定ファイルは Git に入らないので、プレハブやシーンから参照すると他の人の PC で切れる。
+            // 参照が空なら、Resources（AR/Resources/ServerConfig.asset。メニュー「DeskStage/A/5. サーバーの設定を作る」で作る）から探す
+            if (config == null)
+            {
+                config = Resources.Load<ServerConfig>(ServerConfig.ResourceName);
+            }
+        }
+
         void OnEnable()
         {
             if (capture != null)

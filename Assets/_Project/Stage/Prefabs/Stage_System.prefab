@@ -1,0 +1,94 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4183970247397090181
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8254834294601479301}
+  - component: {fileID: 2905149651740967091}
+  - component: {fileID: 6438922294432086212}
+  - component: {fileID: 2222013630216940974}
+  - component: {fileID: 4601088275701692367}
+  m_Layer: 0
+  m_Name: Stage_System
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8254834294601479301
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4183970247397090181}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2905149651740967091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4183970247397090181}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e51bf532f6f8da47ab16b62bea90550, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DeskStage.Stage::DeskStage.Stage.StageBuilder
+  settings: {fileID: 11400000, guid: 717bed95140ad5c4b911aed6f527c948, type: 2}
+  deskMaterial: {fileID: 0}
+  boxMaterial: {fileID: 0}
+  followWorkingBoxes: 1
+--- !u!114 &6438922294432086212
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4183970247397090181}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1235a380ee670b649bafebfb8566cf50, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DeskStage.Stage::DeskStage.Stage.StageReader
+  settings: {fileID: 11400000, guid: 717bed95140ad5c4b911aed6f527c948, type: 2}
+  builder: {fileID: 2905149651740967091}
+--- !u!114 &2222013630216940974
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4183970247397090181}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 632cfe0da70ae3b498a62b864c32700a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DeskStage.Stage::DeskStage.Stage.StageLibrary
+  builder: {fileID: 2905149651740967091}
+--- !u!114 &4601088275701692367
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4183970247397090181}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c26ad944a8e6bd3458dc0a57912cbabb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DeskStage.Stage::DeskStage.Stage.BoxAssist
+  settings: {fileID: 11400000, guid: 717bed95140ad5c4b911aed6f527c948, type: 2}
+  viewCamera: {fileID: 0}

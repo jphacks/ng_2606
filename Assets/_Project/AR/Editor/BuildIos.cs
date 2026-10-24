@@ -39,6 +39,13 @@ namespace DeskStage.AR.EditorTools
             Build(new[] { PhotoScenePath });
         }
 
+        /// <summary>合流用の Main シーンだけを、実機用にビルドする。ビルド対象の設定は変えない。</summary>
+        [MenuItem("DeskStage/A/6. Main を iOS 向けにビルドする")]
+        public static void RunMain()
+        {
+            Build(new[] { CreateMainScene.ScenePath });
+        }
+
         static void Build(string[] scenes)
         {
             if (scenes.Length == 0)

@@ -12,6 +12,9 @@ namespace DeskStage.AR
     [CreateAssetMenu(fileName = "ServerConfig", menuName = "DeskStage/A/サーバーの設定")]
     public class ServerConfig : ScriptableObject
     {
+        /// <summary>Resources.Load で探す名前（AR/Resources/ServerConfig.asset）。</summary>
+        public const string ResourceName = "ServerConfig";
+
         [Tooltip("読み取りサーバーの場所。PC で動かすときは http://127.0.0.1:8000。iPhone から同じ Wi-Fi で試すときは PC の IP アドレス")]
         public string serverUrl = "http://127.0.0.1:8000";
 
