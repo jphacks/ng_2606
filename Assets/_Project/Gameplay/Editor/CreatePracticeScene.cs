@@ -93,6 +93,10 @@ namespace DeskStage.Gameplay.EditorTools
             var markers = gameFlow.gameObject.AddComponent<CourseMarkers>();
             markers.gameFlow = gameFlow;
             markers.settings = viewCamera.settings;
+            // 落下とはさまりからの復帰（Step 15）
+            var guard = gameFlow.gameObject.AddComponent<SafetyGuard>();
+            guard.gameFlow = gameFlow;
+            guard.settings = viewCamera.settings;
             var panel = gameFlow.gameObject.AddComponent<GameFlowDebugPanel>();
             panel.gameFlow = gameFlow;
             panel.practiceRoot = stageRoot;

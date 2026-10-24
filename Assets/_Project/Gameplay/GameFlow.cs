@@ -135,20 +135,42 @@ namespace DeskStage.Gameplay
             if (cameraRelativeInput != null) cameraRelativeInput.SetMotor(Motor);
         }
 
+        /// <summary>
+        /// 最後に通ったチェックポイント（なければスタート）へ瞬間移動する。タイムは止めない。Step 15 の SafetyGuard が呼ぶ。
+        /// </summary>
+        public void RespawnAtLastCheckpoint()
+        {
+            var stage = StageContext.CurrentStage;
+            if (Motor == null)
+            {
+                return;
+            }
+            var spawn = stage != null ? stage.spawn : new SpawnData();
+            bool hasCheckpoint = stage != null && LastCheckpoint >= 0 && LastCheckpoint < stage.checkpoints.Length;
+            Vector3 local = hasCheckpoint ? Vec3.To(stage.checkpoints[LastCheckpoint].position) : Vec3.To(spawn.position);
+            // 向きはスタートと同じにする（カメラはキャラの背中側に回り直す）
+            TeleportToStagePoint(local, spawn.yawDegrees);
+        }
+
         // 準備 → プレイ中：スタートへ瞬間移動、タイムを0にして開始、GameStarted
         void Prepare()
         {
-            var root = StageContext.StageRoot;
             var spawn = StageContext.CurrentStage != null ? StageContext.CurrentStage.spawn : new SpawnData();
-            Vector3 local = Vec3.To(spawn.position) + Vector3.up * 0.001f;
-            Vector3 position = root != null ? root.TransformPoint(local) : local;
-            Quaternion rotation = (root != null ? root.rotation : Quaternion.identity) * Quaternion.Euler(0f, spawn.yawDegrees, 0f);
-
             Motor.Paused = false;
-            Motor.Teleport(position, rotation);
+            TeleportToStagePoint(Vec3.To(spawn.position), spawn.yawDegrees);
             ElapsedSeconds = 0f;
             flow.TryStart();
             GameEvents.RaiseGameStarted();
+        }
+
+        // ステージ座標の点（足元）と向きへ、キャラを瞬間移動する。1mm 上に置いて、床に食い込まないようにする
+        void TeleportToStagePoint(Vector3 local, float yawDegrees)
+        {
+            var root = StageContext.StageRoot;
+            local += Vector3.up * 0.001f;
+            Vector3 position = root != null ? root.TransformPoint(local) : local;
+            Quaternion rotation = (root != null ? root.rotation : Quaternion.identity) * Quaternion.Euler(0f, yawDegrees, 0f);
+            Motor.Teleport(position, rotation);
         }
     }
 }
