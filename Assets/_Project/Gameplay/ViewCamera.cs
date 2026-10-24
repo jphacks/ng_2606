@@ -67,6 +67,36 @@ namespace DeskStage.Gameplay
         {
             UiRequests.OrbitView += OnOrbitView;
             UiRequests.ZoomView += OnZoomView;
+            WatchTarget();
+        }
+
+        void OnDisable()
+        {
+            UiRequests.OrbitView -= OnOrbitView;
+            UiRequests.ZoomView -= OnZoomView;
+            UnwatchTarget();
+        }
+
+        /// <summary>
+        /// 追うキャラを差し替える（GameFlow がキャラを出したり消したりしたとき）。キャラがいれば、机全体から寄り直す。
+        /// </summary>
+        public void SetTarget(Transform newTarget)
+        {
+            UnwatchTarget();
+            target = newTarget;
+            if (isActiveAndEnabled)
+            {
+                WatchTarget();
+            }
+            if (target != null)
+            {
+                BeginIntro();
+            }
+        }
+
+        // 瞬間移動したらキャラの背中側に回るよう、キャラの知らせに登録する
+        void WatchTarget()
+        {
             targetMotor = target != null ? target.GetComponent<CharacterMotor>() : null;
             if (targetMotor != null)
             {
@@ -74,13 +104,12 @@ namespace DeskStage.Gameplay
             }
         }
 
-        void OnDisable()
+        void UnwatchTarget()
         {
-            UiRequests.OrbitView -= OnOrbitView;
-            UiRequests.ZoomView -= OnZoomView;
             if (targetMotor != null)
             {
                 targetMotor.Teleported -= SnapBehindTarget;
+                targetMotor = null;
             }
         }
 
