@@ -184,6 +184,66 @@ namespace DeskStage.Stage.Tests
         }
 
         [Test]
+        public void 物の場所は左右の外側の色でつながってぬりつぶされる()
+        {
+            // 横に黒 → 白と変わる写真に、真ん中に赤い四角（物）
+            var w = 100;
+            var h = 50;
+            var src = new Color32[w * h];
+            for (var y = 0; y < h; y++)
+                for (var x = 0; x < w; x++)
+                {
+                    var v = (byte)(x * 255 / (w - 1));
+                    src[y * w + x] = new Color32(v, v, v, 255);
+                }
+            for (var y = 20; y < 30; y++)
+                for (var x = 40; x < 60; x++)
+                    src[y * w + x] = new Color32(255, 0, 0, 255);
+
+            // 物の場所：x 0.4〜0.6、y（上から）0.4〜0.6
+            var filled = PhotoTextureMath.FillRegions(src, w, h, new[] { Rect.MinMaxRect(0.4f, 0.4f, 0.6f, 0.6f) });
+
+            // 赤は消え、左右の灰色をつないだ色になる（左端はほぼ 101、右端はほぼ 153）
+            var inside = filled[(h - 1 - 25) * w + 50];
+            Assert.AreEqual(inside.r, inside.g, 3);
+            Assert.AreEqual(inside.g, inside.b, 3);
+            Assert.That(inside.r, Is.InRange(110, 145));
+            // 場所の外は、そのまま
+            Assert.AreEqual(src[0].r, filled[0].r);
+            Assert.AreEqual(src[(h - 1 - 5) * w + 80].r, filled[(h - 1 - 5) * w + 80].r);
+        }
+
+        [Test]
+        public void ぬりつぶしは元の写真を変えない()
+        {
+            var src = new Color32[10 * 10];
+            for (var i = 0; i < src.Length; i++) src[i] = new Color32(10, 20, 30, 255);
+            src[55] = new Color32(200, 0, 0, 255);
+
+            PhotoTextureMath.FillRegions(src, 10, 10, new[] { Rect.MinMaxRect(0.4f, 0.4f, 0.7f, 0.7f) });
+
+            Assert.AreEqual(200, src[55].r);
+        }
+
+        [Test]
+        public void 写真の端の物は片側の色でぬりつぶされる()
+        {
+            var w = 20;
+            var h = 10;
+            var src = new Color32[w * h];
+            for (var i = 0; i < src.Length; i++) src[i] = new Color32(50, 60, 70, 255);
+            // 右端の物
+            for (var y = 0; y < h; y++)
+                for (var x = 15; x < w; x++)
+                    src[y * w + x] = new Color32(255, 0, 0, 255);
+
+            var filled = PhotoTextureMath.FillRegions(src, w, h, new[] { Rect.MinMaxRect(0.75f, 0f, 1f, 1f) });
+
+            Assert.AreEqual(50, filled[5 * w + 18].r);
+            Assert.AreEqual(60, filled[5 * w + 18].g);
+        }
+
+        [Test]
         public void 平均の色()
         {
             var avg = PhotoTextureMath.Average(new[] { new Color32(0, 100, 200, 255), new Color32(100, 200, 100, 255) });

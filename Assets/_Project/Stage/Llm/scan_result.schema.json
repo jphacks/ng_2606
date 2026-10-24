@@ -96,7 +96,7 @@
           },
           "topFaceInPhoto1": {
             "type": "object",
-            "description": "この物の上面（1枚目の写真に写っている上面だけ。側面は入れない）の四隅。1枚目（真上）の写真の中の、四隅の位置。写真の左上を (0, 0)、右下を (1, 1) とした割合。ぐるっと一周する順に答える（どの角から始めてもよい）。写真の外に出る角は 0〜1 に収める。まったく分からないときは、8つとも 0",
+            "description": "この物の上面（写っている上面だけ。側面は入れない）の四隅。1枚目（真上）の写真の中の位置（左上が (0, 0)、右下が (1, 1) の割合）。x0,y0 … x3,y3 は、四隅をぐるっと一周する順（どの角からでもよい）。分からなければ 8つとも 0",
             "additionalProperties": false,
             "required": [
               "x0",
@@ -110,36 +110,28 @@
             ],
             "properties": {
               "x0": {
-                "type": "number",
-                "description": "1つ目の角の横の位置（写真の左端が 0、右端が 1）"
+                "type": "number"
               },
               "y0": {
-                "type": "number",
-                "description": "1つ目の角の縦の位置（写真の上端が 0、下端が 1）"
+                "type": "number"
               },
               "x1": {
-                "type": "number",
-                "description": "2つ目の角の横の位置（写真の左端が 0、右端が 1）"
+                "type": "number"
               },
               "y1": {
-                "type": "number",
-                "description": "2つ目の角の縦の位置（写真の上端が 0、下端が 1）"
+                "type": "number"
               },
               "x2": {
-                "type": "number",
-                "description": "3つ目の角の横の位置（写真の左端が 0、右端が 1）"
+                "type": "number"
               },
               "y2": {
-                "type": "number",
-                "description": "3つ目の角の縦の位置（写真の上端が 0、下端が 1）"
+                "type": "number"
               },
               "x3": {
-                "type": "number",
-                "description": "4つ目の角の横の位置（写真の左端が 0、右端が 1）"
+                "type": "number"
               },
               "y3": {
-                "type": "number",
-                "description": "4つ目の角の縦の位置（写真の上端が 0、下端が 1）"
+                "type": "number"
               }
             }
           }
@@ -152,7 +144,7 @@
     },
     "deskInPhoto1": {
       "type": "object",
-      "description": "机の天面の長方形（desk に答えた範囲。desk が null のときは、置いた物を全部囲み、まわりに少し余白をとった長方形）の四隅。1枚目（真上）の写真の中の、四隅の位置。写真の左上を (0, 0)、右下を (1, 1) とした割合。ぐるっと一周する順に答える（どの角から始めてもよい）。写真の外に出る角は 0〜1 に収める。まったく分からないときは、8つとも 0",
+      "description": "机の天面（desk の範囲。null のときは、置いた物を全部囲む余白つきの長方形）の四隅。1枚目（真上）の写真の中の位置（左上が (0, 0)、右下が (1, 1) の割合）。x0,y0 … x3,y3 は、四隅をぐるっと一周する順（どの角からでもよい）。分からなければ 8つとも 0",
       "additionalProperties": false,
       "required": [
         "x0",
@@ -166,36 +158,28 @@
       ],
       "properties": {
         "x0": {
-          "type": "number",
-          "description": "1つ目の角の横の位置（写真の左端が 0、右端が 1）"
+          "type": "number"
         },
         "y0": {
-          "type": "number",
-          "description": "1つ目の角の縦の位置（写真の上端が 0、下端が 1）"
+          "type": "number"
         },
         "x1": {
-          "type": "number",
-          "description": "2つ目の角の横の位置（写真の左端が 0、右端が 1）"
+          "type": "number"
         },
         "y1": {
-          "type": "number",
-          "description": "2つ目の角の縦の位置（写真の上端が 0、下端が 1）"
+          "type": "number"
         },
         "x2": {
-          "type": "number",
-          "description": "3つ目の角の横の位置（写真の左端が 0、右端が 1）"
+          "type": "number"
         },
         "y2": {
-          "type": "number",
-          "description": "3つ目の角の縦の位置（写真の上端が 0、下端が 1）"
+          "type": "number"
         },
         "x3": {
-          "type": "number",
-          "description": "4つ目の角の横の位置（写真の左端が 0、右端が 1）"
+          "type": "number"
         },
         "y3": {
-          "type": "number",
-          "description": "4つ目の角の縦の位置（写真の上端が 0、下端が 1）"
+          "type": "number"
         }
       }
     }

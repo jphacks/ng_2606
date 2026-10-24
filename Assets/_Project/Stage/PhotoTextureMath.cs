@@ -200,6 +200,66 @@ namespace DeskStage.Stage
             return new Color32(Mix(c00.r, c10.r, c01.r, c11.r), Mix(c00.g, c10.g, c01.g, c11.g), Mix(c00.b, c10.b, c01.b, c11.b), 255);
         }
 
+        /// <summary>
+        /// 写真の中の、物がある場所（regions）を、同じ行の左右の外側の色をつないで、ぬりつぶした写真を返す（元の写真は変えない）。
+        /// 机の絵に、物の写真が写り込んだままだと、立体の箱の下に、平らな箱の絵が残って、二重に見えるため。
+        /// regions は、写真の割合（左上が (0, 0)、右下が (1, 1)。x は右へ、y は下へ）。src は、添字 0 が左下の行。
+        /// 左右の外側が写真の端のときは、片側の色で埋める。
+        /// </summary>
+        public static Color32[] FillRegions(Color32[] src, int width, int height, System.Collections.Generic.IList<Rect> regions)
+        {
+            var result = (Color32[])src.Clone();
+            if (regions == null)
+            {
+                return result;
+            }
+            foreach (var region in regions)
+            {
+                var x0 = Mathf.Clamp(Mathf.FloorToInt(region.xMin * width), 0, width - 1);
+                var x1 = Mathf.Clamp(Mathf.CeilToInt(region.xMax * width) - 1, 0, width - 1);
+                var yTop0 = Mathf.Clamp(Mathf.FloorToInt(region.yMin * height), 0, height - 1);
+                var yTop1 = Mathf.Clamp(Mathf.CeilToInt(region.yMax * height) - 1, 0, height - 1);
+                if (x1 < x0 || yTop1 < yTop0)
+                {
+                    continue;
+                }
+                for (var yTop = yTop0; yTop <= yTop1; yTop++)
+                {
+                    var row = (height - 1 - yTop) * width; // 配列は下の行が先
+                    var left = x0 > 0 ? AverageAround(result, row, x0 - 1, -1, width) : (Color?)null;
+                    var right = x1 < width - 1 ? AverageAround(result, row, x1 + 1, 1, width) : (Color?)null;
+                    if (left == null && right == null)
+                    {
+                        continue; // 行が全部、物の場所：埋める色がない
+                    }
+                    var a = left ?? right.Value;
+                    var b = right ?? left.Value;
+                    var span = x1 - x0 + 1;
+                    for (var x = x0; x <= x1; x++)
+                    {
+                        var t = (x - x0 + 0.5f) / span;
+                        result[row + x] = Color.Lerp(a, b, t);
+                    }
+                }
+            }
+            return result;
+        }
+
+        /// <summary>行 row の、x から step の向きに 3 画素の平均の色。</summary>
+        static Color AverageAround(Color32[] pixels, int row, int x, int step, int width)
+        {
+            var sum = Color.black;
+            var count = 0;
+            for (var i = 0; i < 3; i++)
+            {
+                var px = x + step * i;
+                if (px < 0 || px >= width) break;
+                sum += (Color)pixels[row + px];
+                count++;
+            }
+            return count > 0 ? sum / count : Color.gray;
+        }
+
         /// <summary>画素の平均の色（箱の側面の色に使う）。</summary>
         public static Color32 Average(Color32[] pixels)
         {

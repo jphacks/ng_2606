@@ -18,7 +18,7 @@ namespace DeskStage.Merge
     /// ・地面（PhotoGround）：机の板の外側。1枚目（真上）の写真を、机の四隅から外へのばして貼った大きな板を、
     ///   「落ちた」と判定する高さ（fallDepth）に敷く。机のふちから落ちると、この地面に着く
     /// ・背景（PhotoBackdrop）：背景専用に撮った写真（BackdropStore。一覧の「はいけいを とる」で撮る）を、ぼかして、
-    ///   ステージの周りの大きなドームの内側に貼る。背景の写真が無ければ、背景は出さない
+    ///   ステージの周りの壁（円筒）の内側に貼る。背景の写真が無ければ、背景は出さない
     ///   背景は、撮影の写真が無くても（保存したステージを読み込んだときも）貼る
     /// </summary>
     public class StagePhotoTexturer : MonoBehaviour
@@ -35,15 +35,23 @@ namespace DeskStage.Merge
         // 側面は、上面の平均の色を、少し暗くして、上面との違いが分かるようにする
         const float SideDarken = 0.8f;
 
-        // 地面：机の何倍の広さにするか（机の中心から、各方向に）。写真は、机の四隅から外へのばして切り出す
+        // 机の絵から、物の写真を消すときの、場所の広げ方（写真の割合）：左右に SideMargin、下へ（上面の高さ × SideExtendRatio）
+        const float SideMargin = 0.02f;
+        const float SideExtendRatio = 0.8f;
+
+        // 地面：机の何倍の広さにするか（机の中心から、各方向に）。写真は、机の四隅から外へのばして切り出す。
+        // 小さな絵（GroundTextureSide 画素）を、なめらかに引き伸ばして貼る：のばした部分の筋が、ぼやけて目立たなくなる
         const float GroundExtent = 3f;
-        const int GroundTextureSide = 512;
+        const int GroundTextureSide = 64;
         const float GroundDarken = 0.85f;
 
-        // 背景：ドームの半径（m）。カメラの遠いほうの面（20m）より内側。ぼかすため、写真は小さくして使う
-        const float BackdropRadius = 8f;
-        const int BackdropTargetWidth = 48;
-        const float BackdropDarken = 0.9f;
+        // 背景：ステージの周りの壁（円筒）の、半径（m）の下限と、高さ（m）。写真は、読み取れる程度の大きさ（BackdropTargetWidth 画素幅）にぼかして貼る。
+        // 壁の周りの長さに合わせて、写真を横に何回か、鏡写しで並べる
+        const float BackdropMinRadius = 2f;
+        const float BackdropHeight = 3.2f;
+        const float BackdropBottom = -1.0f;
+        const int BackdropTargetWidth = 256;
+        const float BackdropDarken = 0.95f;
 
         class Overlay
         {
@@ -167,15 +175,17 @@ namespace DeskStage.Merge
                 var desk = root.Find("Desk");
                 if (desk != null && StagePhotoRegions.DeskQuad != null)
                 {
-                    AddPhoto(desk, "", StagePhotoRegions.DeskQuad, false);
-                    AddGround(root, desk, StagePhotoRegions.DeskQuad);
+                    // 机の絵には、箱の写真を残さない（残ると、立体の箱の下に平らな箱の絵が見えて、二重になる）
+                    var deskPixels = PhotoTextureMath.FillRegions(photoPixels, photoWidth, photoHeight, ObjectRegions());
+                    AddPhoto(desk, "", StagePhotoRegions.DeskQuad, false, deskPixels);
+                    AddGround(root, desk, StagePhotoRegions.DeskQuad, deskPixels);
                 }
                 foreach (var pair in StagePhotoRegions.TopFaces)
                 {
                     var box = root.Find(pair.Key);
                     if (box != null)
                     {
-                        AddPhoto(box, pair.Key, pair.Value, true);
+                        AddPhoto(box, pair.Key, pair.Value, true, photoPixels);
                     }
                 }
             }
@@ -185,7 +195,32 @@ namespace DeskStage.Merge
             AddBackdrop(root);
         }
 
-        void AddPhoto(Transform target, string boxId, Vector2[] quad, bool paintSides)
+        /// <summary>
+        /// 1枚目の写真の中の、物のある場所（写真の割合）。各箱の上面の四隅を囲む長方形を、少し広げ、下へのばしたもの
+        /// （斜めに撮った写真では、上面の下に、物の側面が写っているため）。
+        /// </summary>
+        static List<Rect> ObjectRegions()
+        {
+            var regions = new List<Rect>();
+            foreach (var quad in StagePhotoRegions.TopFaces.Values)
+            {
+                float xMin = 1f, xMax = 0f, yMin = 1f, yMax = 0f;
+                foreach (var p in quad)
+                {
+                    xMin = Mathf.Min(xMin, p.x);
+                    xMax = Mathf.Max(xMax, p.x);
+                    yMin = Mathf.Min(yMin, p.y);
+                    yMax = Mathf.Max(yMax, p.y);
+                }
+                var height = yMax - yMin;
+                regions.Add(Rect.MinMaxRect(
+                    Mathf.Clamp01(xMin - SideMargin), Mathf.Clamp01(yMin - 0.01f),
+                    Mathf.Clamp01(xMax + SideMargin), Mathf.Clamp01(yMax + height * SideExtendRatio + 0.02f)));
+            }
+            return regions;
+        }
+
+        void AddPhoto(Transform target, string boxId, Vector2[] quad, bool paintSides, Color32[] source)
         {
             var scale = target.localScale;
             var ordered = PhotoTextureMath.OrderForFace(quad, scale.x, scale.z, target.localEulerAngles.y);
@@ -196,7 +231,7 @@ namespace DeskStage.Merge
             var outWidth = wide ? MaxTextureSide : Mathf.Max(16, Mathf.RoundToInt(MaxTextureSide * ratio));
             var outHeight = wide ? Mathf.Max(16, Mathf.RoundToInt(MaxTextureSide * ratio)) : MaxTextureSide;
 
-            var pixels = PhotoTextureMath.Crop(photoPixels, photoWidth, photoHeight, ordered, outWidth, outHeight);
+            var pixels = PhotoTextureMath.Crop(source, photoWidth, photoHeight, ordered, outWidth, outHeight);
             var texture = new Texture2D(outWidth, outHeight, TextureFormat.RGB24, true) { wrapMode = TextureWrapMode.Clamp };
             texture.SetPixels32(pixels);
             texture.Apply();
@@ -238,7 +273,7 @@ namespace DeskStage.Merge
         }
 
         /// <summary>机の外側の地面：1枚目の写真を、机の四隅から外へのばして貼った大きな板を、落ちる高さに敷く。</summary>
-        void AddGround(Transform root, Transform desk, Vector2[] deskQuad)
+        void AddGround(Transform root, Transform desk, Vector2[] deskQuad, Color32[] source)
         {
             var scale = desk.localScale;
             var ordered = PhotoTextureMath.OrderForFace(deskQuad, scale.x, scale.z, 0f);
@@ -251,8 +286,12 @@ namespace DeskStage.Merge
             // 机の中心から各方向に GroundExtent 倍：机の左端が u = 0、右端が u = 1 なので、0.5 ± GroundExtent の範囲
             var min = 0.5f - GroundExtent;
             var max = 0.5f + GroundExtent;
-            var pixels = PhotoTextureMath.CropRange(photoPixels, photoWidth, photoHeight, ordered, outWidth, outHeight, min, max, min, max);
-            var texture = new Texture2D(outWidth, outHeight, TextureFormat.RGB24, true) { wrapMode = TextureWrapMode.Clamp };
+            var pixels = PhotoTextureMath.CropRange(source, photoWidth, photoHeight, ordered, outWidth, outHeight, min, max, min, max);
+            var texture = new Texture2D(outWidth, outHeight, TextureFormat.RGB24, false)
+            {
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear, // 小さな絵を、なめらかに引き伸ばす
+            };
             texture.SetPixels32(pixels);
             texture.Apply();
             created.Add(texture);
@@ -269,7 +308,7 @@ namespace DeskStage.Merge
             extras.Add(ground);
         }
 
-        /// <summary>背景：2枚目の写真を、ぼかして、ステージの周りの大きなドームの内側に貼る。</summary>
+        /// <summary>背景：背景専用の写真を、ぼかして、ステージの周りの壁（円筒）の内側に貼る。</summary>
         void AddBackdrop(Transform root)
         {
             if (backdropPixels == null)
@@ -285,18 +324,27 @@ namespace DeskStage.Merge
             texture.Apply();
             created.Add(texture);
 
-            var dome = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            dome.name = BackdropName;
-            RemoveCollider(dome);
-            dome.transform.SetParent(root, false);
-            dome.transform.localPosition = Vector3.zero;
-            dome.transform.localScale = Vector3.one * (BackdropRadius * 2f);
+            // 壁の半径：机が大きいときは、広げる
+            var stage = StageContext.CurrentStage;
+            var deskSize = stage != null && stage.desk != null ? Mathf.Max(stage.desk.width, stage.desk.depth) : 0.6f;
+            var radius = Mathf.Max(BackdropMinRadius, deskSize * 1.2f + 1f);
+
+            // Unity の円筒は、直径 1、高さ 2。半径 radius、高さ BackdropHeight にする
+            var wall = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            wall.name = BackdropName;
+            RemoveCollider(wall);
+            wall.transform.SetParent(root, false);
+            wall.transform.localPosition = new Vector3(0f, BackdropBottom + BackdropHeight / 2f, 0f);
+            wall.transform.localScale = new Vector3(radius * 2f, BackdropHeight / 2f, radius * 2f);
 
             var material = NewMaterial(texture, new Color(BackdropDarken, BackdropDarken, BackdropDarken, 1f));
             material.SetFloat("_Cull", (float)UnityEngine.Rendering.CullMode.Front); // 内側を見せる
-            material.mainTextureScale = new Vector2(2f, 1f);                           // 写真を横に 2 回、鏡写しで並べて 1 周にする
-            dome.GetComponent<Renderer>().sharedMaterial = material;
-            extras.Add(dome);
+            // 写真の縦横の比が、壁の上で保たれるように、周りの長さ ÷ 高さ ÷ 写真の縦横の比 だけ、横に並べる（鏡写し）
+            var photoAspect = backdropHeight > 0 ? (float)backdropWidth / backdropHeight : 1.33f;
+            var repeats = Mathf.Max(1f, Mathf.Round(2f * Mathf.PI * radius / BackdropHeight / photoAspect));
+            material.mainTextureScale = new Vector2(repeats, 1f);
+            wall.GetComponent<Renderer>().sharedMaterial = material;
+            extras.Add(wall);
         }
 
         Material NewMaterial(Texture2D texture, Color color)
