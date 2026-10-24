@@ -142,6 +142,17 @@ namespace DeskStage.Stage
         /// </summary>
         public static Color32[] Crop(Color32[] src, int srcWidth, int srcHeight, Vector2[] corners, int outWidth, int outHeight)
         {
+            return CropRange(src, srcWidth, srcHeight, corners, outWidth, outHeight, 0f, 1f, 0f, 1f);
+        }
+
+        /// <summary>
+        /// Crop の、範囲を指定する版。面の左端が u = 0、右端が u = 1、手前の端が v = 0、奥の端が v = 1。
+        /// u、v を 0〜1 の外にすると、面の外側へ、四隅の作る向きのまま、のばして切り出す（地面に使う）。
+        /// 写真の外は、いちばん外の色で埋める。
+        /// </summary>
+        public static Color32[] CropRange(Color32[] src, int srcWidth, int srcHeight, Vector2[] corners, int outWidth, int outHeight,
+            float uMin, float uMax, float vMin, float vMax)
+        {
             if (corners == null || corners.Length != 4)
             {
                 throw new ArgumentException("四隅は 4 つ必要です", nameof(corners));
@@ -149,13 +160,13 @@ namespace DeskStage.Stage
             var result = new Color32[outWidth * outHeight];
             for (var iy = 0; iy < outHeight; iy++)
             {
-                var v = (iy + 0.5f) / outHeight; // 0 が手前、1 が奥
+                var v = Mathf.Lerp(vMin, vMax, (iy + 0.5f) / outHeight); // 0 が手前、1 が奥
                 for (var ix = 0; ix < outWidth; ix++)
                 {
-                    var u = (ix + 0.5f) / outWidth;
-                    var near = Vector2.Lerp(corners[NearLeft], corners[NearRight], u);
-                    var far = Vector2.Lerp(corners[FarLeft], corners[FarRight], u);
-                    var p = Vector2.Lerp(near, far, v);
+                    var u = Mathf.Lerp(uMin, uMax, (ix + 0.5f) / outWidth);
+                    var near = Vector2.LerpUnclamped(corners[NearLeft], corners[NearRight], u);
+                    var far = Vector2.LerpUnclamped(corners[FarLeft], corners[FarRight], u);
+                    var p = Vector2.LerpUnclamped(near, far, v);
                     result[iy * outWidth + ix] = Sample(src, srcWidth, srcHeight, p);
                 }
             }

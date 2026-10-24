@@ -156,6 +156,34 @@ namespace DeskStage.Stage.Tests
         }
 
         [Test]
+        public void 範囲を外へ広げると机の外側ものびて切り出される()
+        {
+            var src = Gradient(100, 100);
+            // 机は写真の中央（x 0.25〜0.75、y 0.25〜0.75）
+            var desk = new[] { new Vector2(0.25f, 0.25f), new Vector2(0.75f, 0.25f), new Vector2(0.75f, 0.75f), new Vector2(0.25f, 0.75f) };
+            // u、v を -0.5〜1.5 にすると、写真の全体（0〜1）になる
+            var crop = PhotoTextureMath.CropRange(src, 100, 100, desk, 8, 8, -0.5f, 1.5f, -0.5f, 1.5f);
+
+            // 左下の画素は、写真の左下（赤が小さく、緑が大きい）
+            Assert.Less(crop[0].r, 40);
+            Assert.Greater(crop[0].g, 215);
+            // 右上の画素は、写真の右上
+            Assert.Greater(crop[7 * 8 + 7].r, 215);
+            Assert.Less(crop[7 * 8 + 7].g, 40);
+        }
+
+        [Test]
+        public void 写真の外へのびた部分はいちばん外の色で埋まる()
+        {
+            var src = Gradient(100, 100);
+            var all = new[] { new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f) };
+            // 写真の左へ大きくはみ出す
+            var crop = PhotoTextureMath.CropRange(src, 100, 100, all, 8, 8, -3f, 1f, 0f, 1f);
+            // いちばん左の画素は、写真の左端の色（赤がほぼ 0）
+            Assert.Less(crop[0].r, 5);
+        }
+
+        [Test]
         public void 平均の色()
         {
             var avg = PhotoTextureMath.Average(new[] { new Color32(0, 100, 200, 255), new Color32(100, 200, 100, 255) });
