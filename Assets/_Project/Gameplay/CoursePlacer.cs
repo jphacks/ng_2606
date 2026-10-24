@@ -10,7 +10,7 @@ namespace DeskStage.Gameplay
     /// </summary>
     public class CoursePlacer : MonoBehaviour
     {
-        [Tooltip("スマホのカメラ（AR のカメラ）。空なら Camera.main")]
+        [Tooltip("置くときに使うカメラ。空か、隠れているときは Camera.main（A の AR のカメラ）")]
         public Camera placementCamera;
 
         public CourseMarkers courseMarkers;
@@ -34,7 +34,7 @@ namespace DeskStage.Gameplay
         void OnPlaceCourseItem(CourseItem item, Vector2 screenPosition)
         {
             var stage = StageContext.CurrentStage;
-            var cam = placementCamera != null ? placementCamera : Camera.main;
+            var cam = placementCamera != null && placementCamera.isActiveAndEnabled ? placementCamera : Camera.main;
             if (stage == null || cam == null)
             {
                 Debug.LogWarning("[Gameplay] ステージデータかカメラがないので、コースの物を置けません");

@@ -14,6 +14,9 @@ namespace DeskStage.Gameplay
         public CameraRelativeInput cameraRelativeInput;
         public RecordStore recordStore;
 
+        [Tooltip("遊ぶ画面のカメラ（Game_System の PlayCamera）。Play で出し、BackToList で隠す。練習用シーンでは空")]
+        public GameObject playCamera;
+
         readonly GameFlowState flow = new GameFlowState();
 
         public GameState State => flow.State;
@@ -26,6 +29,15 @@ namespace DeskStage.Gameplay
 
         /// <summary>最後に通ったチェックポイントの番号（なければ -1）。Step 14・15 で使う</summary>
         public int LastCheckpoint { get; set; } = -1;
+
+        void Awake()
+        {
+            // スキャン中とたしかめ画面では A の AR のカメラを使うので、遊ぶ画面のカメラは隠しておく
+            if (playCamera != null)
+            {
+                playCamera.SetActive(false);
+            }
+        }
 
         void OnEnable()
         {
@@ -83,6 +95,10 @@ namespace DeskStage.Gameplay
                 Debug.Log($"[Gameplay] {flow.State}（ステージ {(flow.StageReady ? "あり" : "なし")}）では Play できません");
                 return;
             }
+            if (playCamera != null)
+            {
+                playCamera.SetActive(true);
+            }
             SpawnPlayer();
             Prepare();
         }
@@ -118,6 +134,7 @@ namespace DeskStage.Gameplay
             }
             if (viewCamera != null) viewCamera.SetTarget(null);
             if (cameraRelativeInput != null) cameraRelativeInput.SetMotor(null);
+            if (playCamera != null) playCamera.SetActive(false);
         }
 
         // ステージ待ち → 準備：キャラを StageRoot の子に作る
