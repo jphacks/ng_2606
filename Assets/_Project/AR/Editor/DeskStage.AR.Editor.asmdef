@@ -3,6 +3,7 @@
     "rootNamespace": "DeskStage.AR.EditorTools",
     "references": [
         "DeskStage.AR",
+        "DeskStage.Stage",
         "Unity.XR.ARFoundation",
         "Unity.XR.ARSubsystems",
         "Unity.XR.CoreUtils",

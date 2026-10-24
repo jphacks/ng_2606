@@ -10,6 +10,7 @@ namespace DeskStage.AR
     public class PhotoCaptureDebugPanel : MonoBehaviour
     {
         [SerializeField] PhotoCapture capture;
+        [SerializeField] ScanClient client;
 
         string message = "";
 
@@ -68,6 +69,11 @@ namespace DeskStage.AR
                 GUI.Label(new Rect(20, 350, 600, 30), $"最後の写真：明るさ {q.brightness:0.000}、くっきりさ {q.sharpness:0.000000}");
             }
             GUI.Label(new Rect(20, 260, 900, 60), message);
+            if (client != null && client.LastMessage.Length > 0)
+            {
+                GUI.Label(new Rect(20, 380, 900, 60), $"サーバー：{client.LastMessage}");
+            }
+            GUI.Label(new Rect(20, 440, 600, 30), $"箱：{ScanContext.WorkingBoxes.Count} 個");
 
             // カメラの映像（D の撮影画面では RawImage で映す）
             var preview = ScanContext.CameraPreview;
