@@ -30,9 +30,10 @@ namespace DeskStage.Gameplay.Tests
         }
 
         [Test]
-        public void ジャンプの初速は約0_89()
+        public void ジャンプの初速は約1_08()
         {
-            Assert.AreEqual(0.885f, settings.JumpVelocity, 0.005f);
+            // √(2 × 重力 4.9 × 高さ 0.12) ＝ 約 1.084 m/秒
+            Assert.AreEqual(1.084f, settings.JumpVelocity, 0.005f);
         }
 
         [Test]

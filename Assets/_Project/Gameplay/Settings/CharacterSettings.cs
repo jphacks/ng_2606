@@ -37,11 +37,11 @@ namespace DeskStage.Gameplay
         [Tooltip("歩く速さ（m/秒）")]
         [Min(0f)] public float walkSpeed = 0.15f;
 
-        [Tooltip("重力（m/秒²）。速すぎたら下げる")]
-        [Min(0f)] public float gravity = 9.8f;
+        [Tooltip("重力（m/秒²）。速すぎたら下げる。2026-10-24 に 9.8 の半分にした")]
+        [Min(0f)] public float gravity = 4.9f;
 
-        [Tooltip("ジャンプの高さ（m）。変えたら跳べる段の上限と Docs/StepRules.md も直す")]
-        [Min(0f)] public float jumpHeight = 0.04f;
+        [Tooltip("ジャンプの高さ（m）。変えたら跳べる段の上限と Docs/StepRules.md も直す。2026-10-24 に 4cm の 3 倍の 12cm にした")]
+        [Min(0f)] public float jumpHeight = 0.12f;
 
         [Tooltip("着地の前に押したジャンプを覚えておく時間（秒）")]
         [Min(0f)] public float jumpBufferTime = 0.1f;
@@ -50,7 +50,7 @@ namespace DeskStage.Gameplay
         [Min(0f)] public float coyoteTime = 0.1f;
 
         [Tooltip("落下の速さの上限（m/秒）")]
-        [Min(0f)] public float maxFallSpeed = 1f;
+        [Min(0f)] public float maxFallSpeed = 0.5f;
 
         [Tooltip("向きを変える速さ（度/秒）")]
         [Min(0f)] public float turnSpeed = 720f;
