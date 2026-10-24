@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace DeskStage.Shared
@@ -108,6 +109,22 @@ namespace DeskStage.Shared
 
         /// <summary>端末の発熱状態が変わった（A → D）。</summary>
         public static event Action<ThermalState> ThermalStateChanged;
+
+        static readonly List<StageSummary> s_stageList = new List<StageSummary>();
+
+        /// <summary>端末に保存してあるステージの一覧（新しい順）。書くのは B、表示するのは D。</summary>
+        public static IReadOnlyList<StageSummary> StageList => s_stageList;
+
+        /// <summary>ステージ一覧が変わった（B → D）。起動したとき、保存したとき、消したとき。</summary>
+        public static event Action StageListChanged;
+
+        /// <summary>ステージ一覧を書き換えて、StageListChanged を出す（B が呼ぶ）。</summary>
+        public static void SetStageList(IEnumerable<StageSummary> list)
+        {
+            s_stageList.Clear();
+            s_stageList.AddRange(list);
+            StageListChanged?.Invoke();
+        }
 
         public static void RaiseStageLoaded(StageData stage)
         {

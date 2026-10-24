@@ -32,6 +32,10 @@ namespace DeskStage.Shared
         public static event Action BackToList;
         public static void RequestBackToList() => BackToList?.Invoke();
 
+        /// <summary>ステージを消す（→ B）。ステージID。D は「ほんとうに けす？」と確かめてから出す。</summary>
+        public static event Action<string> DeleteStage;
+        public static void RequestDeleteStage(string stageId) => DeleteStage?.Invoke(stageId);
+
         // --- スキャン（→ A、B） ---
 
         /// <summary>スキャンをはじめる（→ A）。</summary>
