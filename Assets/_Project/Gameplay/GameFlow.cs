@@ -12,6 +12,7 @@ namespace DeskStage.Gameplay
         public GameObject playerPrefab;
         public ViewCamera viewCamera;
         public CameraRelativeInput cameraRelativeInput;
+        public RecordStore recordStore;
 
         readonly GameFlowState flow = new GameFlowState();
 
@@ -64,8 +65,10 @@ namespace DeskStage.Gameplay
                 return;
             }
             Motor.Paused = true;
-            // 最速記録との比べは Step 16 の RecordStore で行う
-            GameEvents.RaiseGoal(ElapsedSeconds, false);
+            // ステージごとの最速記録と比べ、速ければ更新する（Step 16）
+            string stageId = StageContext.CurrentStage != null ? StageContext.CurrentStage.id : "";
+            bool isBest = recordStore != null && recordStore.Submit(stageId, ElapsedSeconds);
+            GameEvents.RaiseGoal(ElapsedSeconds, isBest);
         }
 
         void OnStageBuilt()

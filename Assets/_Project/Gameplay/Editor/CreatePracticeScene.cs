@@ -93,6 +93,8 @@ namespace DeskStage.Gameplay.EditorTools
             gameFlow.playerPrefab = playerPrefab;
             gameFlow.viewCamera = viewCamera;
             gameFlow.cameraRelativeInput = relative;
+            // ステージごとの最速記録（Step 16）
+            gameFlow.recordStore = gameFlow.gameObject.AddComponent<RecordStore>();
             // スタート・ゴール・チェックポイント（Step 14）：「ステージかんせい」で目印が出て、触れると反応する
             var markers = gameFlow.gameObject.AddComponent<CourseMarkers>();
             markers.gameFlow = gameFlow;
