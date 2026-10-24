@@ -78,6 +78,14 @@ namespace DeskStage.Gameplay.EditorTools
             var player = (GameObject)PrefabUtility.InstantiatePrefab(playerPrefab, stageRoot);
             player.transform.localPosition = new Vector3(0f, 0.001f, -0.25f);
 
+            // 瞬間移動の確かめ（Step 5）：ボタンで 6cm の箱の上へ移す
+            var target = new GameObject("TeleportTarget").transform;
+            target.SetParent(stageRoot, false);
+            target.localPosition = new Vector3(-0.04f, 0.061f, 0f);
+            var button = new GameObject("TeleportTestButton").AddComponent<TeleportTestButton>();
+            button.motor = player.GetComponent<CharacterMotor>();
+            button.target = target;
+
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log($"[Gameplay] {ScenePath} を作りました");
         }

@@ -44,6 +44,13 @@ namespace DeskStage.Gameplay
 
         public void RecordJumpPressed(float time) => lastJumpPressedTime = time;
 
+        /// <summary>覚えている時刻を消す。瞬間移動の後に、前の場所の入力で跳ばないように</summary>
+        public void Reset()
+        {
+            lastGroundedTime = float.NegativeInfinity;
+            lastJumpPressedTime = float.NegativeInfinity;
+        }
+
         /// <summary>ジャンプしてよければ true を返し、2つの時刻を古い値に戻す（同じ入力で2回跳ばないように）。</summary>
         public bool TryConsume(float now, float bufferTime, float coyoteTime)
         {
@@ -51,8 +58,7 @@ namespace DeskStage.Gameplay
             {
                 return false;
             }
-            lastGroundedTime = float.NegativeInfinity;
-            lastJumpPressedTime = float.NegativeInfinity;
+            Reset();
             return true;
         }
     }

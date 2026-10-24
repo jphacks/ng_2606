@@ -82,6 +82,17 @@ namespace DeskStage.Gameplay.Tests
         }
 
         [Test]
+        public void Resetの後は前の入力で跳ばない()
+        {
+            var timer = new JumpTimer();
+            timer.RecordGrounded(1f);
+            timer.RecordJumpPressed(1f);
+            timer.Reset();
+            timer.RecordGrounded(1.02f);
+            Assert.IsFalse(timer.TryConsume(1.02f, 0.1f, 0.1f));
+        }
+
+        [Test]
         public void 落ちて0_1秒を過ぎると跳べない()
         {
             var timer = new JumpTimer();
