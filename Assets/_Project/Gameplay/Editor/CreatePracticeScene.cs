@@ -103,6 +103,11 @@ namespace DeskStage.Gameplay.EditorTools
             var guard = gameFlow.gameObject.AddComponent<SafetyGuard>();
             guard.gameFlow = gameFlow;
             guard.settings = viewCamera.settings;
+            // コースの配置（Step 12）：1・2・3 を押しながら左クリックで、スタート・ゴール・チェックポイントを置く
+            var placer = gameFlow.gameObject.AddComponent<CoursePlacer>();
+            placer.placementCamera = camera;
+            placer.courseMarkers = markers;
+            gameFlow.gameObject.AddComponent<PlacementDebugInput>();
             var panel = gameFlow.gameObject.AddComponent<GameFlowDebugPanel>();
             panel.gameFlow = gameFlow;
             panel.practiceRoot = stageRoot;
