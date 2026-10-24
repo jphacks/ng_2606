@@ -92,6 +92,11 @@ namespace DeskStage.Gameplay.EditorTools
             viewCamera.target = player.transform;
             camera.gameObject.AddComponent<ViewDebugInput>();
 
+            // カメラ基準の向き（Step 7）：スティックの上が画面の奥になる
+            var relative = camera.gameObject.AddComponent<CameraRelativeInput>();
+            relative.motor = player.GetComponent<CharacterMotor>();
+            relative.viewCamera = camera.transform;
+
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log($"[Gameplay] {ScenePath} を作りました");
         }
