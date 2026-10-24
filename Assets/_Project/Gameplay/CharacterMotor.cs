@@ -30,6 +30,25 @@ namespace DeskStage.Gameplay
         readonly JumpTimer jumpTimer = new JumpTimer();
         float verticalSpeed;
 
+        // テスト用の入力（Step 8 の PlayMode テスト）。使っている間は DeskStageControls を読まない
+        bool useTestInput;
+        Vector2 testMove;
+        bool testJump;
+
+        /// <summary>テストから、スティックの値を入れる。</summary>
+        public void SetTestInput(Vector2 move)
+        {
+            useTestInput = true;
+            testMove = move;
+        }
+
+        /// <summary>テストから、ジャンプを1回押す。</summary>
+        public void PressJumpForTest()
+        {
+            useTestInput = true;
+            testJump = true;
+        }
+
         void Awake()
         {
             controller = GetComponent<CharacterController>();
@@ -68,7 +87,9 @@ namespace DeskStage.Gameplay
             float now = Time.time;
 
             // 1・2：入力と水平の速さ
-            Vector2 stick = controls.Player.Move.ReadValue<Vector2>();
+            Vector2 stick = useTestInput ? testMove : controls.Player.Move.ReadValue<Vector2>();
+            bool jumpPressed = useTestInput ? testJump : controls.Player.Jump.WasPressedThisFrame();
+            testJump = false;
             Vector3 direction = DirectionProvider != null ? DirectionProvider(stick) : new Vector3(stick.x, 0f, stick.y);
             Vector3 horizontal = MotorMath.HorizontalVelocity(direction, settings.walkSpeed);
 
@@ -81,7 +102,7 @@ namespace DeskStage.Gameplay
             {
                 jumpTimer.RecordGrounded(now);
             }
-            if (controls.Player.Jump.WasPressedThisFrame())
+            if (jumpPressed)
             {
                 jumpTimer.RecordJumpPressed(now);
             }
@@ -95,7 +116,10 @@ namespace DeskStage.Gameplay
             // 6：重力
             verticalSpeed = MotorMath.ApplyGravity(verticalSpeed, settings.gravity, settings.maxFallSpeed, dt);
 
-            // 7：水平と上下を合わせて1回だけ動かす
+            // 7：水平と上下を合わせて1回だけ動かす。
+            // 段差を自動で登る機能（Step Offset）は地面にいるときだけ使う。空中でも働くと、
+            // ジャンプの頂点（5cm）に 0.8cm が足されて、壁のはずの 5cm の箱に乗れてしまう（Step 8）
+            controller.stepOffset = grounded ? settings.stepOffset : 0f;
             controller.Move((horizontal + Vector3.up * verticalSpeed) * dt);
 
             // 8：動いているときは進む方向へなめらかに向く

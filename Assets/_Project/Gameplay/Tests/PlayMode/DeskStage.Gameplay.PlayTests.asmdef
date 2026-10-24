@@ -1,0 +1,23 @@
+{
+    "name": "DeskStage.Gameplay.PlayTests",
+    "rootNamespace": "DeskStage.Gameplay.PlayTests",
+    "references": [
+        "DeskStage.Gameplay",
+        "DeskStage.Shared",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

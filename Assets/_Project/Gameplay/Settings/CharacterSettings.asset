@@ -21,7 +21,7 @@ MonoBehaviour:
   minMoveDistance: 0
   walkSpeed: 0.15
   gravity: 9.8
-  jumpHeight: 0.05
+  jumpHeight: 0.04
   jumpBufferTime: 0.1
   coyoteTime: 0.1
   maxFallSpeed: 1

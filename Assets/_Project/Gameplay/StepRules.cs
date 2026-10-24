@@ -24,7 +24,7 @@ namespace DeskStage.Gameplay
         /// <summary>歩ける段の上限の初期値（m）。Step Offset と同じ 0.8cm</summary>
         public const float DefaultWalkMax = 0.008f;
 
-        /// <summary>跳べる段の上限の初期値（m）。ジャンプの高さ 5cm − 足の余裕 0.5cm</summary>
+        /// <summary>跳べる段の上限の初期値（m）。ジャンプの高さ 4cm ＋ 丸い足元で乗り上げる分 約0.5cm（Step 8 で測定）</summary>
         public const float DefaultJumpMax = 0.045f;
 
         /// <summary>箱の高さの下限（m）。B の箱づくりと同じ</summary>

@@ -10,14 +10,14 @@
 
 ## 進み具合
 
-- ☐ Step 1：箱の高さの決まり（P0）
+- ☑ Step 1：箱の高さの決まり（P0）
 - ☑ Step 2：キャラの設定アセット（P0）
 - ☑ Step 3：練習用シーン（P0）
 - ☑ Step 4：キャラの移動（CharacterMotor）（P0〜M1）
 - ☑ Step 5：瞬間移動（P0〜M1）
 - ☑ Step 6：視点のカメラ（ViewCamera）（M1）
 - ☑ Step 7：カメラ基準の向き（CameraRelativeInput）（M1）
-- ☐ Step 8：小さな世界での物理の確かめ（M1）
+- ☑ Step 8：小さな世界での物理の確かめ（M1）
 - ☐ Step 9：たかさものさしの案（M2）
 - ☐ Step 10：箱の地形での確かめと報告（M2）
 - ☐ Step 11：ゲームの進行（GameFlow）（M3）
