@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &798687103
+--- !u!1 &38441738
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,9 +127,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 798687106}
-  - component: {fileID: 798687105}
-  - component: {fileID: 798687104}
+  - component: {fileID: 38441741}
+  - component: {fileID: 38441740}
+  - component: {fileID: 38441739}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -137,21 +137,21 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &798687104
+--- !u!81 &38441739
 AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 798687103}
+  m_GameObject: {fileID: 38441738}
   m_Enabled: 1
---- !u!20 &798687105
+--- !u!20 &38441740
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 798687103}
+  m_GameObject: {fileID: 38441738}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
@@ -196,13 +196,13 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &798687106
+--- !u!4 &38441741
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 798687103}
+  m_GameObject: {fileID: 38441738}
   serializedVersion: 2
   m_LocalRotation: {x: 0.2981676, y: 0, z: 0, w: 0.95451355}
   m_LocalPosition: {x: 0, y: 0.45, z: -0.65}
@@ -211,7 +211,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &924692038
+--- !u!1 &1118630512
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -219,9 +219,128 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 924692041}
-  - component: {fileID: 924692040}
-  - component: {fileID: 924692039}
+  - component: {fileID: 1118630519}
+  - component: {fileID: 1118630518}
+  - component: {fileID: 1118630517}
+  - component: {fileID: 1118630516}
+  - component: {fileID: 1118630515}
+  - component: {fileID: 1118630514}
+  - component: {fileID: 1118630513}
+  m_Layer: 0
+  m_Name: Stage_System
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1118630513
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1118630512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2477e964839079045a7adcb20ff27c76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DeskStage.Stage::DeskStage.Stage.StageLibraryDebugPanel
+--- !u!114 &1118630514
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1118630512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 632cfe0da70ae3b498a62b864c32700a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DeskStage.Stage::DeskStage.Stage.StageLibrary
+  builder: {fileID: 1118630518}
+--- !u!114 &1118630515
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1118630512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99db635f840754049ba49c72446449d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DeskStage.Stage::DeskStage.Stage.AnswerFileButton
+  builder: {fileID: 1118630518}
+  answerFile: answer-photo-01.json
+--- !u!114 &1118630516
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1118630512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1235a380ee670b649bafebfb8566cf50, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DeskStage.Stage::DeskStage.Stage.StageReader
+  settings: {fileID: 11400000, guid: 717bed95140ad5c4b911aed6f527c948, type: 2}
+--- !u!114 &1118630517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1118630512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70ead02a85482e34aa4c27c3c17209d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DeskStage.Stage::DeskStage.Stage.SampleStageButton
+  builder: {fileID: 1118630518}
+  stageId: sample-01
+--- !u!114 &1118630518
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1118630512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e51bf532f6f8da47ab16b62bea90550, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DeskStage.Stage::DeskStage.Stage.StageBuilder
+  settings: {fileID: 11400000, guid: 717bed95140ad5c4b911aed6f527c948, type: 2}
+  deskMaterial: {fileID: 0}
+  boxMaterial: {fileID: 0}
+  followWorkingBoxes: 0
+--- !u!4 &1118630519
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1118630512}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1332806501
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1332806504}
+  - component: {fileID: 1332806503}
+  - component: {fileID: 1332806502}
   m_Layer: 0
   m_Name: Directional Light
   m_TagString: Untagged
@@ -229,13 +348,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &924692039
+--- !u!114 &1332806502
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 924692038}
+  m_GameObject: {fileID: 1332806501}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
@@ -258,13 +377,13 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
---- !u!108 &924692040
+--- !u!108 &1332806503
 Light:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 924692038}
+  m_GameObject: {fileID: 1332806501}
   m_Enabled: 1
   serializedVersion: 13
   m_Type: 1
@@ -323,13 +442,13 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
---- !u!4 &924692041
+--- !u!4 &1332806504
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 924692038}
+  m_GameObject: {fileID: 1332806501}
   serializedVersion: 2
   m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
   m_LocalPosition: {x: 0, y: 3, z: 0}
@@ -338,101 +457,10 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
---- !u!1 &1381577686
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1381577691}
-  - component: {fileID: 1381577690}
-  - component: {fileID: 1381577689}
-  - component: {fileID: 1381577688}
-  - component: {fileID: 1381577687}
-  m_Layer: 0
-  m_Name: Stage_System
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1381577687
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1381577686}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 99db635f840754049ba49c72446449d0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: DeskStage.Stage::DeskStage.Stage.AnswerFileButton
-  builder: {fileID: 1381577690}
-  answerFile: answer-photo-01.json
---- !u!114 &1381577688
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1381577686}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1235a380ee670b649bafebfb8566cf50, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: DeskStage.Stage::DeskStage.Stage.StageReader
-  settings: {fileID: 11400000, guid: 717bed95140ad5c4b911aed6f527c948, type: 2}
---- !u!114 &1381577689
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1381577686}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 70ead02a85482e34aa4c27c3c17209d3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: DeskStage.Stage::DeskStage.Stage.SampleStageButton
-  builder: {fileID: 1381577690}
-  stageId: sample-01
---- !u!114 &1381577690
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1381577686}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1e51bf532f6f8da47ab16b62bea90550, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: DeskStage.Stage::DeskStage.Stage.StageBuilder
-  settings: {fileID: 11400000, guid: 717bed95140ad5c4b911aed6f527c948, type: 2}
-  deskMaterial: {fileID: 0}
-  boxMaterial: {fileID: 0}
---- !u!4 &1381577691
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1381577686}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 798687106}
-  - {fileID: 924692041}
-  - {fileID: 1381577691}
+  - {fileID: 38441741}
+  - {fileID: 1332806504}
+  - {fileID: 1118630519}

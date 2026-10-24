@@ -21,8 +21,8 @@
 - ☐ Step 7：答えから箱を作る（StageReader）（M1〜M2）… 途中：テストと Test_B（本物の答えから箱3つ）は確認した。実機で撮った写真からの確認がまだ
 - ☐ Step 8：もういちど撮る（M2）… 途中：箱とコースの物を消す処理とテストはできた
 - ☐ Step 9：読み取りの補助（BoxAssist）（M2）
-- ☐ Step 10：ステージ一覧と読み込み（StageCatalog、StageLoader）（M2）
-- ☐ Step 11：ステージの保存（StageSaver）（M2）
+- ☐ Step 10：ステージ一覧と読み込み（StageLibrary、StageStorage）（M2）… 途中：テストと Test_B（一覧・選ぶ・けす）は確認した。実機の確認がまだ
+- ☑ Step 11：ステージの保存（StageLibrary、StageStorage）（M2）… PC で、保存して再生し直しても一覧に残り、選ぶと組み立てられた
 - ☐ Step 12：読み取りの正しさを測る（M2）
 - ☐ Step 13：引っかかり・すり抜けを直す（M2〜M4）
 - ☐ Step 14：Stage_System プレハブと合流（M3）
