@@ -97,6 +97,38 @@ namespace DeskStage.Stage.Tests
         }
 
         [Test]
+        public void 回転が90度違う箱どうしもくっつく()
+        {
+            // 左：前後に長い箱を RectFit の形（幅＝長い辺、90度）で表したもの。X は -0.1〜0、Z は -0.15〜0.15
+            var left = new BoxData { id = "box-01", center = new[] { -0.05f, 0.01f, 0f }, size = new[] { 0.30f, 0.02f, 0.10f }, yawDegrees = 90f };
+            // 右：1cm あけて、左右に長い高い箱（0度）。X は 0.01〜0.21、Z は -0.05〜0.05
+            var right = Box("box-02", 0.01f, 0.21f, -0.05f, 0.05f, 0.14f);
+
+            var result = BoxRefiner.Refine(new[] { left, right }, HeightMerge, GapClose);
+
+            // 左の箱（低い方）が右へ 1cm 広がる。90度回っているので、広がるのはローカルの奥行き（size[2]）
+            Assert.That(result[0].size[2], Is.EqualTo(0.11f).Within(Tolerance));
+            Assert.That(result[0].size[0], Is.EqualTo(0.30f).Within(Tolerance));
+            Assert.That(result[0].center[0], Is.EqualTo(-0.045f).Within(Tolerance));
+            Assert.That(XMin(result[1]), Is.EqualTo(0.01f).Within(Tolerance), "高い方の箱はそのまま");
+        }
+
+        [Test]
+        public void 回転が90度違う箱どうしで高い方が90度のときも広がる()
+        {
+            var low = Box("box-01", -0.1f, 0f, -0.05f, 0.05f, 0.02f);
+            // 右：1cm あけて、前後に長い高い箱（90度）。X は 0.01〜0.11、Z は -0.15〜0.15
+            var high = new BoxData { id = "box-02", center = new[] { 0.06f, 0.07f, 0f }, size = new[] { 0.30f, 0.14f, 0.10f }, yawDegrees = 90f };
+
+            var result = BoxRefiner.Refine(new[] { high, low }, HeightMerge, GapClose);
+
+            // a（先の箱）が 90度の箱なので、低い箱は a から見て入れかわった向き。広がるのは低い箱の幅（size[0]）
+            Assert.That(XMax(result[1]), Is.EqualTo(0.01f).Within(Tolerance));
+            Assert.That(XMin(result[1]), Is.EqualTo(-0.1f).Within(Tolerance));
+            Assert.That(result[1].size[2], Is.EqualTo(0.1f).Within(Tolerance));
+        }
+
+        [Test]
         public void すき間2cmの箱はくっつけない()
         {
             var boxes = new[] { Box("box-01", -0.1f, 0f, -0.05f, 0.05f, 0.02f), Box("box-02", 0.02f, 0.12f, -0.05f, 0.05f, 0.14f) };

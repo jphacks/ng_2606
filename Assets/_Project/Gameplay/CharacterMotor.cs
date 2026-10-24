@@ -1,4 +1,5 @@
 using System;
+using DeskStage.Shared;
 using UnityEngine;
 
 namespace DeskStage.Gameplay
@@ -21,8 +22,11 @@ namespace DeskStage.Gameplay
         /// </summary>
         public Func<Vector2, Vector3> DirectionProvider { get; set; }
 
+        /// <summary>瞬間移動したとき。視点のカメラがキャラの背中側に回り直す</summary>
+        public event Action Teleported;
+
         CharacterController controller;
-        TemporaryControls controls;
+        DeskStageControls controls;
         readonly JumpTimer jumpTimer = new JumpTimer();
         float verticalSpeed;
 
@@ -30,12 +34,12 @@ namespace DeskStage.Gameplay
         {
             controller = GetComponent<CharacterController>();
             settings.ApplyTo(controller);
-            controls = new TemporaryControls();
+            controls = new DeskStageControls();
         }
 
-        void OnEnable() => controls.Enable();
+        void OnEnable() => controls.Player.Enable();
 
-        void OnDisable() => controls.Disable();
+        void OnDisable() => controls.Player.Disable();
 
         void OnDestroy() => controls.Dispose();
 
@@ -50,6 +54,7 @@ namespace DeskStage.Gameplay
             controller.enabled = true;
             verticalSpeed = 0f;
             jumpTimer.Reset();
+            Teleported?.Invoke();
         }
 
         void Update()
@@ -63,7 +68,7 @@ namespace DeskStage.Gameplay
             float now = Time.time;
 
             // 1・2：入力と水平の速さ
-            Vector2 stick = controls.Move.ReadValue<Vector2>();
+            Vector2 stick = controls.Player.Move.ReadValue<Vector2>();
             Vector3 direction = DirectionProvider != null ? DirectionProvider(stick) : new Vector3(stick.x, 0f, stick.y);
             Vector3 horizontal = MotorMath.HorizontalVelocity(direction, settings.walkSpeed);
 
@@ -76,7 +81,7 @@ namespace DeskStage.Gameplay
             {
                 jumpTimer.RecordGrounded(now);
             }
-            if (controls.Jump.WasPressedThisFrame())
+            if (controls.Player.Jump.WasPressedThisFrame())
             {
                 jumpTimer.RecordJumpPressed(now);
             }
