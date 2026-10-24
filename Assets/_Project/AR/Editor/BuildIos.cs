@@ -35,6 +35,15 @@ namespace DeskStage.AR.EditorTools
                 return;
             }
 
+            // 無いと libUnityARKit.a が組み込まれず、実機で AR が起動しない（ArkitBuildSetup 参照）
+            if (!ArkitBuildSetup.HasLoaderDefine())
+            {
+                Debug.LogError("[Build] " + ArkitBuildSetup.LoaderDefine
+                    + " が iOS のスクリプトシンボルにありません。先にメニュー「DeskStage/A/2. ARKit のビルド設定をそろえる」を実行してください");
+                Finish(1);
+                return;
+            }
+
             Directory.CreateDirectory(OutputPath);
 
             var options = new BuildPlayerOptions
