@@ -1,0 +1,13 @@
+<linker>
+  <!--
+    実機のビルドで、使われていないとみなされた当たり判定の型が削られ、
+    GameObject.CreatePrimitive(Cylinder) が「Can't add component because class 'CapsuleCollider' doesn't exist!」
+    を出していた（C の CourseMarkers のゴールの旗と円盤）。実行時に作る物が使う型を、削らないようにする。
+  -->
+  <assembly fullname="UnityEngine.PhysicsModule">
+    <type fullname="UnityEngine.CapsuleCollider" preserve="all"/>
+    <type fullname="UnityEngine.SphereCollider" preserve="all"/>
+    <type fullname="UnityEngine.BoxCollider" preserve="all"/>
+    <type fullname="UnityEngine.MeshCollider" preserve="all"/>
+  </assembly>
+</linker>
