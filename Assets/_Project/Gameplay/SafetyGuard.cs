@@ -13,8 +13,14 @@ namespace DeskStage.Gameplay
         public GameFlow gameFlow;
         public CharacterSettings settings;
 
+        [Tooltip("落ちたと判定してから、さらに落ち続けて見せる時間（秒）。この後で戻す")]
+        public float fallRespawnDelay = 1f;
+
         [Tooltip("落ちて戻った直後に、入力を受け付けない時間（秒）")]
-        public float inputLockAfterFall = 0.5f;
+        public float inputLockAfterFall = 1f;
+
+        // 落ちたと判定した時刻（落ちていなければ null）
+        float? fallingSince;
 
         [Tooltip("スティックを倒しているのに、この時間ほとんど動けなければ はさまったとみなす（秒）")]
         public float stuckSeconds = 3f;
@@ -29,12 +35,18 @@ namespace DeskStage.Gameplay
 
         void OnEnable()
         {
-            GameEvents.GameStarted += stuck.Reset;
+            GameEvents.GameStarted += ResetState;
         }
 
         void OnDisable()
         {
-            GameEvents.GameStarted -= stuck.Reset;
+            GameEvents.GameStarted -= ResetState;
+        }
+
+        void ResetState()
+        {
+            stuck.Reset();
+            fallingSince = null;
         }
 
         void Update()
@@ -51,13 +63,20 @@ namespace DeskStage.Gameplay
             float localFeetY = root != null ? root.InverseTransformPoint(feet).y : feet.y;
             float fallDepth = StageContext.CurrentStage != null ? StageContext.CurrentStage.fallDepth : 0.10f;
 
-            // 1：落下。足元が「0 − fallDepth」より下になったら戻す
-            if (SafetyMath.HasFallen(localFeetY, fallDepth))
+            // 1：落下。足元が「0 − fallDepth」より下になったら Fell を出し、少し落ち続けて見せてから戻す
+            if (fallingSince == null && SafetyMath.HasFallen(localFeetY, fallDepth))
             {
+                fallingSince = Time.time;
                 GameEvents.RaiseFell();
-                gameFlow.RespawnAtLastCheckpoint();
-                motor.LockInput(inputLockAfterFall);
-                stuck.Reset();
+            }
+            if (fallingSince != null)
+            {
+                if (Time.time - fallingSince.Value >= fallRespawnDelay)
+                {
+                    gameFlow.RespawnAtLastCheckpoint();
+                    motor.LockInput(inputLockAfterFall);
+                    ResetState();
+                }
                 return;
             }
 
