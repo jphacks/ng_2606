@@ -82,10 +82,15 @@ namespace DeskStage.Gameplay
             for (int i = 0; i < stage.checkpoints.Length; i++)
             {
                 var cp = stage.checkpoints[i];
-                if (!passed.Contains(i) && CourseMath.IsTouching(body, Vec3.To(cp.position), cp.radius, settings.radius))
+                if (!CourseMath.IsTouching(body, Vec3.To(cp.position), cp.radius, settings.radius))
                 {
-                    passed.Add(i);
-                    gameFlow.LastCheckpoint = i;
+                    continue;
+                }
+                // 戻り先は「最後に踏んだ」チェックポイント。一度通った所を踏み直しても更新する
+                gameFlow.LastCheckpoint = i;
+                // 通過の知らせは、初めて触れたときだけ
+                if (passed.Add(i))
+                {
                     GameEvents.RaiseCheckpointPassed(i);
                 }
             }

@@ -75,6 +75,10 @@ namespace DeskStage.Gameplay.EditorTools
             CreateGapPair(stageRoot, "Gap1cm", -0.15f, 0.01f);
             CreateGapPair(stageRoot, "Gap2cm", 0.12f, 0.02f);
 
+            // はさまりの確かめ（Step 15）：高さ8cmの壁2枚でできた角（右の真ん中）。角に向かって押し込むと動けなくなる
+            CreateBox(stageRoot, "Corner_Back", new Vector3(0.25f, 0.04f, 0.005f), new Vector3(0.1f, 0.08f, 0.01f));
+            CreateBox(stageRoot, "Corner_Left", new Vector3(0.195f, 0.04f, -0.05f), new Vector3(0.01f, 0.08f, 0.1f));
+
             // 視点のカメラ（Step 6）：キャラを追う。マウスの右ドラッグで回り、Q・E で近づく・離れる
             var viewCamera = camera.gameObject.AddComponent<ViewCamera>();
             viewCamera.settings = AssetDatabase.LoadAssetAtPath<CharacterSettings>(CreateCharacterSettings.AssetPath);
@@ -93,6 +97,10 @@ namespace DeskStage.Gameplay.EditorTools
             var markers = gameFlow.gameObject.AddComponent<CourseMarkers>();
             markers.gameFlow = gameFlow;
             markers.settings = viewCamera.settings;
+            // 落下とはさまりからの復帰（Step 15）
+            var guard = gameFlow.gameObject.AddComponent<SafetyGuard>();
+            guard.gameFlow = gameFlow;
+            guard.settings = viewCamera.settings;
             var panel = gameFlow.gameObject.AddComponent<GameFlowDebugPanel>();
             panel.gameFlow = gameFlow;
             panel.practiceRoot = stageRoot;

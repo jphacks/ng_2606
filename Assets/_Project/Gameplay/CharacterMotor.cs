@@ -25,10 +25,27 @@ namespace DeskStage.Gameplay
         /// <summary>瞬間移動したとき。視点のカメラがキャラの背中側に回り直す</summary>
         public event Action Teleported;
 
+        /// <summary>このフレームのスティックの値（Step 15 のはさまりの判定で使う）</summary>
+        public Vector2 Stick { get; private set; }
+
+        /// <summary>このフレームに進もうとした水平の向き（長さ1。止まっていればゼロ）</summary>
+        public Vector3 MoveDirection { get; private set; }
+
+        /// <summary>地面に立っているか</summary>
+        public bool IsGrounded => controller != null && controller.isGrounded;
+
         CharacterController controller;
         DeskStageControls controls;
         readonly JumpTimer jumpTimer = new JumpTimer();
         float verticalSpeed;
+        // この時刻までは入力を受け付けない（落ちて戻った直後など）
+        float inputLockedUntil = float.NegativeInfinity;
+
+        /// <summary>しばらく入力を受け付けない（Step 15：落ちて戻った直後の 0.5 秒）。重力は働く。</summary>
+        public void LockInput(float seconds)
+        {
+            inputLockedUntil = Time.time + seconds;
+        }
 
         // テスト用の入力（Step 8 の PlayMode テスト）。使っている間は DeskStageControls を読まない
         bool useTestInput;
@@ -90,8 +107,15 @@ namespace DeskStage.Gameplay
             Vector2 stick = useTestInput ? testMove : controls.Player.Move.ReadValue<Vector2>();
             bool jumpPressed = useTestInput ? testJump : controls.Player.Jump.WasPressedThisFrame();
             testJump = false;
+            if (now < inputLockedUntil)
+            {
+                stick = Vector2.zero;
+                jumpPressed = false;
+            }
+            Stick = stick;
             Vector3 direction = DirectionProvider != null ? DirectionProvider(stick) : new Vector3(stick.x, 0f, stick.y);
             Vector3 horizontal = MotorMath.HorizontalVelocity(direction, settings.walkSpeed);
+            MoveDirection = horizontal.sqrMagnitude > 1e-10f ? horizontal.normalized : Vector3.zero;
 
             // 3：接地中は小さな下向きの値に戻す
             bool grounded = controller.isGrounded;
