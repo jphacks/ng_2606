@@ -46,6 +46,48 @@ namespace DeskStage.UI
             Debug.Log("DEV スキャン状態: " + step.status + " / " + step.reason + (step.deskFound ? "（机の面が見つかった）" : ""));
         }
 
+        GameObject sampleBoxes;
+
+        /// <summary>
+        /// 仮の机と箱を置く・片付ける（Step 6：デバッグ表示の箱のタップと枠の表示を確かめるため）。
+        /// 本当の箱は B の StageBuilder が作る。
+        /// </summary>
+        public void ToggleSampleBoxes()
+        {
+            if (sampleBoxes != null)
+            {
+                Destroy(sampleBoxes);
+                ScanContext.WorkingBoxes.Clear();
+                return;
+            }
+            sampleBoxes = new GameObject("DEV_SampleBoxes");
+            sampleBoxes.AddComponent<DevMarker>();
+            AddSampleBox("desk", new Vector3(0f, -0.005f, 0f), new Vector3(0.8f, 0.01f, 0.5f), null);
+            AddSampleBox("box-01", new Vector3(-0.2f, 0.03f, 0f), new Vector3(0.12f, 0.06f, 0.12f), BoxData.SourceAuto);
+            AddSampleBox("box-02", new Vector3(0f, 0.04f, 0.05f), new Vector3(0.1f, 0.08f, 0.15f), BoxData.SourceAuto);
+            AddSampleBox("box-03", new Vector3(0.2f, 0.015f, -0.05f), new Vector3(0.15f, 0.03f, 0.1f), BoxData.SourceManual);
+        }
+
+        void AddSampleBox(string id, Vector3 center, Vector3 size, string source)
+        {
+            var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            box.name = id;
+            box.layer = Layers.Terrain;
+            box.transform.SetParent(sampleBoxes.transform, false);
+            box.transform.localPosition = center;
+            box.transform.localScale = size;
+            if (source != null)
+            {
+                ScanContext.WorkingBoxes.Add(new BoxData
+                {
+                    id = id,
+                    center = new[] { center.x, center.y, center.z },
+                    size = new[] { size.x, size.y, size.z },
+                    source = source,
+                });
+            }
+        }
+
         public void RaiseDeskDecided() => StageContext.RaiseDeskDecided();
 
         public void RaiseStageBuilt() => StageContext.RaiseStageBuilt();

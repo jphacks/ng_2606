@@ -13,7 +13,7 @@ namespace DeskStage.UI.Editor
     public static class SetupAssets
     {
         public const string FontFolder = "Assets/_Project/UI/Fonts";
-        const string FontSourcePath = FontFolder + "/NotoSansJP-Regular.otf";
+        public const string FontSourcePath = FontFolder + "/NotoSansJP-Regular.otf";
         const string FontAssetPath = FontFolder + "/NotoSansJP-Regular SDF.asset";
 
         const string InputPath = "Assets/_Project/Shared/Input/DeskStageControls.inputactions";

@@ -91,6 +91,7 @@ namespace DeskStage.UI.Editor
             CreatePlayControls(panels[(int)ScreenId.Play].transform);
             var guidance = CreateGuidance(panels[(int)ScreenId.Scan].transform);
             CreateDevPanel(safeArea, router, guidance);
+            CreateDebugOverlay();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log("Test_D.unity を作りました: " + ScenePath);
@@ -128,6 +129,26 @@ namespace DeskStage.UI.Editor
             var cam = go.AddComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.95f, 0.95f, 0.95f);
+            cam.nearClipPlane = 0.01f;
+            // 机（原点）を斜め上から見る。仮の箱を確かめるため
+            go.transform.position = new Vector3(0f, 0.45f, -0.6f);
+            go.transform.LookAt(Vector3.zero);
+
+            // 仮の光源（本当の光源は Step 7 で作る）
+            var light = new GameObject("DEV_Light").AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+        }
+
+        static void CreateDebugOverlay()
+        {
+            // Step 6：デバッグ表示。当たり判定の枠は、ふだんはオフ
+            var go = new GameObject("DebugOverlay");
+            var outline = go.AddComponent<ColliderOutline>();
+            outline.enabled = false;
+            var overlay = go.AddComponent<DebugOverlay>();
+            overlay.SetColliderOutline(outline);
+            overlay.SetFont(AssetDatabase.LoadAssetAtPath<Font>(SetupAssets.FontSourcePath));
         }
 
         static void CreateEventSystem()
@@ -167,7 +188,9 @@ namespace DeskStage.UI.Editor
             go.transform.SetParent(parent, false);
             Stretch((RectTransform)go.transform);
             var bg = go.AddComponent<Image>();
-            bg.color = spec.Color;
+            // スキャン・たしかめ・プレイは、後ろのカメラ映像や3D画面が見えるように背景を透明にする
+            var over3D = spec.Name == "Screen_Scan" || spec.Name == "Screen_Check" || spec.Name == "Screen_Play";
+            bg.color = over3D ? Color.clear : spec.Color;
             bg.raycastTarget = false;
 
             // 画面の名前は開発用の表示（子どもには見せない）
@@ -257,7 +280,7 @@ namespace DeskStage.UI.Editor
             var go = new GameObject("DEV_Panel", typeof(RectTransform));
             go.transform.SetParent(parent, false);
             go.AddComponent<DevMarker>();
-            Anchor((RectTransform)go.transform, new Vector2(1f, 1f), new Vector2(-190f, -360f), new Vector2(340, 650));
+            Anchor((RectTransform)go.transform, new Vector2(1f, 1f), new Vector2(-190f, -400f), new Vector2(340, 760));
             var layout = go.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 12;
             // ボタンの大きさを並びに合わせて決めさせる（決めさせないと既定の小さな四角のまま重なる）
@@ -270,6 +293,7 @@ namespace DeskStage.UI.Editor
             dev.SetGuidance(guidance);
 
             AddDevButton(go.transform, "DEV: スキャン状態 →", dev.NextScanStatus);
+            AddDevButton(go.transform, "DEV: 仮の箱", dev.ToggleSampleBoxes);
             AddDevButton(go.transform, "DEV: DeskDecided", dev.RaiseDeskDecided);
             AddDevButton(go.transform, "DEV: StageBuilt", dev.RaiseStageBuilt);
             AddDevButton(go.transform, "DEV: SaveOk", dev.RaiseSaveOk);
