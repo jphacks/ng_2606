@@ -16,8 +16,10 @@
 | 担当 | 手順書 | 中身 |
 | --- | --- | --- |
 | 全員 | 00_overview.md（このファイル） | 決まり、共通コードの仕様、プロジェクトの土台 |
-| A：AR・空間認識 | A_ar.md | 平らな面の検出と安定化、机の座標、もういちどスキャン、ビルド |
-| B：スキャン・データ | B_scan_data.md | 上面から箱を作る処理、読み取りの補助、stage.json の保存と読み込み |
+| A：撮影・サーバー | A_ar.md | カメラと撮影、写真の確認、サーバーとの送受信、サーバー、ビルド（9章） |
+| B：スキャン・データ | B_scan_data.md | Claude の答えから箱を作る処理、読み取りの補助、stage.json の保存と読み込み |
+
+2026-10-24 から、A と B は同じ人が担当します。A と B の間の受け渡しも、共通コードを通す決まり（2.5）はそのままにします（あとで担当を分け直せるように）。
 | C：キャラ・ゲームプレイ | C_gameplay.md | キャラの移動、視点のカメラ、ゲームの進行、スタートとゴール、箱の高さの決まり |
 | D：UI・見た目 | D_ui.md | 全画面、ならべかたのコツ、スキャン画面、たしかめ画面、見た目、子どもテスト |
 
@@ -74,6 +76,7 @@
 | --- | --- | --- |
 | Assets/_Project/Shared/ | DeskStage.Shared | 全員（Aが作る、変更は全員で合意） |
 | Assets/_Project/AR/ | DeskStage.AR | A |
+| Server/ | （Python。Unity の外） | A |
 | Assets/_Project/Stage/ | DeskStage.Stage | B |
 | Assets/_Project/Gameplay/ | DeskStage.Gameplay | C |
 | Assets/_Project/UI/ | DeskStage.UI | D |
@@ -372,6 +375,7 @@ Input System のアセット Assets/_Project/Shared/Input/DeskStageControls.inpu
 | --- | --- |
 | ScanContext に足す | 知らせ `ScanResultReceived`（A → B、答えの JSON の文字列）と `RaiseScanResultReceived(string json)` |
 | UiRequests に足す | 依頼 `TakePhoto`（なし、D → A） |
+| ScanContext に足す | `CameraPreview`（Texture。A が書き、D の撮影画面が映す） |
 | 使わなくなる物 | `ScanContext.Surfaces`、`SurfacesChanged`、`UiRequests.SetDesk`、`DeskDecided`、`Layers.ScanView`。すぐには消さず、合流（M3）の前に消すか決める |
 | そのまま使う物 | StageData、StageContext（StageRoot は B が原点に作る）、ScanStatus（意味は 9.2 のとおり読み替える）、WorkingBoxes、BoxesChanged、FinishScan、Rescan など |
 
@@ -397,7 +401,7 @@ Input System のアセット Assets/_Project/Shared/Input/DeskStageControls.inpu
 
 | 担当 | 変わる所 |
 | --- | --- |
-| A | 面の検出と机の決定（A の Step 6〜13 の多く）は使わない。代わりに、カメラと撮影、写真の明るさ・ぶれの確認、サーバーとの送受信、サーバー自体（API キーの管理、1日の回数の制限、答えの形の確認）を作る |
+| A | B と同じ人が担当する。面の検出と机の決定（A の Step 6〜13 の多く）は使わない。代わりに、カメラと撮影、写真の明るさ・ぶれの確認、サーバーとの送受信、サーバー自体（API キーの管理、1日の回数の制限、答えの形の確認）を作る |
 | B | 上面から箱を作る（BoxBuilder）代わりに、答えの JSON から箱を作る。答えの形と指示文も B が決める。整える・補助・保存・読み込みは今までどおり |
 | C | ほぼ変わらない。たしかめ画面が3Dになるので、コースの物を置くタップは3D画面の箱の上で受ける |
 | D | スキャン画面を「撮影画面（紙の置き方とガイド枠、2枚の案内）」と「待ち画面」にする。たしかめ画面を3Dにする |

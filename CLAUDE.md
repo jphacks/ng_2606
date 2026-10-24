@@ -9,8 +9,7 @@
 
 | 担当 | 手順書 | 作業してよいフォルダ |
 | --- | --- | --- |
-| A：AR・スキャン | Docs/ClaudeCode/A_ar.md | Assets/_Project/AR/ |
-| B：箱・データ | Docs/ClaudeCode/B_scan_data.md | Assets/_Project/Stage/、Assets/StreamingAssets/Stages/ |
+| A＋B：撮影・サーバー・箱・データ（2026-10-24 から同じ人が担当） | Docs/ClaudeCode/A_ar.md と Docs/ClaudeCode/B_scan_data.md | Assets/_Project/AR/、Assets/_Project/Stage/、Assets/StreamingAssets/Stages/、Server/ |
 | C：ゲーム | Docs/ClaudeCode/C_gameplay.md | Assets/_Project/Gameplay/ |
 | D：UI・見た目 | Docs/ClaudeCode/D_ui.md | Assets/_Project/UI/、Assets/_Project/Rendering/ |
 
