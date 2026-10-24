@@ -10,7 +10,7 @@ namespace DeskStage.Gameplay.EditorTools
     public static class CreateCharacterSettings
     {
         const string Folder = "Assets/_Project/Gameplay/Settings";
-        const string AssetPath = Folder + "/CharacterSettings.asset";
+        public const string AssetPath = Folder + "/CharacterSettings.asset";
 
         [MenuItem("DeskStage/C/1. キャラの設定アセットを作る")]
         public static void Run()
