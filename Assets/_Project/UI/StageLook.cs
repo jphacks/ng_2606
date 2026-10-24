@@ -16,6 +16,7 @@ namespace DeskStage.UI
         [SerializeField] ViewLook look;
 
         AppMode appliedMode = (AppMode)(-1);
+        string appliedSelected;
         MaterialPropertyBlock block;
         readonly List<Renderer> boxRenderers = new List<Renderer>();
         readonly List<Rect> footprints = new List<Rect>();
@@ -32,8 +33,8 @@ namespace DeskStage.UI
 
         void Update()
         {
-            // Mode は D の ScreenRouter が書く。変わったら見た目を直す
-            if (StageContext.Mode != appliedMode)
+            // Mode は D の ScreenRouter が書く。Mode か選んでいる箱が変わったら見た目を直す
+            if (StageContext.Mode != appliedMode || ScanContext.SelectedBoxId != appliedSelected)
             {
                 Apply();
             }
@@ -42,6 +43,7 @@ namespace DeskStage.UI
         public void Apply()
         {
             appliedMode = StageContext.Mode;
+            appliedSelected = ScanContext.SelectedBoxId;
             if (look == null)
             {
                 return;
@@ -74,7 +76,9 @@ namespace DeskStage.UI
                 }
                 else if (child.name.StartsWith("box-"))
                 {
-                    SetMaterial(r, look.BoxFor(appliedMode));
+                    // Step 11：補助で選んだ箱は、太い黄色のふちで光らせる（遊ぶ画面では選ばない）
+                    var selected = appliedMode != AppMode.Play && child.name == appliedSelected;
+                    SetMaterial(r, selected ? look.BoxSelected : look.BoxFor(appliedMode));
                     boxRenderers.Add(r);
                     var b = r.bounds;
                     footprints.Add(Rect.MinMaxRect(b.min.x, b.min.z, b.max.x, b.max.z));
