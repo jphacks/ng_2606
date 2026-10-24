@@ -16,6 +16,10 @@ namespace DeskStage.Stage
     {
         [SerializeField] StageBuilder builder;
 
+        // 一覧に出す絵（thumbnail.jpg）の大きさと画質
+        const int ThumbnailMaxSide = 256;
+        const int ThumbnailQuality = 80;
+
         StageStorage storage;
 
         void Awake()
@@ -76,6 +80,7 @@ namespace DeskStage.Stage
             if (ok)
             {
                 Debug.Log($"[Stage] {stage.id}（{stage.name}）を保存しました：箱 {stage.boxes.Length} 個");
+                SaveThumbnail(stage.id);
                 Refresh();
             }
             else
@@ -83,6 +88,69 @@ namespace DeskStage.Stage
                 Debug.LogWarning($"[Stage] 保存できませんでした：{reason}");
             }
             StageContext.RaiseSaveCompleted(ok, ok ? "" : reason);
+        }
+
+        /// <summary>撮った 1 枚目（真上）の写真を小さくして、一覧に出す絵（thumbnail.jpg）として保存する。写真が無ければ何もしない。</summary>
+        void SaveThumbnail(string stageId)
+        {
+            var jpeg = StagePhotoRegions.TopJpeg;
+            if (jpeg == null)
+            {
+                return;
+            }
+            var thumbnail = MakeThumbnail(jpeg, ThumbnailMaxSide, ThumbnailQuality);
+            if (thumbnail != null && storage.WriteThumbnail(stageId, thumbnail))
+            {
+                Debug.Log($"[Stage] {stageId} の一覧の絵を保存しました（{thumbnail.Length / 1024} KB）");
+            }
+        }
+
+        /// <summary>写真（JPEG）を、長い辺が maxSide 以下の JPEG にする。読めなければ null。</summary>
+        static byte[] MakeThumbnail(byte[] jpeg, int maxSide, int quality)
+        {
+            var source = new Texture2D(2, 2, TextureFormat.RGB24, false);
+            try
+            {
+                if (!source.LoadImage(jpeg))
+                {
+                    return null;
+                }
+                var size = FitLongSide(source.width, source.height, maxSide);
+                var rt = RenderTexture.GetTemporary(size.x, size.y, 0);
+                var before = RenderTexture.active;
+                try
+                {
+                    Graphics.Blit(source, rt);
+                    RenderTexture.active = rt;
+                    var small = new Texture2D(size.x, size.y, TextureFormat.RGB24, false);
+                    small.ReadPixels(new Rect(0, 0, size.x, size.y), 0, 0);
+                    small.Apply();
+                    var bytes = small.EncodeToJPG(quality);
+                    Destroy(small);
+                    return bytes;
+                }
+                finally
+                {
+                    RenderTexture.active = before;
+                    RenderTexture.ReleaseTemporary(rt);
+                }
+            }
+            finally
+            {
+                Destroy(source);
+            }
+        }
+
+        /// <summary>長い辺が maxSide 以下になるように、縦横の比を保って縮めた大きさ。</summary>
+        public static Vector2Int FitLongSide(int width, int height, int maxSide)
+        {
+            var longSide = Mathf.Max(width, height);
+            if (longSide <= maxSide || longSide <= 0)
+            {
+                return new Vector2Int(Mathf.Max(1, width), Mathf.Max(1, height));
+            }
+            var scale = (float)maxSide / longSide;
+            return new Vector2Int(Mathf.Max(1, Mathf.RoundToInt(width * scale)), Mathf.Max(1, Mathf.RoundToInt(height * scale)));
         }
 
         void OnDeleteStage(string id)

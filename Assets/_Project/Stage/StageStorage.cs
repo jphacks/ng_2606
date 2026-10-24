@@ -15,6 +15,7 @@ namespace DeskStage.Stage
     /// </summary>
     public class StageStorage
     {
+        public const string ThumbnailFile = "thumbnail.jpg";
         const string StageFile = "stage.json";
         const string BackupFile = "stage.json.bak";
         const string TempFile = "stage.json.tmp";
@@ -188,6 +189,36 @@ namespace DeskStage.Stage
             catch (UnauthorizedAccessException e)
             {
                 reason = $"保存できませんでした（{e.Message}）";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// ステージの一覧に出す小さな絵（thumbnail.jpg）を、保存したステージのフォルダに書く。
+        /// 一覧（D）は、ステージのフォルダの thumbnail.jpg があれば、それを出す（無ければ絵なし）。
+        /// </summary>
+        public bool WriteThumbnail(string id, byte[] jpeg)
+        {
+            if (!IsSafeId(id) || jpeg == null || jpeg.Length == 0)
+            {
+                return false;
+            }
+            try
+            {
+                var dir = Path.Combine(savedDir, id);
+                if (!Directory.Exists(dir))
+                {
+                    return false;
+                }
+                File.WriteAllBytes(Path.Combine(dir, ThumbnailFile), jpeg);
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
                 return false;
             }
         }

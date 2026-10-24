@@ -20,6 +20,7 @@ namespace DeskStage.Merge.EditorTools
         public const string PrefabPath = "Assets/_Project/Merge/Prefabs/UI_System.prefab";
         const string SourceScenePath = "Assets/_Project/Scenes/Test_D.unity";
         const string FontPath = "Assets/_Project/UI/Fonts/NotoSansJP-Regular SDF.asset";
+        const string PhotoMaterialPath = "Assets/_Project/Merge/Materials/PhotoUnlit.mat";
 
         static readonly string[] RootNames =
         {
@@ -93,6 +94,12 @@ namespace DeskStage.Merge.EditorTools
             flowSo.FindProperty("router").objectReferenceValue = router.GetComponent<DeskStage.UI.ScreenRouter>();
             flowSo.ApplyModifiedPropertiesWithoutUndo();
 
+            // 3D のステージに本物の写真を貼る部品（素材は、ビルドで削られないよう、アセットとして持たせる）
+            var texturer = uiRoot.AddComponent<StagePhotoTexturer>();
+            var texturerSo = new SerializedObject(texturer);
+            texturerSo.FindProperty("photoMaterial").objectReferenceValue = EnsurePhotoMaterial();
+            texturerSo.ApplyModifiedPropertiesWithoutUndo();
+
             Directory.CreateDirectory(Path.GetDirectoryName(PrefabPath));
             PrefabUtility.SaveAsPrefabAsset(uiRoot, PrefabPath);
             Debug.Log($"[Merge] 作りました：{PrefabPath}（外した開発用の部品 {removed} 個）");
@@ -104,6 +111,22 @@ namespace DeskStage.Merge.EditorTools
             {
                 EditorApplication.Exit(0);
             }
+        }
+
+        /// <summary>写真を貼る素材（URP の Unlit）。無ければ作る。実行時の Shader.Find はビルドで削られるので、アセットにする。</summary>
+        static Material EnsurePhotoMaterial()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<Material>(PhotoMaterialPath);
+            if (existing != null)
+            {
+                return existing;
+            }
+            var shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Texture");
+            Directory.CreateDirectory(Path.GetDirectoryName(PhotoMaterialPath));
+            var material = new Material(shader) { name = "PhotoUnlit" };
+            AssetDatabase.CreateAsset(material, PhotoMaterialPath);
+            AssetDatabase.SaveAssets();
+            return material;
         }
 
         // ---- 撮影画面 ----

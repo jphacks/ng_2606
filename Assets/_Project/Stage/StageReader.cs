@@ -74,13 +74,21 @@ namespace DeskStage.Stage
                 ScanContext.RaiseBoxesChanged(id, BoxChange.Removed, BoxData.SourceAuto);
             }
 
-            // 新しい箱を足す。manual の箱と id が重ならないようにする
+            // 新しい箱を足す。manual の箱と id が重ならないようにする。写真の中の上面の位置は、付け替えた id に合わせる
+            var topFaces = new Dictionary<string, Vector2[]>();
             foreach (var box in result.Boxes)
             {
+                var answeredId = box.id;
                 box.id = NewId(box.id);
+                if (result.TopFaceQuads.TryGetValue(answeredId, out var quad))
+                {
+                    topFaces[box.id] = quad;
+                }
                 ScanContext.WorkingBoxes.Add(box);
                 ScanContext.RaiseBoxesChanged(box.id, BoxChange.Added, BoxData.SourceAuto);
             }
+            // 3D のステージに写真を貼る位置（builder.Build の前に入れる。StageBuilt で貼る側が読む）
+            StagePhotoRegions.Set(result.DeskQuad, topFaces);
 
             ScanContext.DeskSize = result.DeskSize;
             UpdateCurrentStage(result.DeskSize);
@@ -103,6 +111,7 @@ namespace DeskStage.Stage
             }
             ScanContext.SelectedBoxId = "";
             StageCourse.Clear(StageContext.CurrentStage);
+            StagePhotoRegions.Clear();
 
             // 組み立てた机の板と箱を片付ける（次の答えで、また組み立てる）
             if (builder != null)

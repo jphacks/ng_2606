@@ -3,6 +3,7 @@
     "rootNamespace": "DeskStage.Merge.EditorTools",
     "references": [
         "DeskStage.Merge",
+        "DeskStage.Stage",
         "DeskStage.Shared",
         "DeskStage.UI",
         "Unity.TextMeshPro",

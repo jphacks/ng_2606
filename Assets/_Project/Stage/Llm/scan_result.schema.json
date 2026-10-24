@@ -5,6 +5,7 @@
     "paperFound",
     "scaleReference",
     "desk",
+    "deskInPhoto1",
     "blocks",
     "notes"
   ],
@@ -57,6 +58,7 @@
           "depthCm",
           "heightCm",
           "yawDegrees",
+          "topFaceInPhoto1",
           "confidence"
         ],
         "properties": {
@@ -91,6 +93,55 @@
           "confidence": {
             "type": "number",
             "description": "この物の値にどれだけ自信があるか。0（ない）〜 1（ある）"
+          },
+          "topFaceInPhoto1": {
+            "type": "object",
+            "description": "この物の上面（1枚目の写真に写っている上面だけ。側面は入れない）の四隅。1枚目（真上）の写真の中の、四隅の位置。写真の左上を (0, 0)、右下を (1, 1) とした割合。ぐるっと一周する順に答える（どの角から始めてもよい）。写真の外に出る角は 0〜1 に収める。まったく分からないときは、8つとも 0",
+            "additionalProperties": false,
+            "required": [
+              "x0",
+              "y0",
+              "x1",
+              "y1",
+              "x2",
+              "y2",
+              "x3",
+              "y3"
+            ],
+            "properties": {
+              "x0": {
+                "type": "number",
+                "description": "1つ目の角の横の位置（写真の左端が 0、右端が 1）"
+              },
+              "y0": {
+                "type": "number",
+                "description": "1つ目の角の縦の位置（写真の上端が 0、下端が 1）"
+              },
+              "x1": {
+                "type": "number",
+                "description": "2つ目の角の横の位置（写真の左端が 0、右端が 1）"
+              },
+              "y1": {
+                "type": "number",
+                "description": "2つ目の角の縦の位置（写真の上端が 0、下端が 1）"
+              },
+              "x2": {
+                "type": "number",
+                "description": "3つ目の角の横の位置（写真の左端が 0、右端が 1）"
+              },
+              "y2": {
+                "type": "number",
+                "description": "3つ目の角の縦の位置（写真の上端が 0、下端が 1）"
+              },
+              "x3": {
+                "type": "number",
+                "description": "4つ目の角の横の位置（写真の左端が 0、右端が 1）"
+              },
+              "y3": {
+                "type": "number",
+                "description": "4つ目の角の縦の位置（写真の上端が 0、下端が 1）"
+              }
+            }
           }
         }
       }
@@ -98,6 +149,55 @@
     "notes": {
       "type": "string",
       "description": "人が読むための短いメモ（見えにくかった物、推定に自信がない理由など）。なければ空"
+    },
+    "deskInPhoto1": {
+      "type": "object",
+      "description": "机の天面の長方形（desk に答えた範囲。desk が null のときは、置いた物を全部囲み、まわりに少し余白をとった長方形）の四隅。1枚目（真上）の写真の中の、四隅の位置。写真の左上を (0, 0)、右下を (1, 1) とした割合。ぐるっと一周する順に答える（どの角から始めてもよい）。写真の外に出る角は 0〜1 に収める。まったく分からないときは、8つとも 0",
+      "additionalProperties": false,
+      "required": [
+        "x0",
+        "y0",
+        "x1",
+        "y1",
+        "x2",
+        "y2",
+        "x3",
+        "y3"
+      ],
+      "properties": {
+        "x0": {
+          "type": "number",
+          "description": "1つ目の角の横の位置（写真の左端が 0、右端が 1）"
+        },
+        "y0": {
+          "type": "number",
+          "description": "1つ目の角の縦の位置（写真の上端が 0、下端が 1）"
+        },
+        "x1": {
+          "type": "number",
+          "description": "2つ目の角の横の位置（写真の左端が 0、右端が 1）"
+        },
+        "y1": {
+          "type": "number",
+          "description": "2つ目の角の縦の位置（写真の上端が 0、下端が 1）"
+        },
+        "x2": {
+          "type": "number",
+          "description": "3つ目の角の横の位置（写真の左端が 0、右端が 1）"
+        },
+        "y2": {
+          "type": "number",
+          "description": "3つ目の角の縦の位置（写真の上端が 0、下端が 1）"
+        },
+        "x3": {
+          "type": "number",
+          "description": "4つ目の角の横の位置（写真の左端が 0、右端が 1）"
+        },
+        "y3": {
+          "type": "number",
+          "description": "4つ目の角の縦の位置（写真の上端が 0、下端が 1）"
+        }
+      }
     }
   }
 }

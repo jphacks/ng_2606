@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 namespace DeskStage.Stage
 {
@@ -13,6 +14,8 @@ namespace DeskStage.Stage
         public string scaleReference = "";
         // JsonUtility は null を読めないので、desk が null のときも中身が 0 の物になる
         public LlmDesk desk;
+        // 1枚目（真上）の写真の中の、机の四隅（絵を貼るため）。なければ中身が 0
+        public LlmQuad deskInPhoto1;
         public LlmBlock[] blocks;
         public string notes = "";
     }
@@ -35,5 +38,19 @@ namespace DeskStage.Stage
         public float heightCm;
         public float yawDegrees;
         public float confidence;
+        // 1枚目（真上）の写真の中の、上面の四隅（絵を貼るため）。なければ中身が 0
+        public LlmQuad topFaceInPhoto1;
+    }
+
+    /// <summary>写真の中の四隅。写真の左上が (0, 0)、右下が (1, 1) の割合。ぐるっと一周する順。</summary>
+    [Serializable]
+    public class LlmQuad
+    {
+        public float x0, y0, x1, y1, x2, y2, x3, y3;
+
+        public Vector2[] ToPoints() => new[]
+        {
+            new Vector2(x0, y0), new Vector2(x1, y1), new Vector2(x2, y2), new Vector2(x3, y3),
+        };
     }
 }
