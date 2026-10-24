@@ -35,7 +35,7 @@
 
 写真の方式（2026-10-24 から。Step 14 の合流より先に行う）：
 
-- ☐ Step 21：共通コードに足す（ScanResultReceived、TakePhoto、CameraPreview）
+- ☑ Step 21：共通コードに足す（ScanResultReceived、TakePhoto、CameraPreview）… C・D の了承はプルリクエストで
 - ☐ Step 22：カメラと撮影（PhotoCapture）
 - ☐ Step 23：写真の確認（PhotoCheck）
 - ☐ Step 24：サーバー（Server/）

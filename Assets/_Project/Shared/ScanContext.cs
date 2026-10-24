@@ -39,7 +39,7 @@ namespace DeskStage.Shared
         /// <summary>机の長方形の幅と奥行き（m）。書くのは A。</summary>
         public static Vector2 DeskSize { get; set; }
 
-        /// <summary>整えた上面の一覧。書くのは A。</summary>
+        /// <summary>整えた上面の一覧。書くのは A。写真の方式（00_overview.md 9章）では使わない。</summary>
         public static List<SurfaceData> Surfaces { get; } = new List<SurfaceData>();
 
         /// <summary>作業中の箱の一覧。書くのは B。</summary>
@@ -48,7 +48,15 @@ namespace DeskStage.Shared
         /// <summary>補助で選んでいる箱の id。なければ空。書くのは B。</summary>
         public static string SelectedBoxId { get; set; } = "";
 
-        /// <summary>上面が増えた・変わった・消えた（A → B、D）。1秒に4回まで。</summary>
+        /// <summary>撮影中のカメラの映像。書くのは A、D の撮影画面が映す（00_overview.md 9.3）。カメラを閉じたら null。</summary>
+        public static Texture CameraPreview { get; set; }
+
+        /// <summary>写真を読んだ Claude の答え（JSON の文字列、Docs/LlmScanFormat.md の形）が届いた（A → B）。</summary>
+        public static event Action<string> ScanResultReceived;
+
+        public static void RaiseScanResultReceived(string json) => ScanResultReceived?.Invoke(json);
+
+        /// <summary>上面が増えた・変わった・消えた（A → B、D）。1秒に4回まで。写真の方式では使わない。</summary>
         public static event Action SurfacesChanged;
 
         /// <summary>箱が変わった（B → D）。箱の id、何が起きたか、auto か manual か。</summary>

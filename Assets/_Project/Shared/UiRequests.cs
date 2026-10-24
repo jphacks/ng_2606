@@ -38,7 +38,11 @@ namespace DeskStage.Shared
         public static event Action StartScan;
         public static void RequestStartScan() => StartScan?.Invoke();
 
-        /// <summary>机はここ（→ A）。画面のタップ位置。</summary>
+        /// <summary>写真を1枚撮る（→ A）。1枚目は真上、2枚目は斜め（00_overview.md 9.2）。</summary>
+        public static event Action TakePhoto;
+        public static void RequestTakePhoto() => TakePhoto?.Invoke();
+
+        /// <summary>机はここ（→ A）。画面のタップ位置。写真の方式（9章）では使わない。</summary>
         public static event Action<Vector2> SetDesk;
         public static void RequestSetDesk(Vector2 screenPosition) => SetDesk?.Invoke(screenPosition);
 

@@ -56,6 +56,11 @@ Physics.Raycast(ray, out var hit, 10f, Layers.TerrainMask);
 - **スキャン状態は `SetScanStatus()` から変える。** 「同じ状態なら知らせを出さない」（4.3）という決まりを守るため、`ScanStatus` と `ScanReason` は読み取り専用にして、変化したときだけ `ScanStatusChanged` が出るようにしています。
 - **座標は長さ3の `float` 配列。** `JsonUtility` が `Vector3` を直接扱えないためです（4.2）。計算に使うときは `Vec3.From()` / `Vec3.To()` で変換します。`Vec3.To()` は長さが3でなければ `Vector3.zero` を返すので、壊れた stage.json でも落ちません。
 - **`ScanContext.Clear()`** を足しました。もういちどスキャンで面と箱を消す処理が A と B の両方に出てくるので、1か所にまとめています。
+- **写真の方式（00_overview.md 9章、2026-10-24）で足した物。**
+  - `ScanContext.CameraPreview`（Texture）：A がカメラの映像を入れ、D の撮影画面が映す。カメラを閉じたら null
+  - `ScanContext.ScanResultReceived` / `RaiseScanResultReceived(string json)`：Claude の答えの JSON（形は Docs/LlmScanFormat.md）を A から B へ渡す。中身の確かめは B が行う
+  - `UiRequests.TakePhoto` / `RequestTakePhoto()`：D の「とる」ボタンで A が1枚撮る。1枚目は真上、2枚目は斜め
+  - `Surfaces`、`SurfacesChanged`、`SetDesk` は写真の方式では使いません。消すかどうかは合流（M3）の前に決めます
 - **asmdef を置いています。** EditMode テストを動かすのに必要です。`autoReferenced` が有効なので、A〜D のコードからは今までどおり参照できます。
 
 ## テスト
@@ -71,6 +76,7 @@ Physics.Raycast(ray, out var hit, 10f, Layers.TerrainMask);
 | `Zeroはすべて0の長さ3の配列を返す` | `Vec3.Zero()` |
 | `レイヤー番号が手順書と一致する` | 8 / 9 / 10 / 11 が 00_overview.md 3.2 の表どおり |
 | `TerrainMaskはTerrainだけを指す` | マスク値が Terrain だけを拾う |
+| `答えのJSONがそのまま届く` など3つ | 写真の方式の `ScanResultReceived` と `TakePhoto` |
 
 ## 変えるとき
 
