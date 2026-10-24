@@ -1,0 +1,39 @@
+{
+  "version": 2,
+  "id": "photo-test-01",
+  "name": "しゃしんの ためし",
+  "createdAt": "2026-10-24T18:00:00+09:00",
+  "desk": { "width": 0.505, "depth": 0.72 },
+  "boxes": [
+    {
+      "id": "box-01",
+      "center": [-0.04, 0.01, -0.195],
+      "size": [0.195, 0.02, 0.13],
+      "yawDegrees": 0,
+      "source": "auto",
+      "texture": ""
+    },
+    {
+      "id": "box-02",
+      "center": [-0.0025, 0.02, -0.075],
+      "size": [0.30, 0.04, 0.11],
+      "yawDegrees": 0,
+      "source": "auto",
+      "texture": ""
+    },
+    {
+      "id": "box-03",
+      "center": [0.0275, 0.12, 0.14],
+      "size": [0.25, 0.24, 0.24],
+      "yawDegrees": 0,
+      "source": "auto",
+      "texture": ""
+    }
+  ],
+  "spawn": { "position": [-0.2, 0.0, -0.3], "yawDegrees": 0 },
+  "goal": { "position": [0.1, 0.04, -0.075], "radius": 0.03 },
+  "checkpoints": [
+    { "position": [-0.04, 0.02, -0.195], "radius": 0.03 }
+  ],
+  "fallDepth": 0.10
+}

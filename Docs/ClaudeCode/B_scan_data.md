@@ -17,7 +17,7 @@
 - ☑ Step 3：stage.json version 2 の説明と、箱の設定アセット（P0）
 - ☐ Step 4：お手本ステージ（M1）… 途中：stage.json は作った。本物を置いて写真を撮るのはまだ
 - ☑ Step 5：ステージの組み立て（StageBuilder）（M1）
-- ☐ Step 6：答えの形と指示文（LlmScanFormat）（M1）
+- ☐ Step 6：答えの形と指示文（LlmScanFormat）（M1）… 途中：指示文とスキーマはできた。紙なしの写真2枚からステージを作れた（photo-test-01）。A4 の紙と真上の写真での試しがまだ
 - ☐ Step 7：答えから箱を作る（StageReader）（M1〜M2）… 途中：整える計算（BoxRefiner）とテストはできた
 - ☐ Step 8：もういちど撮る（M2）… 途中：箱とコースの物を消す処理とテストはできた
 - ☐ Step 9：読み取りの補助（BoxAssist）（M2）

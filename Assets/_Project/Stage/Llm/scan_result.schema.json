@@ -1,0 +1,49 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["paperFound", "desk", "blocks", "notes"],
+  "properties": {
+    "paperFound": {
+      "type": "boolean",
+      "description": "基準の A4 の紙（21.0cm × 29.7cm）が写真に写っていて、長さの基準に使えたか"
+    },
+    "desk": {
+      "description": "机の天面の大きさ（cm）。紙の左手前の角が机の左手前の角にある前提。机の右の端か奥の端が写っていなければ null",
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["widthCm", "depthCm"],
+          "properties": {
+            "widthCm": { "type": "number", "description": "左右の長さ（cm）。20〜300" },
+            "depthCm": { "type": "number", "description": "前後の長さ（cm）。20〜300" }
+          }
+        },
+        { "type": "null" }
+      ]
+    },
+    "blocks": {
+      "type": "array",
+      "description": "机の上に置いた物の一覧。紙そのものは入れない。0〜100件",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "centerXCm", "centerZCm", "widthCm", "depthCm", "heightCm", "yawDegrees", "confidence"],
+        "properties": {
+          "label": { "type": "string", "description": "何の物か（例：段ボール箱、積み木、本）" },
+          "centerXCm": { "type": "number", "description": "上から見た中心の位置。紙の左手前の角から右へ何 cm か" },
+          "centerZCm": { "type": "number", "description": "上から見た中心の位置。紙の左手前の角から奥へ何 cm か" },
+          "widthCm": { "type": "number", "description": "上から見た長い方の辺の長さ（cm）。1〜60" },
+          "depthCm": { "type": "number", "description": "上から見た短い方の辺の長さ（cm）。1〜60" },
+          "heightCm": { "type": "number", "description": "机の天面から、この物の上面までの高さ（cm）。積んだ物は机からの高さ。0.5〜40" },
+          "yawDegrees": { "type": "number", "description": "上から見て、長い方の辺が右（+X）の向きから反時計回りに何度回っているか。0 以上 180 未満" },
+          "confidence": { "type": "number", "description": "この物の値にどれだけ自信があるか。0（ない）〜 1（ある）" }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "人が読むための短いメモ（見えにくかった物、推定に自信がない理由など）。なければ空"
+    }
+  }
+}
