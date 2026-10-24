@@ -17,7 +17,7 @@
 - － Step 5：判定会議（P0の終わり）… 省略。案は 00_overview.md 8章の仮の決め方（案A）
 - ☑ Step 6：面の見張り（PlaneWatcher）（M1）
 - ☑ Step 7：長方形の当てはめ（共通の計算）（M1）
-- ☐ Step 8：机の決定とステージ座標（DeskFrame）（M1）
+- ☑ Step 8：机の決定とステージ座標（DeskFrame）（M1）
 - ☑ Step 9：スキャン状態の報告（ScanStatusReporter）（M1）
 - ☑ Step 10：スキャンの開始と終わり（ScanSession）（M1）
 - ☐ Step 11：面の安定化（SurfaceStabilizer）（M1〜M2）
@@ -31,7 +31,7 @@
 - ☐ Step 19：上面の画像の切り出し（M5、任意）
 - ☐ Step 20：完成版のビルド（M5）
 
-> 2026-10-24 西垣さんの判断：P0 の検証（Step 4・5）はしない（B の省略と同じ）。Step 1・3・6・9・10 は実装まで済ませ、実機での確認は省略して ☑ にした。実機（iPhone 17）では「Unable to load plugin UnityARKit」で AR が起動しなかった。原因は、バッチ実行のビルドで libUnityARKit.a が組み込まれていないこと、と見ている（未確定）。実機で AR を動かす前に、GUI のメニューからのビルドで直るかを確かめる。
+> 2026-10-24 西垣さんの判断：P0 の検証（Step 4・5）はしない（B の省略と同じ）。Step 1・3・6・8・9・10 は実装まで済ませ、実機での確認は省略して ☑ にした（Step 8 は、机をタップして立方体が机の中心に出ることを実機で確かめていない。EditMode テストは通っている）。実機（iPhone 17）では「Unable to load plugin UnityARKit」で AR が起動しなかった。原因は、バッチ実行のビルドで libUnityARKit.a が組み込まれていないこと、と見ている（未確定）。実機で AR を動かす前に、GUI のメニューからのビルドで直るかを確かめる。
 
 ## 作る部品の一覧
 
