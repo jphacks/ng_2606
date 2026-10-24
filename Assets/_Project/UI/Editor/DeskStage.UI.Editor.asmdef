@@ -1,0 +1,22 @@
+{
+    "name": "DeskStage.UI.Editor",
+    "rootNamespace": "DeskStage.UI.Editor",
+    "references": [
+        "DeskStage.Shared",
+        "DeskStage.UI",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
