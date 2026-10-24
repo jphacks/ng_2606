@@ -56,15 +56,21 @@ namespace DeskStage.Gameplay
             StageContext.RaiseStageBuilt();
         }
 
-        // 練習用の床に合わせた仮のステージデータ（スタートは手前、向きは奥）
+        // 練習用の床に合わせた仮のステージデータ（スタートは手前で奥向き、ゴールは右手前）
         static StageData PracticeStage()
         {
             var stage = new StageData { id = "practice", name = "れんしゅう" };
             stage.desk.width = 0.6f;
             stage.desk.depth = 0.6f;
             stage.spawn.position = Vec3.From(new Vector3(0f, 0f, -0.25f));
-            stage.goal.position = Vec3.From(new Vector3(0.2f, 0f, -0.2f));
+            stage.goal.position = Vec3.From(new Vector3(0.22f, 0f, -0.25f));
             stage.goal.radius = 0.03f;
+            // チェックポイント：床の上と、6cm の箱の上
+            stage.checkpoints = new[]
+            {
+                new GoalData { position = Vec3.From(new Vector3(-0.2f, 0f, -0.25f)), radius = 0.03f },
+                new GoalData { position = Vec3.From(new Vector3(-0.04f, 0.06f, 0f)), radius = 0.03f },
+            };
             return stage;
         }
     }
