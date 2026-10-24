@@ -10,8 +10,41 @@ namespace DeskStage.UI
     public class DevEvents : MonoBehaviour
     {
         [SerializeField] ScreenRouter router;
+        [SerializeField] GuidanceView guidance;
 
         public void SetRouter(ScreenRouter value) => router = value;
+
+        public void SetGuidance(GuidanceView value) => guidance = value;
+
+        // スキャン状態を順に変えて、案内の表示を確かめる（Step 5）。本当は A が書く。
+        static readonly (ScanStatus status, ScanReason reason, bool deskFound)[] ScanSteps =
+        {
+            (ScanStatus.Starting, ScanReason.None, false),
+            (ScanStatus.FindingDesk, ScanReason.None, false),
+            (ScanStatus.FindingDesk, ScanReason.None, true),
+            (ScanStatus.Scanning, ScanReason.None, false),
+            (ScanStatus.Limited, ScanReason.Dark, false),
+            (ScanStatus.Limited, ScanReason.FastMotion, false),
+            (ScanStatus.Limited, ScanReason.FewFeatures, false),
+            (ScanStatus.Scanning, ScanReason.None, false),
+            (ScanStatus.Lost, ScanReason.None, false),
+            (ScanStatus.Finished, ScanReason.None, false),
+            (ScanStatus.NotStarted, ScanReason.None, false),
+        };
+
+        int scanStep = -1;
+
+        public void NextScanStatus()
+        {
+            scanStep = (scanStep + 1) % ScanSteps.Length;
+            var step = ScanSteps[scanStep];
+            StageContext.SetScanStatus(step.status, step.reason);
+            if (guidance != null)
+            {
+                guidance.SetDeskFound(step.deskFound);
+            }
+            Debug.Log("DEV スキャン状態: " + step.status + " / " + step.reason + (step.deskFound ? "（机の面が見つかった）" : ""));
+        }
 
         public void RaiseDeskDecided() => StageContext.RaiseDeskDecided();
 

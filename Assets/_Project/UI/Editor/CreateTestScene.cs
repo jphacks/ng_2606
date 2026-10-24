@@ -89,7 +89,8 @@ namespace DeskStage.UI.Editor
             router.SetScreens(panels);
 
             CreatePlayControls(panels[(int)ScreenId.Play].transform);
-            CreateDevPanel(safeArea, router);
+            var guidance = CreateGuidance(panels[(int)ScreenId.Scan].transform);
+            CreateDevPanel(safeArea, router, guidance);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log("Test_D.unity を作りました: " + ScenePath);
@@ -240,20 +241,32 @@ namespace DeskStage.UI.Editor
             Stretch((RectTransform)jumpLabel.transform);
         }
 
-        static void CreateDevPanel(RectTransform parent, ScreenRouter router)
+        static GuidanceView CreateGuidance(Transform scanScreen)
+        {
+            // Step 5：画面の上の中央に1行の案内。文は状態に合わせて Wording から選ぶ
+            var label = CreateLabel("Guidance", scanScreen, "", 72);
+            Anchor((RectTransform)label.transform, new Vector2(0.5f, 1f), new Vector2(0f, -220f), new Vector2(1800, 120));
+            var guidance = label.gameObject.AddComponent<GuidanceView>();
+            guidance.SetWording(wording);
+            return guidance;
+        }
+
+        static void CreateDevPanel(RectTransform parent, ScreenRouter router, GuidanceView guidance)
         {
             // 仮のボタン。画面の右上に縦に並べる。合流前に DevMarker の付いた物ごと消す。
             var go = new GameObject("DEV_Panel", typeof(RectTransform));
             go.transform.SetParent(parent, false);
             go.AddComponent<DevMarker>();
-            Anchor((RectTransform)go.transform, new Vector2(1f, 1f), new Vector2(-190f, -300f), new Vector2(340, 520));
+            Anchor((RectTransform)go.transform, new Vector2(1f, 1f), new Vector2(-190f, -360f), new Vector2(340, 650));
             var layout = go.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 12;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = true;
             var dev = go.AddComponent<DevEvents>();
             dev.SetRouter(router);
+            dev.SetGuidance(guidance);
 
+            AddDevButton(go.transform, "DEV: スキャン状態 →", dev.NextScanStatus);
             AddDevButton(go.transform, "DEV: DeskDecided", dev.RaiseDeskDecided);
             AddDevButton(go.transform, "DEV: StageBuilt", dev.RaiseStageBuilt);
             AddDevButton(go.transform, "DEV: SaveOk", dev.RaiseSaveOk);

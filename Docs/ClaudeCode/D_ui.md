@@ -36,7 +36,7 @@
 - ☑ Step 1：Canvas と7つの画面、画面の切り替え（P0）
 - ☐ Step 2：入力アセットと画面上のスティック・ジャンプ（P0）※ Input Debugger での確認は済。C の練習用シーンでキャラが動くかは、C の準備ができてから確かめる
 - ☑ Step 3：文言の表（P0）
-- ☐ Step 4：視点の操作（ViewGesture）（M1）
+- ☐ Step 4：視点の操作（ViewGesture）（M1）※ PC での確認は済。実機（スティックで走りながら視点を回す）は、A のビルドができてから確かめる
 - ☐ Step 5：案内の表示（GuidanceView）（M1）
 - ☐ Step 6：デバッグ表示（DebugOverlay）（M1）
 - ☐ Step 7：見た目の素材と光源（M1）
