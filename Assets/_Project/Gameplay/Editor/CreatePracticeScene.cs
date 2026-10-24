@@ -25,6 +25,11 @@ namespace DeskStage.Gameplay.EditorTools
         [MenuItem("DeskStage/C/3. 練習用シーンを作る")]
         public static void Run()
         {
+            if (EditorApplication.isPlaying)
+            {
+                Debug.LogError("[Gameplay] ▶（Play）を止めてから実行してください");
+                return;
+            }
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             {
                 return;
@@ -128,6 +133,11 @@ namespace DeskStage.Gameplay.EditorTools
         [MenuItem("DeskStage/C/4. お手本ステージを練習用シーンに置く")]
         public static void PlaceSampleStage()
         {
+            if (EditorApplication.isPlaying)
+            {
+                Debug.LogError("[Gameplay] ▶（Play）を止めてから実行してください");
+                return;
+            }
             var scene = SceneManager.GetActiveScene();
             if (scene.path != ScenePath)
             {

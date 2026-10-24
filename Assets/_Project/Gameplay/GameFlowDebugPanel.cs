@@ -81,15 +81,16 @@ namespace DeskStage.Gameplay
             else
             {
                 StageContext.StageRoot = practiceRoot;
-                StageContext.CurrentStage = PracticeStage();
+                StageContext.CurrentStage = PracticeStage(practiceRoot);
             }
             StageContext.RaiseStageBuilt();
         }
 
         // 練習用の床に合わせた仮のステージデータ（スタートは手前で奥向き、ゴールは右手前）
-        static StageData PracticeStage()
+        static StageData PracticeStage(Transform root)
         {
             var stage = new StageData { id = "practice", name = "れんしゅう" };
+            stage.boxes = PracticeBoxes(root);
             stage.desk.width = 0.6f;
             stage.desk.depth = 0.6f;
             stage.spawn.position = Vec3.From(new Vector3(0f, 0f, -0.25f));
@@ -102,6 +103,29 @@ namespace DeskStage.Gameplay
                 new GoalData { position = Vec3.From(new Vector3(-0.04f, 0.06f, 0f)), radius = 0.03f },
             };
             return stage;
+        }
+
+        // 練習用の床に並べた箱（Terrain の BoxCollider。床は除く）を、ステージデータの箱にする。
+        // コースの配置（Step 12）の「とどかないかも」を練習用の床でも試せるように
+        static BoxData[] PracticeBoxes(Transform root)
+        {
+            var list = new System.Collections.Generic.List<BoxData>();
+            foreach (Transform child in root)
+            {
+                if (child.name == "Floor" || child.gameObject.layer != Layers.Terrain || child.GetComponent<BoxCollider>() == null)
+                {
+                    continue;
+                }
+                list.Add(new BoxData
+                {
+                    id = child.name,
+                    center = Vec3.From(child.localPosition),
+                    size = Vec3.From(child.localScale),
+                    yawDegrees = child.localEulerAngles.y,
+                    source = BoxData.SourceManual,
+                });
+            }
+            return list.ToArray();
         }
     }
 }
