@@ -53,5 +53,8 @@ namespace DeskStage.Stage
 
         [Tooltip("机の板の厚さ（m）。上面が高さ0になるように置く")]
         [Min(0f)] public float deskThickness = 0.01f;
+
+        [Tooltip("写真の答えに机の大きさがないとき、物を囲む長方形の外に足す余白（m）")]
+        [Min(0f)] public float deskMargin = 0.10f;
     }
 }
