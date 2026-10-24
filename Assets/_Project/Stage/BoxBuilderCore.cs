@@ -9,18 +9,41 @@ namespace DeskStage.Stage
     {
         public string boxId;
         public BoxChange change;
+        /// <summary>その箱の source（auto か manual）。</summary>
+        public string source;
     }
 
     /// <summary>
-    /// 上面の一覧から、上面1つにつき箱1つを作り・直し・消す計算（B の Step 6）。
+    /// 上面の一覧から、上面1つにつき箱1つを作り・直し・消す計算（B の Step 6・7）。
     /// MonoBehaviour から切り離して、EditMode テストで確かめられるようにする。
-    /// 自分が作った auto の箱だけを扱い、補助で足した manual の箱には触らない。
+    /// 自分が作った auto の箱だけを扱う。manual の箱（補助で足した・直した箱）には触らない。
     /// </summary>
     public class BoxBuilderCore
     {
+        readonly float minBoxHeight;
+        readonly float heightMergeThreshold;
+        readonly float gapCloseThreshold;
+
         // 上面の番号 → 箱の id
         readonly Dictionary<int, string> surfaceToBox = new Dictionary<int, string>();
         int nextNumber = 1;
+
+        /// <summary>手順書の初期値で作る（テスト用）。</summary>
+        public BoxBuilderCore() : this(0.005f, 0.008f, 0.016f)
+        {
+        }
+
+        public BoxBuilderCore(BoxSettings settings)
+            : this(settings.minBoxHeight, settings.heightMergeThreshold, settings.gapCloseThreshold)
+        {
+        }
+
+        public BoxBuilderCore(float minBoxHeight, float heightMergeThreshold, float gapCloseThreshold)
+        {
+            this.minBoxHeight = minBoxHeight;
+            this.heightMergeThreshold = heightMergeThreshold;
+            this.gapCloseThreshold = gapCloseThreshold;
+        }
 
         /// <summary>
         /// 上面の一覧に合わせて boxes を書き換え、起きた変化を返す。
@@ -28,42 +51,65 @@ namespace DeskStage.Stage
         /// </summary>
         public List<BoxChangeEntry> Apply(IReadOnlyList<SurfaceData> surfaces, List<BoxData> boxes)
         {
-            var changes = new List<BoxChangeEntry>();
+            // 1. 上面ごとに、整える前の箱を作る
+            var raw = new List<BoxData>();
             var seen = new HashSet<int>();
-
             foreach (var surface in surfaces)
             {
-                // 境界の点がない上面からは箱を作れない
-                if (surface.Outline == null || surface.Outline.Length == 0)
+                // 境界の点がない上面と、低すぎる上面からは箱を作らない
+                if (surface.Outline == null || surface.Outline.Length == 0 || surface.Height < minBoxHeight)
                 {
                     continue;
                 }
-                seen.Add(surface.Id);
 
-                var made = MakeBox(surface);
-                if (surfaceToBox.TryGetValue(surface.Id, out var boxId))
+                if (surfaceToBox.TryGetValue(surface.Id, out var mappedId))
                 {
-                    var index = boxes.FindIndex(b => b.id == boxId);
-                    if (index >= 0)
+                    var existing = boxes.Find(b => b.id == mappedId);
+                    if (existing != null && existing.source == BoxData.SourceManual)
                     {
-                        made.id = boxId;
-                        if (!SameShape(boxes[index], made))
-                        {
-                            boxes[index] = made;
-                            changes.Add(new BoxChangeEntry { boxId = boxId, change = BoxChange.Modified });
-                        }
+                        // 補助で直された箱は、上面が変わっても自動で直さない
+                        seen.Add(surface.Id);
                         continue;
                     }
-                    // 一覧から箱が消されていたら、作り直す
+                    if (existing == null)
+                    {
+                        // 一覧から箱が消されていたら、新しい id で作り直す
+                        surfaceToBox.Remove(surface.Id);
+                    }
                 }
 
-                made.id = NewBoxId(boxes);
-                surfaceToBox[surface.Id] = made.id;
-                boxes.Add(made);
-                changes.Add(new BoxChangeEntry { boxId = made.id, change = BoxChange.Added });
+                seen.Add(surface.Id);
+                if (!surfaceToBox.TryGetValue(surface.Id, out var boxId))
+                {
+                    boxId = NewBoxId(boxes, raw);
+                    surfaceToBox[surface.Id] = boxId;
+                }
+                var made = MakeBox(surface);
+                made.id = boxId;
+                raw.Add(made);
             }
 
-            // 上面が消えたら箱も消す
+            // 2. 高さをそろえ、すき間をなくす
+            var refined = BoxRefiner.Refine(raw, heightMergeThreshold, gapCloseThreshold);
+
+            // 3. 作業中の一覧との違いを書き込む
+            var changes = new List<BoxChangeEntry>();
+            foreach (var made in refined)
+            {
+                var index = boxes.FindIndex(b => b.id == made.id);
+                if (index < 0)
+                {
+                    boxes.Add(made);
+                    changes.Add(new BoxChangeEntry { boxId = made.id, change = BoxChange.Added, source = BoxData.SourceAuto });
+                }
+                else if (!SameShape(boxes[index], made))
+                {
+                    boxes[index] = made;
+                    changes.Add(new BoxChangeEntry { boxId = made.id, change = BoxChange.Modified, source = BoxData.SourceAuto });
+                }
+            }
+
+            // 4. 上面が消えた箱を消す（manual になった箱は残す）
             var gone = new List<int>();
             foreach (var pair in surfaceToBox)
             {
@@ -76,9 +122,9 @@ namespace DeskStage.Stage
             {
                 var boxId = surfaceToBox[surfaceId];
                 surfaceToBox.Remove(surfaceId);
-                if (boxes.RemoveAll(b => b.id == boxId) > 0)
+                if (boxes.RemoveAll(b => b.id == boxId && b.source == BoxData.SourceAuto) > 0)
                 {
-                    changes.Add(new BoxChangeEntry { boxId = boxId, change = BoxChange.Removed });
+                    changes.Add(new BoxChangeEntry { boxId = boxId, change = BoxChange.Removed, source = BoxData.SourceAuto });
                 }
             }
 
@@ -92,13 +138,30 @@ namespace DeskStage.Stage
             nextNumber = 1;
         }
 
+        /// <summary>
+        /// もういちどスキャン（B の Step 8）：作業中の箱をすべて消し（manual の箱も）、上面と箱の対応も忘れる。
+        /// 消した箱ごとの変化を返す。
+        /// </summary>
+        public List<BoxChangeEntry> ClearAll(List<BoxData> boxes)
+        {
+            var changes = new List<BoxChangeEntry>(boxes.Count);
+            foreach (var b in boxes)
+            {
+                changes.Add(new BoxChangeEntry { boxId = b.id, change = BoxChange.Removed, source = b.source });
+            }
+            boxes.Clear();
+            Reset();
+            return changes;
+        }
+
         static BoxData MakeBox(SurfaceData surface)
         {
             var f = BoxFootprint.Fit(surface.Outline);
             var height = surface.Height;
             return new BoxData
             {
-                // 箱の高さ＝上面の高さ。中心の高さはその半分（箱は机の天面から立つ）
+                // 箱の高さ＝上面の高さ。中心の高さはその半分（箱は机の天面から立つ）。
+                // 積んだ物は、上の物も下の物の見えている所も、それぞれ机まで届く箱になる（重なってよい）
                 center = new[] { f.center.x, height / 2f, f.center.y },
                 size = new[] { f.width, height, f.depth },
                 yawDegrees = f.yawDegrees,
@@ -107,13 +170,13 @@ namespace DeskStage.Stage
         }
 
         /// <summary>「box-」＋2桁の連番。一覧にすでにある id は飛ばす。</summary>
-        string NewBoxId(List<BoxData> boxes)
+        string NewBoxId(List<BoxData> boxes, List<BoxData> pending)
         {
             while (true)
             {
                 var id = $"box-{nextNumber:00}";
                 nextNumber++;
-                if (!boxes.Exists(b => b.id == id))
+                if (!boxes.Exists(b => b.id == id) && !pending.Exists(b => b.id == id))
                 {
                     return id;
                 }
