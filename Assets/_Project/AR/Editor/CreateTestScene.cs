@@ -138,6 +138,24 @@ namespace DeskStage.AR.EditorTools
             serialized.FindProperty("m_PlaneMaterialAsset").objectReferenceValue = CreatePlaneMaterial();
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
+            // Step 9・10：スキャン状態の報告と、開始・終了の受け付け。
+            // Test_A は PlaneProbe を単体で動かすので、起動時に AR は止めない
+            var scanGo = new GameObject("Scan");
+            var reporter = scanGo.AddComponent<ScanStatusReporter>();
+            var session = scanGo.AddComponent<ScanSession>();
+            scanGo.AddComponent<ScanSessionDebugPanel>();
+
+            var reporterSerialized = new SerializedObject(reporter);
+            reporterSerialized.FindProperty("m_Settings").objectReferenceValue = settings;
+            reporterSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+            var sessionSerialized = new SerializedObject(session);
+            sessionSerialized.FindProperty("m_Session").objectReferenceValue = sessionGo.GetComponent<ARSession>();
+            sessionSerialized.FindProperty("m_PlaneManager").objectReferenceValue = planeManager;
+            sessionSerialized.FindProperty("m_Reporter").objectReferenceValue = reporter;
+            sessionSerialized.FindProperty("m_DisableOnAwake").boolValue = false;
+            sessionSerialized.ApplyModifiedPropertiesWithoutUndo();
+
             // 動作確認用：前方50cm に一辺5cm の立方体
             var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cube.name = "CheckCube";
