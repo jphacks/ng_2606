@@ -89,6 +89,10 @@ namespace DeskStage.Gameplay.EditorTools
             gameFlow.playerPrefab = playerPrefab;
             gameFlow.viewCamera = viewCamera;
             gameFlow.cameraRelativeInput = relative;
+            // スタート・ゴール・チェックポイント（Step 14）：「ステージかんせい」で目印が出て、触れると反応する
+            var markers = gameFlow.gameObject.AddComponent<CourseMarkers>();
+            markers.gameFlow = gameFlow;
+            markers.settings = viewCamera.settings;
             var panel = gameFlow.gameObject.AddComponent<GameFlowDebugPanel>();
             panel.gameFlow = gameFlow;
             panel.practiceRoot = stageRoot;
