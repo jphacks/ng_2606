@@ -13,3 +13,9 @@ A・B・C・D の部品を、1つのアプリ（`Scenes/Main.unity`）にまと�
   メニュー「DeskStage/Merge/1. UI_System プレハブを作る」で作り直せる
 
 **D の担当が正式な `UI_System` と撮影画面を作ったら、この中の `UI_System.prefab`、`PhotoScanView`、`CoursePlaceView` は、差し替えて消す。**
+
+## 写真のキャラクター（人形）
+
+- 撮る：カメラの映像に、太めで 3 等身くらいの人型の枠（`HumanMask`）を重ねる。人形を枠に合わせて撮ると、枠の中だけがキャラになる（枠の形で切り抜く）
+- `CutoutMath`（背景の色で自動で切り抜く方法）は、うまく切れなかったので、今は使っていない。テストだけ残してある。不要になったら消してよい
+- 保存：端末の中（`CharacterStore`）。選んだキャラは、遊ぶとき（`CharacterAvatar`）に、キャラの体の代わりに立つ

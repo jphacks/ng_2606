@@ -5,15 +5,16 @@ using UnityEngine;
 namespace DeskStage.Merge
 {
     /// <summary>
-    /// 人形を撮って、切り抜く（キャラクターを写真で作る）。
+    /// 人形を、人型の枠（HumanMask）に合わせて撮り、枠の形に切り抜く（キャラクターを写真で作る）。
     /// カメラ（WebCamTexture）を開き、端末の向きに合わせて起こした映像を Preview に出す。
-    /// TakeCutout で、今の映像から人形の部分を切り抜く（計算は CutoutMath）。
+    /// TakeFramed で、今の映像の、枠を置く場所（HumanMask.CropRegion）を撮り、枠の外を透明にする。
+    /// 背景を自動で切り抜く方法（CutoutMath）は、うまく切れなかったので、使わない。
     /// 机の写真を撮る PhotoCapture と、同じカメラを使うので、同時には開かない（撮影の画面では、これを閉じておく）。
     /// </summary>
     public class CharacterCapture : MonoBehaviour
     {
-        // 切り抜きに使う写真の、長い辺の上限（画素）。大きいと、切り抜きに時間がかかる
-        const int MaxSide = 512;
+        // 撮る絵の高さ（画素）。横は、枠の縦横の比（HumanMask.Aspect）で決まる
+        const int OutHeight = 512;
 
         WebCamTexture webcam;
         RenderTexture upright;
@@ -108,8 +109,8 @@ namespace DeskStage.Merge
             Graphics.Blit(webcam, upright, scale, offset);
         }
 
-        /// <summary>いまの映像から、人形を切り抜く。映像がまだなら、失敗の結果を返す。</summary>
-        public CutoutResult TakeCutout()
+        /// <summary>いまの映像の、枠の場所を撮って、枠の外を透明にする。映像がまだなら、失敗の結果を返す。</summary>
+        public CutoutResult TakeFramed()
         {
             var source = Preview;
             if (source == null || source.width <= 16)
@@ -117,19 +118,21 @@ namespace DeskStage.Merge
                 return new CutoutResult { Ok = false, Reason = "カメラの えいぞうが まだ きていません" };
             }
 
-            var size = PhotoMath.FitLongSide(source.width, source.height, MaxSide);
-            var rt = RenderTexture.GetTemporary(size.x, size.y, 0);
+            var region = HumanMask.CropRegion((float)source.width / source.height);
+            var outWidth = Mathf.RoundToInt(OutHeight * HumanMask.Aspect);
+            var rt = RenderTexture.GetTemporary(outWidth, OutHeight, 0);
             var before = RenderTexture.active;
             try
             {
-                Graphics.Blit(source, rt);
+                // 映像の、枠の場所だけを取り出す
+                Graphics.Blit(source, rt, new Vector2(region.width, region.height), new Vector2(region.xMin, region.yMin));
                 RenderTexture.active = rt;
-                var tex = new Texture2D(size.x, size.y, TextureFormat.RGB24, false);
-                tex.ReadPixels(new Rect(0, 0, size.x, size.y), 0, 0);
+                var tex = new Texture2D(outWidth, OutHeight, TextureFormat.RGB24, false);
+                tex.ReadPixels(new Rect(0, 0, outWidth, OutHeight), 0, 0);
                 tex.Apply();
-                var pixels = tex.GetPixels32();
+                var pixels = HumanMask.Apply(tex.GetPixels32(), outWidth, OutHeight);
                 Destroy(tex);
-                return CutoutMath.Cut(pixels, size.x, size.y);
+                return new CutoutResult { Ok = true, Reason = "", Pixels = pixels, Width = outWidth, Height = OutHeight };
             }
             finally
             {

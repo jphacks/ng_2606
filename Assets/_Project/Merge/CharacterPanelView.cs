@@ -9,8 +9,8 @@ namespace DeskStage.Merge
     /// <summary>
     /// キャラクターを写真で作る・選ぶ画面（合流のつなぎ）。一覧の画面の「キャラを えらぶ」ボタンから開く、全画面の重ね画面。
     ///  ・一覧：いつものキャラと、撮ったキャラが並ぶ。押すと選ぶ。「あたらしく とる」「えらんだ キャラを けす」「とじる」
-    ///  ・撮る：カメラの映像に、無地の紙の上の人形を映して「とる」
-    ///  ・たしかめる：切り抜いた人形を見て、「これにする」か「とりなおす」
+    ///  ・撮る：カメラの映像に、太めで 3 等身くらいの人型の枠（HumanMask）が重なる。人形を枠に合わせて「とる」。枠の中だけが、キャラになる
+    ///  ・たしかめる：枠の形に切れた人形を見て、「これにする」か「とりなおす」
     /// 部品はすべて、開いたときに作る（見た目の大きさは、画面の大きさから決める）。
     /// D の正式な画面ができるまでの代わり。
     /// </summary>
@@ -37,6 +37,9 @@ namespace DeskStage.Merge
         RectTransform tileRow;
         TMP_Text listMessage;
         RawImage capturePreview;
+        RawImage captureGuide;
+        Texture2D guideTexture;
+        float guideAspect;
         AspectRatioFitter captureFitter;
         TMP_Text captureHint;
         RawImage reviewImage;
@@ -65,6 +68,11 @@ namespace DeskStage.Merge
             }
             ReleasePending();
             ReleaseList();
+            if (guideTexture != null)
+            {
+                Destroy(guideTexture);
+                guideTexture = null;
+            }
         }
 
         public void Open()
@@ -96,7 +104,7 @@ namespace DeskStage.Merge
         void ShowCapture()
         {
             SetOnly(captureView);
-            captureHint.text = "むじの かみの うえに にんぎょうを おいて、まんなかに うつしてね";
+            captureHint.text = "にんぎょうを わくに あわせてね。あたまから あしまで ぜんぶ いれてね";
             if (capture != null) capture.Open();
         }
 
@@ -146,8 +154,11 @@ namespace DeskStage.Merge
             capturePreview.enabled = preview != null;
             if (preview != null && preview.height > 0)
             {
-                captureFitter.aspectRatio = (float)preview.width / preview.height;
+                var aspect = (float)preview.width / preview.height;
+                captureFitter.aspectRatio = aspect;
+                UpdateGuide(aspect);
             }
+            captureGuide.enabled = preview != null;
             if (!string.IsNullOrEmpty(capture.Problem))
             {
                 captureHint.text = capture.Problem;
@@ -156,7 +167,31 @@ namespace DeskStage.Merge
 
         // ---- ボタンの動き ----
 
-        void OnTake() => ShowReview(capture.TakeCutout());
+        void OnTake() => ShowReview(capture.TakeFramed());
+
+        /// <summary>映像の上に、人型の枠の案内の絵を重ねる（映像の縦横の比が変わったら、作り直す）。</summary>
+        void UpdateGuide(float aspect)
+        {
+            if (guideTexture != null && Mathf.Abs(aspect - guideAspect) < 0.001f)
+            {
+                return;
+            }
+            const int guideHeight = 240;
+            var width = Mathf.Max(8, Mathf.RoundToInt(guideHeight * aspect));
+            if (guideTexture != null)
+            {
+                Destroy(guideTexture);
+            }
+            guideTexture = new Texture2D(width, guideHeight, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            guideTexture.SetPixels32(HumanMask.GuideOverlay(width, guideHeight, HumanMask.CropRegion(aspect)));
+            guideTexture.Apply();
+            captureGuide.texture = guideTexture;
+            guideAspect = aspect;
+        }
 
         void OnConfirm()
         {
@@ -326,6 +361,13 @@ namespace DeskStage.Merge
             captureFitter = previewRect.gameObject.AddComponent<AspectRatioFitter>();
             captureFitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
             captureFitter.aspectRatio = 4f / 3f;
+
+            // 映像と同じ大きさに、人型の枠の案内を重ねる（映像の子なので、映像の大きさに合わせて動く）
+            var guideRect = NewRect("Guide", previewRect);
+            Stretch(guideRect, Vector2.zero, Vector2.one);
+            captureGuide = guideRect.gameObject.AddComponent<RawImage>();
+            captureGuide.raycastTarget = false;
+            captureGuide.enabled = false;
 
             captureHint = NewText("Hint", root, "", 40f, TextAlignmentOptions.Center);
             Anchor(captureHint.rectTransform, new Vector2(0.03f, 0.86f), new Vector2(0.97f, 0.98f));
