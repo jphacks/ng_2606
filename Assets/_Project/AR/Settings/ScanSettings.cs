@@ -55,6 +55,12 @@ namespace DeskStage.AR
         [Tooltip("送る写真の JPEG の品質（1〜100）")]
         [Range(1, 100)] public int photoJpegQuality = 85;
 
+        [Tooltip("これより暗い写真は送らない（平均の明るさ 0〜1）。仮の値")]
+        [Range(0f, 1f)] public float photoMinBrightness = 0.12f;
+
+        [Tooltip("これよりくっきりさが低い写真は、ぶれとして送らない。仮の値（元の写真は 0.01 くらい、ぶれた写真は 0.0001 くらい）")]
+        public float photoMinSharpness = 0.0003f;
+
         [Tooltip("エディタでカメラの代わりに使う写真のフォルダ（プロジェクトからの位置）。top.jpg と side.jpg を置く。Git に入らない場所にする")]
         public string testPhotoFolder = "UserSettings/TestPhotos";
     }

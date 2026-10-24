@@ -12,6 +12,7 @@ namespace DeskStage.AR
     /// ・TakePhoto：1枚目は真上、2枚目は斜め。1枚目のあとは Scanning。2枚そろったら PhotosReady を出す
     /// ・Rescan：撮った写真を捨てて、カメラを開き直す
     /// 写真は長い辺を ScanSettings の上限まで縮め、JPEG にする。
+    /// 撮るたびに暗さとぶれを確かめ（Step 23）、使えなければ受け取らずに Limited（Dark か FastMotion）にして、同じ写真を撮り直してもらう。
     /// エディタで useTestPhotos が on のときは、カメラの代わりに testPhotoFolder の top.jpg と side.jpg を「撮った」ことにする。
     /// </summary>
     public class PhotoCapture : MonoBehaviour
@@ -38,6 +39,11 @@ namespace DeskStage.AR
         bool UseTestPhotos => useTestPhotos && Application.isEditor;
         int MaxLongSide => settings != null ? settings.photoMaxLongSide : 1568;
         int JpegQuality => settings != null ? settings.photoJpegQuality : 85;
+        float MinBrightness => settings != null ? settings.photoMinBrightness : 0.12f;
+        float MinSharpness => settings != null ? settings.photoMinSharpness : 0.0003f;
+
+        /// <summary>最後に撮った写真の明るさとくっきりさ（ログと確認用）。</summary>
+        public PhotoQuality LastQuality { get; private set; }
 
         void OnEnable()
         {
@@ -110,7 +116,18 @@ namespace DeskStage.AR
             }
 
             var source = UseTestPhotos ? (TopJpeg == null ? testTop : testSide) : (Texture)webcam;
-            var jpeg = Encode(source);
+            var jpeg = Encode(source, out var quality);
+            LastQuality = quality;
+
+            // 使えない写真は受け取らず、同じ写真を撮り直してもらう（D が「もういちど とってね」と出す）
+            var which = TopJpeg == null ? "真上" : "斜め";
+            var reason = PhotoCheck.Judge(quality, MinBrightness, MinSharpness);
+            Debug.Log($"[Photo] {which}：明るさ {quality.brightness:0.000}、くっきりさ {quality.sharpness:0.000000} → {(reason == ScanReason.None ? "OK" : reason.ToString())}");
+            if (reason != ScanReason.None)
+            {
+                StageContext.SetScanStatus(ScanStatus.Limited, reason);
+                return;
+            }
 
             if (TopJpeg == null)
             {
@@ -124,13 +141,14 @@ namespace DeskStage.AR
             }
 
             SideJpeg = jpeg;
+            StageContext.SetScanStatus(ScanStatus.Scanning);
             StopCamera();
             SaveForDebug();
             PhotosReady?.Invoke(TopJpeg, SideJpeg);
         }
 
-        /// <summary>今の映像を、長い辺を上限まで縮めて JPEG にする。</summary>
-        byte[] Encode(Texture source)
+        /// <summary>今の映像を、長い辺を上限まで縮めて JPEG にする。縮めた写真の明るさとくっきりさも測る。</summary>
+        byte[] Encode(Texture source, out PhotoQuality quality)
         {
             var size = PhotoMath.FitLongSide(source.width, source.height, MaxLongSide);
             var rt = RenderTexture.GetTemporary(size.x, size.y, 0);
@@ -142,6 +160,7 @@ namespace DeskStage.AR
                 var tex = new Texture2D(size.x, size.y, TextureFormat.RGB24, false);
                 tex.ReadPixels(new Rect(0, 0, size.x, size.y), 0, 0);
                 tex.Apply();
+                quality = PhotoCheck.Measure(tex.GetPixels32(), size.x, size.y);
                 var jpeg = tex.EncodeToJPG(JpegQuality);
                 Destroy(tex);
                 return jpeg;
