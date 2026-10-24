@@ -5,7 +5,7 @@ namespace DeskStage.UI
 {
     /// <summary>
     /// たしかめ画面の段の印を決める。計算だけの普通のクラス（Step 10）。
-    /// 箱ごとに、まわりの面（机の板＝高さ0、隣の箱の上面）との高さの差のうち、いちばん小さいもので判定する。
+    /// 机の板から登れる面を順にたどり、たどり着ける箱は登るときの段の高さで、たどり着けない箱は壁として判定する。
     /// 値は Docs/StepRules.md（C の StepRules）と同じ。C のクラスは直接呼べないため、ここに同じ決まりを置く。
     /// </summary>
     public static class StepMarkLogic
@@ -45,23 +45,62 @@ namespace DeskStage.UI
             return d <= JumpMax + 1e-6f ? Mark.Jump : Mark.Wall;
         }
 
-        /// <summary>箱ごとの印。まわりにいちばん近い高さの面がある所から登ると考える。</summary>
+        /// <summary>
+        /// 箱ごとの印。机の板（高さ0。どの箱のまわりにもある）から、登れる面を順にたどって決める。
+        /// たどり着ける箱は、登るときの段（たどり着ける隣の面との差のうち、いちばん小さいもの）で Walk か Jump。
+        /// たどり着けない箱は Wall（隣の箱との差が小さくても、その隣の箱にも登れなければ意味がないため）。
+        /// </summary>
         public static Mark[] Marks(IReadOnlyList<Box> boxes)
         {
-            var result = new Mark[boxes.Count];
-            for (int i = 0; i < boxes.Count; i++)
+            // 机から、いちばん大きな段がいちばん小さくなる道順で、近い順に箱を決めていく（最短経路と同じ考え方）。
+            // 決まった箱からだけ先へ進むので、「まだ登れていない隣の箱から歩いて来られる」と数えることはない。
+            var n = boxes.Count;
+            var cost = new float[n];
+            var step = new float[n];
+            var done = new bool[n];
+            for (int i = 0; i < n; i++)
             {
-                // 机の板（高さ0）はどの箱のまわりにもある
-                var best = boxes[i].Height;
-                for (int j = 0; j < boxes.Count; j++)
+                step[i] = boxes[i].Height;
+                cost[i] = Classify(step[i]) != Mark.Wall ? step[i] : float.PositiveInfinity;
+            }
+            while (true)
+            {
+                var next = -1;
+                for (int i = 0; i < n; i++)
                 {
-                    if (i == j || !BoxColorAssigner.AreNeighbors(boxes[i].Footprint, boxes[j].Footprint, NeighborMargin))
+                    if (!done[i] && !float.IsPositiveInfinity(cost[i]) && (next < 0 || cost[i] < cost[next]))
+                    {
+                        next = i;
+                    }
+                }
+                if (next < 0)
+                {
+                    break;
+                }
+                done[next] = true;
+                for (int k = 0; k < n; k++)
+                {
+                    if (done[k] || !BoxColorAssigner.AreNeighbors(boxes[next].Footprint, boxes[k].Footprint, NeighborMargin))
                     {
                         continue;
                     }
-                    best = Mathf.Min(best, Mathf.Abs(boxes[i].Height - boxes[j].Height));
+                    var d = Mathf.Abs(boxes[k].Height - boxes[next].Height);
+                    if (Classify(d) == Mark.Wall)
+                    {
+                        continue;
+                    }
+                    var c = Mathf.Max(cost[next], d);
+                    if (c < cost[k] || (Mathf.Approximately(c, cost[k]) && d < step[k]))
+                    {
+                        cost[k] = c;
+                        step[k] = d;
+                    }
                 }
-                result[i] = Classify(best);
+            }
+            var result = new Mark[n];
+            for (int i = 0; i < n; i++)
+            {
+                result[i] = done[i] ? Classify(step[i]) : Mark.Wall;
             }
             return result;
         }
