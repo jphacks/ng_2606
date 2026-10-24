@@ -19,6 +19,33 @@ namespace DeskStage.AR.EditorTools
         const string ScenePath = "Assets/_Project/Scenes/Test_A.unity";
         const string SettingsPath = "Assets/_Project/AR/Settings/ScanSettings.asset";
 
+        const string MaterialPath = "Assets/_Project/AR/Debug/PlaneVisual.mat";
+
+        /// <summary>
+        /// 面に貼る半透明のマテリアルをアセットとして作る。
+        /// 実行時に Shader.Find で作ると、ビルドでシェーダーが削られて
+        /// null になり落ちる。アセットにしてシーンから参照させれば残る。
+        /// </summary>
+        static Material CreatePlaneMaterial()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
+            if (existing != null)
+            {
+                return existing;
+            }
+            var material = PlaneProbe.CreateTransparentMaterial();
+            if (material == null)
+            {
+                Debug.LogWarning("[Step3] 面のマテリアルを作れませんでした");
+                return null;
+            }
+            Directory.CreateDirectory(Path.GetDirectoryName(MaterialPath));
+            AssetDatabase.CreateAsset(material, MaterialPath);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Step3] 作りました: " + MaterialPath);
+            return material;
+        }
+
         /// <summary>
         /// Test_A をビルド対象の先頭に入れる。入れ忘れるとビルドしても
         /// 別のシーンが起動して、原因が分かりにくい。
@@ -108,6 +135,7 @@ namespace DeskStage.AR.EditorTools
             var probe = originGo.AddComponent<PlaneProbe>();
             var serialized = new SerializedObject(probe);
             serialized.FindProperty("m_Settings").objectReferenceValue = settings;
+            serialized.FindProperty("m_PlaneMaterialAsset").objectReferenceValue = CreatePlaneMaterial();
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
             // 動作確認用：前方50cm に一辺5cm の立方体

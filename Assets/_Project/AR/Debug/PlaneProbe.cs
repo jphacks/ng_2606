@@ -18,6 +18,13 @@ namespace DeskStage.AR
     {
         [SerializeField] ScanSettings m_Settings;
 
+        /// <summary>
+        /// 面に貼る半透明のマテリアル。エディタ用スクリプトが作って入れる。
+        /// Shader.Find はビルドではシェーダーが削られて null になることがあるので、
+        /// アセットとして持ち、シーンから参照させる。
+        /// </summary>
+        [SerializeField] Material m_PlaneMaterialAsset;
+
         /// <summary>面ごとに覚えておくこと。</summary>
         class PlaneRecord
         {
@@ -57,7 +64,9 @@ namespace DeskStage.AR
             m_RaycastManager = GetComponent<ARRaycastManager>();
             m_Session = FindFirstObjectByType<ARSession>();
             m_Watcher = GetComponent<PlaneWatcher>();
-            m_PlaneMaterial = CreateTransparentMaterial();
+            m_PlaneMaterial = m_PlaneMaterialAsset != null
+                ? new Material(m_PlaneMaterialAsset)
+                : CreateTransparentMaterial();
             m_StartedAt = Time.realtimeSinceStartup;
         }
 
@@ -112,10 +121,21 @@ namespace DeskStage.AR
 
         // ---- 表示 ----
 
-        /// <summary>URP で半透明に描けるマテリアルを作る。</summary>
-        static Material CreateTransparentMaterial()
+        /// <summary>
+        /// URP で半透明に描けるマテリアルを作る。
+        /// アセットが入っていないときの保険。シェーダーが見つからなければ
+        /// null を返し、面の板を出さないだけにする（アプリは落とさない）。
+        /// </summary>
+        public static Material CreateTransparentMaterial()
         {
-            var shader = Shader.Find("Universal Render Pipeline/Unlit");
+            var shader = Shader.Find("Universal Render Pipeline/Unlit")
+                         ?? Shader.Find("Unlit/Color")
+                         ?? Shader.Find("Sprites/Default");
+            if (shader == null)
+            {
+                Debug.LogWarning("[PlaneProbe] 面を描くシェーダーが見つかりません。面の板は出しません");
+                return null;
+            }
             var material = new Material(shader);
             material.SetFloat("_Surface", 1f);           // Transparent
             material.SetFloat("_Blend", 0f);             // Alpha
@@ -133,7 +153,10 @@ namespace DeskStage.AR
             go.transform.SetParent(plane.transform, false);
             go.AddComponent<MeshFilter>();
             var renderer = go.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = m_PlaneMaterial;
+            if (m_PlaneMaterial != null)
+            {
+                renderer.sharedMaterial = m_PlaneMaterial;
+            }
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             go.AddComponent<ARPlaneMeshVisualizer>();
             return go;
@@ -146,7 +169,7 @@ namespace DeskStage.AR
                 return;
             }
             var renderer = record.Visual.GetComponent<MeshRenderer>();
-            if (renderer == null)
+            if (renderer == null || renderer.sharedMaterial == null)
             {
                 return;
             }
