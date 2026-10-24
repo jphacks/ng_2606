@@ -18,6 +18,9 @@ namespace DeskStage.Stage
         [Tooltip("箱の素材。空なら単色の仮の素材を使う（D の素材ができたら差し替える）")]
         [SerializeField] Material boxMaterial;
 
+        [Tooltip("スキャン中：作業中の箱（ScanContext.WorkingBoxes）が変わるたびに、その箱だけを出し直す")]
+        [SerializeField] bool followWorkingBoxes;
+
         static readonly Color FallbackDeskColor = new Color(0.82f, 0.70f, 0.55f);
         static readonly Color FallbackBoxColor = new Color(0.45f, 0.65f, 0.90f);
 
@@ -25,20 +28,41 @@ namespace DeskStage.Stage
         GameObject desk;
         Transform builtRoot;
 
+        void OnEnable()
+        {
+            if (followWorkingBoxes)
+            {
+                ScanContext.BoxesChanged += OnBoxesChanged;
+            }
+        }
+
+        void OnDisable()
+        {
+            ScanContext.BoxesChanged -= OnBoxesChanged;
+        }
+
+        /// <summary>スキャン中の箱の変化を、その箱のオブジェクトだけに反映する。机の板は作らない（本物の机が見えるように）。</summary>
+        void OnBoxesChanged(string boxId, BoxChange change, string source)
+        {
+            if (change == BoxChange.Removed)
+            {
+                RemoveBox(boxId);
+                return;
+            }
+            var box = ScanContext.WorkingBoxes.Find(b => b.id == boxId);
+            if (box != null)
+            {
+                UpsertBox(box);
+            }
+        }
+
         /// <summary>
         /// ステージ全体を組み立てる。前に作った物は、残す箱は直し、ない箱は消す。
         /// 作り終えたら StageBuilt を出す。
         /// </summary>
         public void Build(StageData stage)
         {
-            var root = EnsureStageRoot();
-            if (builtRoot != root)
-            {
-                // StageRoot が替わったら、前の物は使わない
-                Clear();
-                builtRoot = root;
-            }
-
+            CurrentRoot();
             BuildDesk(stage.desk);
 
             var keep = new HashSet<string>();
@@ -67,7 +91,7 @@ namespace DeskStage.Stage
         /// <summary>箱を1つ作る。同じ id の箱がもうあれば、その箱の位置と大きさだけを直す。</summary>
         public void UpsertBox(BoxData box)
         {
-            var root = EnsureStageRoot();
+            var root = CurrentRoot();
             if (!boxes.TryGetValue(box.id, out var go) || go == null)
             {
                 go = CreateCube(box.id, root, boxMaterial, FallbackBoxColor);
@@ -121,6 +145,18 @@ namespace DeskStage.Stage
             }
             var thickness = settings != null ? settings.deskThickness : 0.01f;
             Apply(desk.transform, StageLayout.Desk(deskData, thickness));
+        }
+
+        /// <summary>今の StageRoot。替わっていたら（もういちどスキャンで A が置き直した、など）前に作った物は捨てる。</summary>
+        Transform CurrentRoot()
+        {
+            var root = EnsureStageRoot();
+            if (builtRoot != root)
+            {
+                Clear();
+                builtRoot = root;
+            }
+            return root;
         }
 
         /// <summary>遊ぶときは StageRoot がないので、B が原点に作る（00_overview.md 3.1）。</summary>
