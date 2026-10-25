@@ -191,16 +191,26 @@ iPhone で机を2枚撮るだけで、並べた物の形がそのまま3Dのス�
 
 #### API・データ
 
-* Claude API（モデル `claude-opus-5-5`、構造化出力）：机の写真2枚から、物ごとの位置・大きさ・高さを決まった形の JSON で読み取る
+* Claude API（モデル `claude-opus-5-5`、構造化出力）：机の写真2枚から、物ごとの位置・大きさ・高さを、決まった形の JSON で読み取る。答えの形を決めてあるので、アプリがそのまま箱の一覧に直せる
 
 #### フレームワーク・ライブラリ・モジュール
 
-* Unity 6（6000.6.6f1）、Universal Render Pipeline、Input System、Unity Test Framework
-* Python、FastAPI、uvicorn、Anthropic Python SDK（読み取りサーバー）
+| 技術 | 使う場面 |
+| --- | --- |
+| Unity 6（6000.6.6f1）、Universal Render Pipeline | アプリ全体。3D のステージ、画面、ゲーム |
+| C#、UGUI、TextMeshPro | 12 枚の画面を、コードで作る。ひらがな中心の日本語の表示 |
+| Input System | 画面のスティックとジャンプボタン |
+| WebCamTexture | 撮影。カメラ映像、向きの補正、暗い・ぶれた写真の判定 |
+| UnityWebRequest | 撮った写真 2 枚を、読み取りサーバーに送る |
+| Python、FastAPI、uvicorn、Anthropic Python SDK | 読み取りサーバー。写真を受け取り、AI に聞いて、答えを返す |
+| CharacterController | 身長 3cm のキャラの動き、2段ジャンプ、しかけで流される動き |
+| Unity Test Framework | 計算の自動テストと、箱に乗れる高さの実測 |
+| Xcode、devicectl | iPhone へのビルドと、実機での確認 |
 
 #### デバイス
 
-* iPhone（撮影と遊ぶ画面）
+* iPhone：撮影と、遊ぶ画面
+* Mac：読み取りサーバーの実行と、Unity のビルド（開発用）
 
 ### 独自技術
 
