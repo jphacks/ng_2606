@@ -5,8 +5,8 @@
 | リンク | |
 | --- | --- |
 | スライド | [ならべて！ステージ JPHACKS Award Day（PDF）](Docs/slides.pdf) |
-| デモ動画 1 | https://youtu.be/EEbAB2pftfA |
-| デモ動画 2 | https://youtu.be/VaGDQbAmtqg |
+| デモ動画 1（アプリの動作の概要） | https://youtu.be/EEbAB2pftfA |
+| デモ動画 2（想定する子どもが、どのように遊ぶか） | https://youtu.be/VaGDQbAmtqg |
 
 ---
 
