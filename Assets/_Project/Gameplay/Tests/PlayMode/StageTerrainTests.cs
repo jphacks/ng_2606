@@ -21,6 +21,9 @@ namespace DeskStage.Gameplay.PlayTests
         const float OnTopTolerance = 0.003f;
         // 立っているときの上下の揺れの上限（m）
         const float JitterLimit = 0.0002f;
+        // 「進めない」とみなす、水平の速さの上限（m/秒）。歩く速さ 0.15 の 1/12。測る間隔は 0.05 秒
+        const float StuckSpeed = 0.012f;
+        const float StuckWindow = 0.05f;
 
         GameObject world;
         CharacterSettings settings;
@@ -134,7 +137,10 @@ namespace DeskStage.Gameplay.PlayTests
                 yield return new WaitForSeconds(0.2f);
 
                 motor.SetTestInput(new Vector2(dir.x, dir.z));
-                Vector3 lastPos = motor.transform.position;
+                // 進んだ量は、短い間（0.05 秒）ごとにまとめて測る。1 フレームごとに測ると、
+                // フレームが速い環境（バッチ実行では 0.1 ミリ秒）で、進んでいても「進めない」と誤って判定してしまう
+                Vector3 windowStart = motor.transform.position;
+                float windowTime = 0f;
                 float stuckTime = 0f;
                 bool stuck = false, sunk = false;
                 for (float t = 0f; t < 1.5f; t += Time.deltaTime)
@@ -145,12 +151,19 @@ namespace DeskStage.Gameplay.PlayTests
                     {
                         sunk = true;
                     }
-                    float moved = Vector3.Distance(Flat(pos), Flat(lastPos));
-                    lastPos = pos;
-                    // 前が壁なら止まるのは正しい。壁がないのに進めないときだけ、はさまったとみなす
-                    if (controller.isGrounded && moved < 0.0002f && !WallAhead(pos, dir))
+                    windowTime += Time.deltaTime;
+                    if (windowTime < StuckWindow)
                     {
-                        stuckTime += Time.deltaTime;
+                        continue;
+                    }
+                    float speed = Vector3.Distance(Flat(pos), Flat(windowStart)) / windowTime;
+                    windowStart = pos;
+                    float elapsed = windowTime;
+                    windowTime = 0f;
+                    // 前が壁なら止まるのは正しい。壁がないのに進めないときだけ、はさまったとみなす
+                    if (controller.isGrounded && speed < StuckSpeed && !WallAhead(pos, dir))
+                    {
+                        stuckTime += elapsed;
                         stuck |= stuckTime > 0.5f;
                     }
                     else
@@ -282,6 +295,10 @@ namespace DeskStage.Gameplay.PlayTests
             Vector3 lastPos = motor.transform.position;
             float stillTime = 0f;
             float nextJumpAllowed = 0f;
+            float secondJumpAt = -1f;
+            // 1 回のジャンプ（12cm + 足元で乗り上げる分）で届かない高さのときだけ、2 段ジャンプにする
+            // （低い箱で 2 段にすると、箱を飛び越えてしまう）
+            bool needTwoJumps = stopAboveY > 0.12f;
             for (float t = 0f; t < seconds; t += Time.deltaTime)
             {
                 if (controller.isGrounded && motor.transform.position.y > stopAboveY)
@@ -290,12 +307,23 @@ namespace DeskStage.Gameplay.PlayTests
                 }
                 yield return null;
                 Vector3 pos = motor.transform.position;
-                stillTime = Vector3.Distance(Flat(pos), Flat(lastPos)) < 0.0002f ? stillTime + Time.deltaTime : 0f;
+                // 進んだ速さで見る（フレームが速くても、遅くても、同じ結果になる）
+                float speed = Vector3.Distance(Flat(pos), Flat(lastPos)) / Mathf.Max(Time.deltaTime, 1e-4f);
+                stillTime = speed < StuckSpeed ? stillTime + Time.deltaTime : 0f;
                 lastPos = pos;
                 if (controller.isGrounded && stillTime > 0.05f && Time.time >= nextJumpAllowed)
                 {
                     motor.PressJumpForTest();
                     nextJumpAllowed = Time.time + 0.3f;
+                    if (needTwoJumps) secondJumpAt = Time.time + 0.2f; // ジャンプの頂点のあたりで、もう一度押す（2 段ジャンプ）
+                }
+                if (secondJumpAt > 0f && Time.time >= secondJumpAt)
+                {
+                    if (!controller.isGrounded)
+                    {
+                        motor.PressJumpForTest();
+                    }
+                    secondJumpAt = -1f;
                 }
             }
             motor.SetTestInput(Vector2.zero);
