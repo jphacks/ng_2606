@@ -5,7 +5,8 @@
 | リンク | |
 | --- | --- |
 | スライド | [ならべて！ステージ JPHACKS Award Day（PDF）](Docs/slides.pdf) |
-| デモ動画 | https://youtu.be/EEbAB2pftfA |
+| デモ動画 1 | https://youtu.be/EEbAB2pftfA |
+| デモ動画 2 | https://youtu.be/VaGDQbAmtqg |
 
 ---
 
