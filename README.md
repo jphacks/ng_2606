@@ -5,7 +5,7 @@
 | リンク | |
 | --- | --- |
 | アプリ | 〈TestFlight などの URL〉 |
-| スライド | 〈URL〉 |
+| スライド | [ならべて！ステージ JPHACKS Award Day（PDF）](Docs/slides.pdf) |
 | デモ動画 | https://youtu.be/EEbAB2pftfA |
 
 ---
