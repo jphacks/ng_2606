@@ -1,12 +1,12 @@
 # ならべて！ステージ
 
-![ならべて！ステージ　家にあるものが、そのままステージに](Docs/images/eyecatch.png)
+[![ならべて！ステージ　家にあるものが、そのままステージに](Docs/images/eyecatch.png)](https://youtu.be/EEbAB2pftfA)
 
 | リンク | |
 | --- | --- |
 | アプリ | 〈TestFlight などの URL〉 |
 | スライド | 〈URL〉 |
-| デモ動画 | 〈YouTube の URL〉 |
+| デモ動画 | https://youtu.be/EEbAB2pftfA |
 
 ---
 
