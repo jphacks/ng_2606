@@ -4,7 +4,7 @@
 
 | リンク | |
 | --- | --- |
-| スライド | 〈URL〉 |
+| スライド | [ならべて！ステージ JPHACKS Award Day（PDF）](Docs/slides.pdf) |
 | デモ動画 | https://youtu.be/EEbAB2pftfA |
 
 ---
@@ -207,4 +207,3 @@ iPhone で机を2枚撮るだけで、並べた物の形がそのまま3Dのス�
 * ゴールまで行けるかの判定：[CourseReachability.cs](Assets/_Project/Gameplay/CourseReachability.cs)、コミット `c7d92ff`
 * 子どもが見失わないカメラ：[ViewCamera.cs](Assets/_Project/Gameplay/ViewCamera.cs)
 * 写真の読み取りサーバー：[Server/app.py](Server/app.py)、指示文 [scan_prompt.md](Assets/_Project/Stage/Llm/scan_prompt.md)
-* 〈A・B・D の担当が、それぞれの力を入れた部分を足す〉
