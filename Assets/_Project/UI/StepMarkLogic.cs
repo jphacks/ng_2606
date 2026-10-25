@@ -22,8 +22,8 @@ namespace DeskStage.UI
 
         /// <summary>歩ける段の上限（m）。0.8cm</summary>
         public const float WalkMax = 0.008f;
-        /// <summary>跳べる段の上限（m）。12.5cm（ジャンプの高さ 12cm + 約 0.5cm）。境目ちょうどは Jump</summary>
-        public const float JumpMax = 0.125f;
+        /// <summary>跳べる段の上限（m）。22cm（2 段ジャンプ。12cm を 2 回 + 約 0.5cm の理論上の 24.5cm より少し低く）。境目ちょうどは Jump</summary>
+        public const float JumpMax = 0.22f;
         /// <summary>隣とみなす距離（m）。B の箱と箱のすき間は 0 か 1.6cm 以上なので、それより狭くする</summary>
         public const float NeighborMargin = 0.01f;
 

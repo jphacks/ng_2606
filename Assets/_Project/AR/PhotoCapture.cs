@@ -275,6 +275,15 @@ namespace DeskStage.AR
             Debug.Log($"[Photo] 2枚撮りました（真上 {TopJpeg.Length / 1024} KB、斜め {SideJpeg.Length / 1024} KB）。保存した場所：{folder}");
         }
 
+        /// <summary>撮影をやめる（カメラを閉じ、撮った写真を捨てる）。撮影の画面から出るときに、UI が呼ぶ。</summary>
+        public void StopScan()
+        {
+            StopAllCoroutines();
+            StopCamera();
+            TopJpeg = null;
+            SideJpeg = null;
+        }
+
         void StopCamera()
         {
             if (webcam != null)

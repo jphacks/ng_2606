@@ -8,14 +8,14 @@ namespace DeskStage.AR.EditorTools
     /// <summary>
     /// 合流用の Main.unity を作る（00_overview.md 6章「合流（M3）の決まり」）。
     /// Main には、各担当のプレハブ（AR_System、Stage_System、Game_System）を置くだけにする。
-    /// UI_System は、D の正式な物ができるまで、Test_D から作ったつなぎの物（Merge/Prefabs）を置く。
+    /// UI は、新しい UI（App/）の App_System を置く（メニュー「DeskStage/App/1. App_System プレハブを作る」で作る）。
     /// Main を変えるときは、チームのチャットで「Main触ります」「Main終わりました」と伝える。
     /// </summary>
     public static class CreateMainScene
     {
         public const string ScenePath = "Assets/_Project/Scenes/Main.unity";
         const string StagePrefabPath = "Assets/_Project/Stage/Prefabs/Stage_System.prefab";
-        const string UiPrefabPath = "Assets/_Project/Merge/Prefabs/UI_System.prefab";
+        const string UiPrefabPath = "Assets/_Project/App/Prefabs/App_System.prefab";
         const string GamePrefabPath = "Assets/_Project/Gameplay/Prefabs/Game_System.prefab";
 
         [MenuItem("DeskStage/A/7. Main シーンを作る")]
@@ -55,7 +55,7 @@ namespace DeskStage.AR.EditorTools
             Place(StagePrefabPath);
             Place(GamePrefabPath);
 
-            // D の UI（Test_D から仮の部品を除いた UI_System。メニュー「DeskStage/Merge/1. UI_System プレハブを作る」で作る）
+            // 新しい UI（画面は、起動したときに AppRoot がコードで作る）
             Place(UiPrefabPath);
 
             Directory.CreateDirectory(Path.GetDirectoryName(ScenePath));

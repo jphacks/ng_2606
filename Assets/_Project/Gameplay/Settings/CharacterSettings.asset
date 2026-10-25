@@ -22,11 +22,12 @@ MonoBehaviour:
   walkSpeed: 0.15
   gravity: 4.9
   jumpHeight: 0.12
+  maxAirJumps: 1
   jumpBufferTime: 0.1
   coyoteTime: 0.1
   maxFallSpeed: 0.5
   turnSpeed: 720
-  jumpableStepMax: 0.125
+  jumpableStepMax: 0.22
   walkableStepMax: 0.008
   cameraDistance: 0.35
   cameraDistanceMin: 0.2

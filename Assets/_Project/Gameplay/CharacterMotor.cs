@@ -25,6 +25,12 @@ namespace DeskStage.Gameplay
         /// <summary>瞬間移動したとき。視点のカメラがキャラの背中側に回り直す</summary>
         public event Action Teleported;
 
+        /// <summary>
+        /// 外から加わる水平の速さ（m/秒）。水の箱の上で流される分など。毎フレームの動きに足して、1 回だけ Character Controller を動かす
+        /// （別に Move を呼ぶと、接地の判定が狂って、ジャンプできなくなる）。使わないときはゼロ。
+        /// </summary>
+        public Vector3 ExternalVelocity { get; set; }
+
         /// <summary>このフレームのスティックの値（Step 15 のはさまりの判定で使う）</summary>
         public Vector2 Stick { get; private set; }
 
@@ -38,6 +44,8 @@ namespace DeskStage.Gameplay
         DeskStageControls controls;
         readonly JumpTimer jumpTimer = new JumpTimer();
         float verticalSpeed;
+        // 空中で使ったジャンプの回数（接地すると 0 に戻る）
+        int airJumpsUsed;
         // この時刻までは入力を受け付けない（落ちて戻った直後など）
         float inputLockedUntil = float.NegativeInfinity;
 
@@ -89,6 +97,7 @@ namespace DeskStage.Gameplay
             transform.SetPositionAndRotation(position, rotation);
             controller.enabled = true;
             verticalSpeed = 0f;
+            airJumpsUsed = 0;
             jumpTimer.Reset();
             Teleported?.Invoke();
         }
@@ -125,6 +134,7 @@ namespace DeskStage.Gameplay
             if (grounded)
             {
                 jumpTimer.RecordGrounded(now);
+                airJumpsUsed = 0;
             }
             if (jumpPressed)
             {
@@ -136,6 +146,12 @@ namespace DeskStage.Gameplay
             {
                 verticalSpeed = settings.JumpVelocity;
             }
+            else if (jumpPressed && !grounded && airJumpsUsed < settings.maxAirJumps)
+            {
+                // 空中でもう一度押したら、その場から、もう一度同じ高さまで跳ぶ（2 段ジャンプ）
+                verticalSpeed = settings.JumpVelocity;
+                airJumpsUsed++;
+            }
 
             // 6：重力
             verticalSpeed = MotorMath.ApplyGravity(verticalSpeed, settings.gravity, settings.maxFallSpeed, dt);
@@ -144,7 +160,7 @@ namespace DeskStage.Gameplay
             // 段差を自動で登る機能（Step Offset）は地面にいるときだけ使う。空中でも働くと、
             // ジャンプの頂点（5cm）に 0.8cm が足されて、壁のはずの 5cm の箱に乗れてしまう（Step 8）
             controller.stepOffset = grounded ? settings.stepOffset : 0f;
-            controller.Move((horizontal + Vector3.up * verticalSpeed) * dt);
+            controller.Move((horizontal + ExternalVelocity + Vector3.up * verticalSpeed) * dt);
 
             // 8：動いているときは進む方向へなめらかに向く
             if (horizontal.sqrMagnitude > 1e-8f)

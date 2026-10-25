@@ -14,9 +14,10 @@ namespace DeskStage.Merge
     /// 貼る物は、机の板と箱の子（PhotoTop、PhotoSides）。親の素材や当たり判定は変えない。
     /// 位置が分からない箱（補助で足した箱など）は、そのまま（D の見た目）。選んでいる箱は、D の強調が見えるよう、写真を外す。
     ///
-    /// 地面と背景も、本物の写真にする：
-    /// ・地面（PhotoGround）：机の板の外側。1枚目（真上）の写真を、机の四隅から外へのばして貼った大きな板を、
+    /// 写真を貼るのは、箱だけ。机の板と地面は、写真ではなく、きれいな色にする：
+    /// ・地面（PhotoGround）：机の板の外側。きれいな単色の大きな板を、
     ///   「落ちた」と判定する高さ（fallDepth）に敷く。机のふちから落ちると、この地面に着く
+    ///   （1枚目の写真を机の外へのばす方法は、AddGround に残してあるが、使っていない）
     /// ・背景（PhotoBackdrop）：背景専用に撮った写真（BackdropStore。一覧の「はいけいを とる」で撮る）を、ぼかして、
     ///   ステージの周りの壁（円筒）の内側に貼る。背景の写真が無ければ、背景は出さない
     ///   背景は、撮影の写真が無くても（保存したステージを読み込んだときも）貼る
@@ -44,6 +45,8 @@ namespace DeskStage.Merge
         const float GroundExtent = 3f;
         const int GroundTextureSide = 64;
         const float GroundDarken = 0.85f;
+        // 地面の色（きれいなクリーム色。背景のプリセットと合う、やわらかい色）
+        static readonly Color PlainGroundColor = new Color(0.94f, 0.89f, 0.78f, 1f);
 
         // 背景：ステージの周りの壁（円筒）の、半径（m）の下限と、高さ（m）。写真は、読み取れる程度の大きさ（BackdropTargetWidth 画素幅）にぼかして貼る。
         // 壁の周りの長さに合わせて、写真を横に何回か、鏡写しで並べる
@@ -169,24 +172,30 @@ namespace DeskStage.Merge
                 return;
             }
 
-            // 机・地面・箱：撮影の 1 枚目の写真があるときだけ（保存したステージを読み込んだときは、写真が無い）
+            // 机の板と地面は、写真を貼らない（きれいな色）。写真を貼るのは、箱だけ
+            var desk = root.Find("Desk");
+            if (desk != null)
+            {
+                AddPlainGround(root, desk);
+            }
+
+            var changed = false;
+
+            // 箱：撮影の 1 枚目の写真があるときだけ（保存したステージを読み込んだときは、写真が無い）
             if (photoPixels != null)
             {
-                var desk = root.Find("Desk");
-                if (desk != null && StagePhotoRegions.DeskQuad != null)
-                {
-                    // 机の絵には、箱の写真を残さない（残ると、立体の箱の下に平らな箱の絵が見えて、二重になる）
-                    var deskPixels = PhotoTextureMath.FillRegions(photoPixels, photoWidth, photoHeight, ObjectRegions());
-                    AddPhoto(desk, "", StagePhotoRegions.DeskQuad, false, deskPixels);
-                    AddGround(root, desk, StagePhotoRegions.DeskQuad, deskPixels);
-                }
                 foreach (var pair in StagePhotoRegions.TopFaces)
                 {
                     var box = root.Find(pair.Key);
                     if (box != null)
                     {
                         AddPhoto(box, pair.Key, pair.Value, true, photoPixels);
+                        changed |= DetectGimmick(box, pair.Key, pair.Value);
                     }
+                }
+                if (changed)
+                {
+                    GimmicksChanged?.Invoke();
                 }
             }
 
@@ -218,6 +227,47 @@ namespace DeskStage.Merge
                     Mathf.Clamp01(xMax + SideMargin), Mathf.Clamp01(yMax + height * SideExtendRatio + 0.02f)));
             }
             return regions;
+        }
+
+        /// <summary>箱のしかけ（水・炎・回復）が、写真から決まった（変わった）。GimmickSystem が受けて、見た目を作り直す。</summary>
+        public static event System.Action GimmicksChanged;
+
+        // 上面の写真の、ふち（影やテープ）を除いた内側を小さく切り出して、一面、青・赤・緑のどれかなら、その箱のしかけにする
+        bool DetectGimmick(Transform box, string id, Vector2[] quad)
+        {
+            const int Side = 24;
+            const float Inner0 = 0.15f;
+            const float Inner1 = 0.85f;
+            var scale = box.localScale;
+            var ordered = PhotoTextureMath.OrderForFace(quad, scale.x, scale.z, box.localEulerAngles.y);
+            var pixels = PhotoTextureMath.CropRange(photoPixels, photoWidth, photoHeight, ordered, Side, Side, Inner0, Inner1, Inner0, Inner1);
+            var gimmick = GimmickDetector.Detect(pixels);
+            var changed = false;
+            foreach (var data in ScanContext.WorkingBoxes)
+            {
+                if (data.id == id && (data.gimmick ?? "") != gimmick)
+                {
+                    data.gimmick = gimmick;
+                    changed = true;
+                }
+            }
+            var stage = StageContext.CurrentStage;
+            if (stage != null && stage.boxes != null)
+            {
+                foreach (var data in stage.boxes)
+                {
+                    if (data.id == id && (data.gimmick ?? "") != gimmick)
+                    {
+                        data.gimmick = gimmick;
+                        changed = true;
+                    }
+                }
+            }
+            if (gimmick.Length > 0)
+            {
+                Debug.Log($"[Merge] {id} の上面は一面 {gimmick} の色：しかけにします");
+            }
+            return changed;
         }
 
         void AddPhoto(Transform target, string boxId, Vector2[] quad, bool paintSides, Color32[] source)
@@ -270,6 +320,27 @@ namespace DeskStage.Merge
             overlay.Top = top;
 
             overlays.Add(overlay);
+        }
+
+        /// <summary>机の外側の地面：きれいな単色の大きな板を、落ちる高さに敷く（机のふちから落ちると、ここに着く）。</summary>
+        void AddPlainGround(Transform root, Transform desk)
+        {
+            var scale = desk.localScale;
+            var texture = new Texture2D(2, 2, TextureFormat.RGB24, false) { wrapMode = TextureWrapMode.Clamp };
+            texture.SetPixels32(new Color32[] { new Color32(255, 255, 255, 255), new Color32(255, 255, 255, 255), new Color32(255, 255, 255, 255), new Color32(255, 255, 255, 255) });
+            texture.Apply();
+            created.Add(texture);
+
+            var fallDepth = StageContext.CurrentStage != null ? StageContext.CurrentStage.fallDepth : 0.10f;
+            var ground = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            ground.name = GroundName;
+            RemoveCollider(ground);
+            ground.transform.SetParent(root, false);
+            ground.transform.localPosition = new Vector3(0f, -fallDepth, 0f);
+            ground.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            ground.transform.localScale = new Vector3(scale.x * GroundExtent * 2f, scale.z * GroundExtent * 2f, 1f);
+            ground.GetComponent<Renderer>().sharedMaterial = NewMaterial(texture, PlainGroundColor);
+            extras.Add(ground);
         }
 
         /// <summary>机の外側の地面：1枚目の写真を、机の四隅から外へのばして貼った大きな板を、落ちる高さに敷く。</summary>

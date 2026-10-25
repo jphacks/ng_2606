@@ -37,9 +37,17 @@ namespace DeskStage.Gameplay.Tests
         }
 
         [Test]
-        public void 跳べる段の上限はジャンプの高さに0_5cm足した値()
+        public void 跳べる段の上限は2段ジャンプの理論上の高さより低く1回ジャンプより高い()
         {
-            Assert.AreEqual(settings.jumpHeight + 0.005f, settings.jumpableStepMax, 0.00001f);
+            var theory = settings.jumpHeight * (1 + settings.maxAirJumps) + 0.005f;
+            Assert.Less(settings.jumpableStepMax, theory);
+            Assert.Greater(settings.jumpableStepMax, settings.jumpHeight + 0.005f);
+        }
+
+        [Test]
+        public void 空中のジャンプは1回できる()
+        {
+            Assert.AreEqual(1, settings.maxAirJumps);
         }
 
         [Test]

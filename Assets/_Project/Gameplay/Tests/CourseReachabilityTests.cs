@@ -47,34 +47,34 @@ namespace DeskStage.Gameplay.Tests
         }
 
         [Test]
-        public void 高さ20cmの箱の上へは行けない()
+        public void 高さ30cmの箱の上へは行けない()
         {
-            var stage = Stage((0f, 0.20f));
-            Assert.IsFalse(CourseReachability.CanReach(stage, rules, OnDesk, new Vector3(0f, 0.20f, 0f)));
+            var stage = Stage((0f, 0.30f));
+            Assert.IsFalse(CourseReachability.CanReach(stage, rules, OnDesk, new Vector3(0f, 0.30f, 0f)));
         }
 
         [Test]
-        public void となりに10cmの箱があれば20cmの箱へ行ける()
+        public void となりに20cmの箱があれば30cmの箱へ行ける()
         {
-            // 10cm（x -8〜0cm）と 20cm（x 0〜8cm）がくっついている
-            var stage = Stage((-0.04f, 0.10f), (0.04f, 0.20f));
-            Assert.IsTrue(CourseReachability.CanReach(stage, rules, OnDesk, new Vector3(0.04f, 0.20f, 0f)));
+            // 20cm（x -8〜0cm）と 30cm（x 0〜8cm）がくっついている
+            var stage = Stage((-0.04f, 0.20f), (0.04f, 0.30f));
+            Assert.IsTrue(CourseReachability.CanReach(stage, rules, OnDesk, new Vector3(0.04f, 0.30f, 0f)));
         }
 
         [Test]
-        public void すき間が広いと20cmの箱へ行けない()
+        public void すき間が広いと30cmの箱へ行けない()
         {
-            // 10cm（x -11〜-3cm）と 20cm（x 0〜8cm）の間に 3cm のすき間
-            var stage = Stage((-0.07f, 0.10f), (0.04f, 0.20f));
-            Assert.IsFalse(CourseReachability.CanReach(stage, rules, OnDesk, new Vector3(0.04f, 0.20f, 0f)));
+            // 20cm（x -11〜-3cm）と 30cm（x 0〜8cm）の間に 3cm のすき間
+            var stage = Stage((-0.07f, 0.20f), (0.04f, 0.30f));
+            Assert.IsFalse(CourseReachability.CanReach(stage, rules, OnDesk, new Vector3(0.04f, 0.30f, 0f)));
         }
 
         [Test]
         public void すき間が狭ければつながっている()
         {
-            // 10cm（x -9.5〜-1.5cm）と 20cm（x 0〜8cm）の間に 1.5cm のすき間
-            var stage = Stage((-0.055f, 0.10f), (0.04f, 0.20f));
-            Assert.IsTrue(CourseReachability.CanReach(stage, rules, OnDesk, new Vector3(0.04f, 0.20f, 0f)));
+            // 20cm（x -9.5〜-1.5cm）と 30cm（x 0〜8cm）の間に 1.5cm のすき間
+            var stage = Stage((-0.055f, 0.20f), (0.04f, 0.30f));
+            Assert.IsTrue(CourseReachability.CanReach(stage, rules, OnDesk, new Vector3(0.04f, 0.30f, 0f)));
         }
 
         [Test]
