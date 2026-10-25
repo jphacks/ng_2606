@@ -65,9 +65,14 @@ namespace DeskStage.App
             UiKit.Place(back.Rect, new Vector2(0f, 1f), new Vector2(Theme.Margin, -40f), back.Rect.sizeDelta);
             var title = UiKit.FitLabel(safe, AppText.CheckTitle, Theme.H2, Color.white, TextAlignmentOptions.Center, true, "Title");
             UiKit.Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -55f), new Vector2(1200f, 100f));
-            var rescan = UiKit.Button(safe, AppText.CheckRescanButton, UiKit.ButtonStyle.Overlay, new Vector2(500f, Theme.SmallButtonHeight),
-                AskRescan, "Rescan", Theme.Body);
-            UiKit.Place(rescan.Rect, new Vector2(1f, 1f), new Vector2(-Theme.Margin, -40f), rescan.Rect.sizeDelta);
+            // 画面の上での直し（なおす）は、ふだんは使わない、ちいさな道具。主な直し方は、ほんものを ならべなおして「もういちど とる」
+            fixButton = UiKit.Button(safe, AppText.CheckFix, UiKit.ButtonStyle.Overlay, new Vector2(420f, Theme.SmallButtonHeight),
+                null, "Fix", Theme.Body);
+            UiKit.Place(fixButton.Rect, new Vector2(1f, 1f), new Vector2(-Theme.Margin, -40f), fixButton.Rect.sizeDelta);
+
+            var mainHint = UiKit.Label(safe, AppText.CheckMainHint, Theme.Small, Theme.WithAlpha(Color.white, 0.92f), TextAlignmentOptions.Center, true, "MainHint");
+            mainHint.textWrappingMode = TextWrappingModes.NoWrap;
+            UiKit.Place(mainHint.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -140f), new Vector2(1500f, 56f));
 
             hint = UiKit.Label(safe, "", Theme.Body, Color.white, TextAlignmentOptions.Center, true, "Hint");
             var hintBack = UiKit.Panel(safe, "HintBack", Theme.WithAlpha(Theme.Navy, 0.78f), 60f);
@@ -80,15 +85,15 @@ namespace DeskStage.App
             // 下の帯
             UiParts.Bar(Rect, "BottomBar", false, 300f);
             var barSafe = UiKit.Fill(UiKit.NewRect("BarSafe", Rect));
-            fixButton = UiKit.Button(barSafe, AppText.CheckFix, UiKit.ButtonStyle.Soft, new Vector2(400f, Theme.ButtonHeight),
-                null, "Fix", Theme.H2);
-            UiKit.Place(fixButton.Rect, new Vector2(0f, 0f), new Vector2(Theme.Margin, 50f), fixButton.Rect.sizeDelta);
-            courseButton = UiKit.Button(barSafe, AppText.CheckCourse, UiKit.ButtonStyle.Soft, new Vector2(400f, Theme.ButtonHeight),
+            var rescan = UiKit.Button(barSafe, AppText.CheckRescanButton, UiKit.ButtonStyle.Secondary, new Vector2(620f, Theme.ButtonHeight),
+                AskRescan, "Rescan", Theme.H2);
+            UiKit.Place(rescan.Rect, new Vector2(0f, 0f), new Vector2(Theme.Margin, 50f), rescan.Rect.sizeDelta);
+            courseButton = UiKit.Button(barSafe, AppText.CheckCourse, UiKit.ButtonStyle.Soft, new Vector2(360f, Theme.ButtonHeight),
                 ToggleCourse, "Course", Theme.H2);
-            UiKit.Place(courseButton.Rect, new Vector2(0f, 0f), new Vector2(Theme.Margin + 440f, 50f), courseButton.Rect.sizeDelta);
-            saveButton = UiKit.Button(barSafe, AppText.CheckSave, UiKit.ButtonStyle.Soft, new Vector2(400f, Theme.ButtonHeight),
+            UiKit.Place(courseButton.Rect, new Vector2(0f, 0f), new Vector2(Theme.Margin + 660f, 50f), courseButton.Rect.sizeDelta);
+            saveButton = UiKit.Button(barSafe, AppText.CheckSave, UiKit.ButtonStyle.Soft, new Vector2(360f, Theme.ButtonHeight),
                 () => Context.Flow.SaveStage(), "Save", Theme.H2);
-            UiKit.Place(saveButton.Rect, new Vector2(0f, 0f), new Vector2(Theme.Margin + 880f, 50f), saveButton.Rect.sizeDelta);
+            UiKit.Place(saveButton.Rect, new Vector2(0f, 0f), new Vector2(Theme.Margin + 1060f, 50f), saveButton.Rect.sizeDelta);
 
             playButton = UiKit.Button(barSafe, AppText.CheckPlay, UiKit.ButtonStyle.Primary, new Vector2(560f, Theme.ButtonHeight),
                 () => Context.Flow.PlayFromCheck(), "Play", Theme.H1);
@@ -224,7 +229,7 @@ namespace DeskStage.App
                 CloseCourse();
             }
             fixButton.SetText(mode == Mode.Assist ? AppText.CheckFixClose : AppText.CheckFix);
-            fixButton.SetStyle(mode == Mode.Assist ? UiKit.ButtonStyle.Primary : UiKit.ButtonStyle.Soft);
+            fixButton.SetStyle(mode == Mode.Assist ? UiKit.ButtonStyle.Primary : UiKit.ButtonStyle.Overlay);
         }
 
         void ToggleCourse()

@@ -85,6 +85,7 @@ namespace DeskStage.App
 
         // ---- たしかめ ----
         public const string CheckTitle = "ほんものと おなじかな？";
+        public const string CheckMainHint = "ちがうときは、ものを ならべなおして、もういちど とってね";
         public const string CheckFix = "なおす";
         public const string CheckFixClose = "なおしおわる";
         public const string CheckAddBox = "＋ はこ";
@@ -108,7 +109,7 @@ namespace DeskStage.App
         public const string CheckPlay = "あそぶ";
         public const string CheckNeedCourse = "スタートと ゴールを おくと あそべるよ";
         public const string CheckRescan = "もういちど とる";
-        public const string CheckRescanConfirm = "いまの ステージは なくなるよ。\nもういちど とる？";
+        public const string CheckRescanConfirm = "いまの ステージは なくなるよ。\nものを ならべなおして、もういちど とる？";
         public const string CheckLeaveConfirm = "ほぞん していないよ。\nもどると なくなるよ。もどる？";
         public const string CheckMarkJump = "とぶ";
         public const string CheckMarkWall = "ばつ";
