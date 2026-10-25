@@ -80,6 +80,21 @@ namespace DeskStage.Shared
 
         /// <summary>表面の画像のファイル名。なければ空。</summary>
         public string texture = "";
+
+        /// <summary>水の箱。上面が一面、青い折り紙のとき。遊ぶと、箱の上で、決まった向きに少し流される。</summary>
+        public const string GimmickWater = "water";
+
+        /// <summary>炎の箱。上面が一面、赤い折り紙のとき。乗るとハートが 1 つ減る。</summary>
+        public const string GimmickFire = "fire";
+
+        /// <summary>回復の箱。上面が一面、緑の折り紙のとき。乗っている間、ハートが回復する。</summary>
+        public const string GimmickHeal = "heal";
+
+        /// <summary>
+        /// 箱のしかけ（water / fire / heal）。なければ空。撮影の写真から、上面が一面その色のときに決まる（Merge の GimmickDetector）。
+        /// 古い保存データには無いので、読み込むと空（しかけ無し）になる。
+        /// </summary>
+        public string gimmick = "";
     }
 
     /// <summary>スタート地点。</summary>

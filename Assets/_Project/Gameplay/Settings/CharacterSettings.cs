@@ -37,11 +37,14 @@ namespace DeskStage.Gameplay
         [Tooltip("歩く速さ（m/秒）")]
         [Min(0f)] public float walkSpeed = 0.15f;
 
-        [Tooltip("重力（m/秒²）。速すぎたら下げる")]
-        [Min(0f)] public float gravity = 9.8f;
+        [Tooltip("重力（m/秒²）。速すぎたら下げる。2026-10-24 に 9.8 の半分にした")]
+        [Min(0f)] public float gravity = 4.9f;
 
-        [Tooltip("ジャンプの高さ（m）。変えたら跳べる段の上限と Docs/StepRules.md も直す")]
-        [Min(0f)] public float jumpHeight = 0.04f;
+        [Tooltip("ジャンプの高さ（m）。変えたら跳べる段の上限と Docs/StepRules.md も直す。2026-10-24 に 4cm の 3 倍の 12cm にした")]
+        [Min(0f)] public float jumpHeight = 0.12f;
+
+        [Tooltip("空中で、あと何回ジャンプできるか。1 なら 2 段ジャンプ。変えたら跳べる段の上限と Docs/StepRules.md も直す（2026-10-25 に 1 にした）")]
+        [Min(0)] public int maxAirJumps = 1;
 
         [Tooltip("着地の前に押したジャンプを覚えておく時間（秒）")]
         [Min(0f)] public float jumpBufferTime = 0.1f;
@@ -50,14 +53,14 @@ namespace DeskStage.Gameplay
         [Min(0f)] public float coyoteTime = 0.1f;
 
         [Tooltip("落下の速さの上限（m/秒）")]
-        [Min(0f)] public float maxFallSpeed = 1f;
+        [Min(0f)] public float maxFallSpeed = 0.5f;
 
         [Tooltip("向きを変える速さ（度/秒）")]
         [Min(0f)] public float turnSpeed = 720f;
 
         [Header("箱の高さの決まり（StepRules の境目）")]
 
-        [Tooltip("跳べる段の上限（m）。ジャンプの高さ＋丸い足元で乗り上げる分 約0.5cm（Step 8 で測定）")]
+        [Tooltip("跳べる段の上限（m）。2 段ジャンプの届く高さ（ジャンプの高さ × (1 + 空中のジャンプ回数) ＋ 約0.5cm）より少し低くする。22cm")]
         [Min(0f)] public float jumpableStepMax = StepRules.DefaultJumpMax;
 
         [Tooltip("歩ける段の上限（m）。Step Offset と同じ")]

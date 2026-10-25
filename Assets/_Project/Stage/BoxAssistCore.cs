@@ -230,6 +230,7 @@ namespace DeskStage.Stage
                 yawDegrees = b.yawDegrees,
                 source = b.source,
                 texture = b.texture,
+                gimmick = b.gimmick,
             };
         }
     }

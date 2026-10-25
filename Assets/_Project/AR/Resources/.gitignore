@@ -1,0 +1,3 @@
+# サーバーの合言葉が入るので、Git に入れない（ServerConfig.cs を参照）
+ServerConfig.asset
+ServerConfig.asset.meta

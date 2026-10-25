@@ -28,6 +28,7 @@ namespace DeskStage.Stage
                     yawDegrees = RoundYaw(b.yawDegrees),
                     source = b.source,
                     texture = b.texture ?? "",
+                    gimmick = b.gimmick ?? "",
                 });
             }
 

@@ -1,0 +1,25 @@
+{
+    "name": "DeskStage.App.Editor",
+    "rootNamespace": "DeskStage.App.EditorTools",
+    "references": [
+        "DeskStage.App",
+        "DeskStage.Shared",
+        "DeskStage.UI",
+        "DeskStage.AR",
+        "DeskStage.Stage",
+        "DeskStage.Merge",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

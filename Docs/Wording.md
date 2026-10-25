@@ -72,6 +72,7 @@
 | check.addBox | ＋はこ | 補助 |
 | check.addBoxHint | おきたい ところを タップしてね | ＋はこ を押した後 |
 | check.delete | けす | 補助（選んだ箱の横） |
+| check.heightHandle | ↕ | 補助（選んだ箱の上の、高さを変える取っ手） |
 | check.undo | もどす | 補助 |
 | check.pickAround | まわりこんで えらんでね | 手前の箱が選ばれてしまうとき |
 | check.start | スタート | 切り替えボタン |

@@ -24,8 +24,8 @@ namespace DeskStage.Gameplay
         /// <summary>歩ける段の上限の初期値（m）。Step Offset と同じ 0.8cm</summary>
         public const float DefaultWalkMax = 0.008f;
 
-        /// <summary>跳べる段の上限の初期値（m）。ジャンプの高さ 4cm ＋ 丸い足元で乗り上げる分 約0.5cm（Step 8 で測定）</summary>
-        public const float DefaultJumpMax = 0.045f;
+        /// <summary>跳べる段の上限の初期値（m）。2 段ジャンプ（高さ 12cm を 2 回）の理論上の最大は、12 + 12 + 足元の乗り上げ 約0.5cm = 24.5cm。頂点の ぴったりで 押さなくても届くよう、22cm にした（2026-10-25）</summary>
+        public const float DefaultJumpMax = 0.22f;
 
         /// <summary>箱の高さの下限（m）。B の箱づくりと同じ</summary>
         public const float MinBoxHeight = 0.005f;

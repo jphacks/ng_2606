@@ -138,5 +138,36 @@ namespace DeskStage.Stage.Tests
 
             Assert.That(result.Ok, Is.False);
         }
+
+        [Test]
+        public void 写真の中の位置が箱のidごとに入る()
+        {
+            const string quad = "{\"x0\":0.2,\"y0\":0.2,\"x1\":0.4,\"y1\":0.2,\"x2\":0.4,\"y2\":0.4,\"x3\":0.2,\"y3\":0.4}";
+            const string zero = "{\"x0\":0,\"y0\":0,\"x1\":0,\"y1\":0,\"x2\":0,\"y2\":0,\"x3\":0,\"y3\":0}";
+            var json = "{\"paperFound\":true,\"scaleReference\":\"A4\",\"desk\":null,\"deskInPhoto1\":" + quad
+                + ",\"blocks\":["
+                + "{\"label\":\"箱\",\"centerXCm\":10,\"centerZCm\":10,\"widthCm\":8,\"depthCm\":6,\"heightCm\":5,\"yawDegrees\":0,\"confidence\":0.8,\"topFaceInPhoto1\":" + quad + "},"
+                + "{\"label\":\"箱\",\"centerXCm\":30,\"centerZCm\":10,\"widthCm\":8,\"depthCm\":6,\"heightCm\":9,\"yawDegrees\":0,\"confidence\":0.8,\"topFaceInPhoto1\":" + zero + "}"
+                + "],\"notes\":\"\"}";
+
+            var result = new StageReaderCore().Read(json);
+
+            Assert.That(result.Ok, Is.True, result.Reason);
+            Assert.That(result.DeskQuad, Is.Not.Null);
+            // 1つ目の箱だけ、位置が分かる（2つ目は 8 つとも 0 ＝分からない）
+            Assert.That(result.TopFaceQuads.Count, Is.EqualTo(1));
+            Assert.That(result.TopFaceQuads.ContainsKey("box-01"), Is.True);
+        }
+
+        [Test]
+        public void 写真の中の位置が無い答えでも箱は作れる()
+        {
+            // 位置の項目が無い古い形の答え
+            var result = new StageReaderCore().Read(AnswerFile("answer-photo-01.json"));
+
+            Assert.That(result.Ok, Is.True, result.Reason);
+            Assert.That(result.DeskQuad, Is.Null);
+            Assert.That(result.TopFaceQuads.Count, Is.EqualTo(0));
+        }
     }
 }

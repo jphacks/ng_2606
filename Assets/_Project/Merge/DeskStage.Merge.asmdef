@@ -1,0 +1,23 @@
+{
+    "name": "DeskStage.Merge",
+    "rootNamespace": "DeskStage.Merge",
+    "references": [
+        "DeskStage.Shared",
+        "DeskStage.UI",
+        "DeskStage.AR",
+        "DeskStage.Stage",
+        "DeskStage.Gameplay",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

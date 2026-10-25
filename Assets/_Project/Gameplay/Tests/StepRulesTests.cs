@@ -4,7 +4,7 @@ namespace DeskStage.Gameplay.Tests
 {
     /// <summary>
     /// 箱の高さの決まり（Docs/StepRules.md）の境目を確かめる。
-    /// 0.8cm 未満は Walk、0.8〜4.5cm は Jump、4.5cm を超えると Wall。
+    /// 0.8cm 未満は Walk、0.8〜22cm は Jump、22cm を超えると Wall。
     /// </summary>
     public class StepRulesTests
     {
@@ -20,7 +20,7 @@ namespace DeskStage.Gameplay.Tests
         public void 初期値は手順書の境目()
         {
             Assert.AreEqual(0.008f, rules.WalkMax);
-            Assert.AreEqual(0.045f, rules.JumpMax);
+            Assert.AreEqual(0.22f, rules.JumpMax);
         }
 
         [TestCase(0f)]
@@ -34,16 +34,16 @@ namespace DeskStage.Gameplay.Tests
         [TestCase(0.008f)]
         [TestCase(0.02f)]
         [TestCase(0.04f)]
-        [TestCase(0.045f)]
-        public void 差が0_8cmから4_5cmまでならジャンプ(float diff)
+        [TestCase(0.22f)]
+        public void 差が0_8cmから22cmまでならジャンプ(float diff)
         {
             Assert.AreEqual(StepKind.Jump, rules.Classify(diff));
         }
 
-        [TestCase(0.0451f)]
-        [TestCase(0.05f)]
-        [TestCase(0.08f)]
-        public void 差が4_5cmを超えると壁(float diff)
+        [TestCase(0.2201f)]
+        [TestCase(0.25f)]
+        [TestCase(0.30f)]
+        public void 差が22cmを超えると壁(float diff)
         {
             Assert.AreEqual(StepKind.Wall, rules.Classify(diff));
         }
@@ -53,7 +53,7 @@ namespace DeskStage.Gameplay.Tests
         {
             Assert.AreEqual(StepKind.Walk, rules.Classify(-0.005f));
             Assert.AreEqual(StepKind.Jump, rules.Classify(-0.02f));
-            Assert.AreEqual(StepKind.Wall, rules.Classify(-0.08f));
+            Assert.AreEqual(StepKind.Wall, rules.Classify(-0.30f));
         }
 
         [Test]
@@ -61,15 +61,15 @@ namespace DeskStage.Gameplay.Tests
         {
             // 2cm の箱から 6cm の箱へ：差 4cm でジャンプ
             Assert.AreEqual(StepKind.Jump, rules.Classify(0.02f, 0.06f));
-            // 机の天面から 8cm の箱へ：壁
-            Assert.AreEqual(StepKind.Wall, rules.Classify(0f, 0.08f));
+            // 机の天面から 30cm の箱へ：壁
+            Assert.AreEqual(StepKind.Wall, rules.Classify(0f, 0.30f));
         }
 
         [Test]
         public void 計算の誤差で境目がずれない()
         {
-            // 5cm − 0.5cm を引き算で出すと 0.045 ちょうどにならないことがある
-            Assert.AreEqual(StepKind.Jump, rules.Classify(0.005f, 0.05f));
+            // 22.5cm − 0.5cm を引き算で出すと 0.22 ちょうどにならないことがある
+            Assert.AreEqual(StepKind.Jump, rules.Classify(0.005f, 0.225f));
             Assert.AreEqual(StepKind.Jump, rules.Classify(0.002f, 0.01f));
         }
 

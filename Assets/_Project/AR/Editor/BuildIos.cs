@@ -20,6 +20,8 @@ namespace DeskStage.AR.EditorTools
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                 "Builds", "DeskStageAR");
 
+        const string PhotoScenePath = "Assets/_Project/Scenes/Test_A_Photo.unity";
+
         [MenuItem("DeskStage/A/3. iOS 向けにビルドする")]
         public static void Run()
         {
@@ -27,7 +29,25 @@ namespace DeskStage.AR.EditorTools
                 .Where(s => s.enabled)
                 .Select(s => s.path)
                 .ToArray();
+            Build(scenes);
+        }
 
+        /// <summary>写真のテスト用シーン（Test_A_Photo）だけを、実機用にビルドする。ビルド対象の設定は変えない。</summary>
+        [MenuItem("DeskStage/A/5. 写真のテスト用シーンを iOS 向けにビルドする")]
+        public static void RunPhoto()
+        {
+            Build(new[] { PhotoScenePath });
+        }
+
+        /// <summary>合流用の Main シーンだけを、実機用にビルドする。ビルド対象の設定は変えない。</summary>
+        [MenuItem("DeskStage/A/6. Main を iOS 向けにビルドする")]
+        public static void RunMain()
+        {
+            Build(new[] { CreateMainScene.ScenePath });
+        }
+
+        static void Build(string[] scenes)
+        {
             if (scenes.Length == 0)
             {
                 Debug.LogError("[Build] ビルド対象のシーンがありません");
@@ -59,7 +79,19 @@ namespace DeskStage.AR.EditorTools
             Debug.Log("[Build] シーン: " + string.Join(", ", scenes));
             Debug.Log("[Build] 書き出し先: " + OutputPath);
 
-            var report = BuildPipeline.BuildPlayer(options);
+            // 家の Wi-Fi の中の読み取りサーバー（http://）に、開発用ビルドだけ送れるようにする（ScanClient の決まりと同じ）。
+            // ProjectSettings は変えず、ビルドの間だけ切り替えて、すぐ戻す
+            var previousHttp = PlayerSettings.insecureHttpOption;
+            PlayerSettings.insecureHttpOption = InsecureHttpOption.DevelopmentOnly;
+            UnityEditor.Build.Reporting.BuildReport report;
+            try
+            {
+                report = BuildPipeline.BuildPlayer(options);
+            }
+            finally
+            {
+                PlayerSettings.insecureHttpOption = previousHttp;
+            }
             var summary = report.summary;
 
             if (summary.result == BuildResult.Succeeded)

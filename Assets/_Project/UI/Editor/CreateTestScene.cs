@@ -415,6 +415,53 @@ namespace DeskStage.UI.Editor
             Anchor((RectTransform)rescan.transform, new Vector2(0f, 1f), new Vector2(290f, -220f), new Vector2(500, 160));
 
             marks.AddComponent<CheckScreen>().Set(router, dialog, rescan);
+
+            CreateAssist(checkScreen);
+        }
+
+        // Step 11：読み取りの補助。画面いっぱいの透明な板で指の動きを受ける（段の印より奥）
+        static void CreateAssist(Transform checkScreen)
+        {
+            var area = new GameObject("AssistArea", typeof(RectTransform));
+            area.transform.SetParent(checkScreen, false);
+            area.transform.SetAsFirstSibling();
+            Stretch((RectTransform)area.transform);
+            area.AddComponent<Image>().color = Color.clear;
+
+            var fix = CreateButton("Button_Fix", checkScreen, "check.fix");
+            Anchor((RectTransform)fix.transform, new Vector2(0f, 0f), new Vector2(240f, 140f), new Vector2(380, 160));
+
+            // 「なおす」を押したときだけ出す操作
+            var tools = new GameObject("AssistTools", typeof(RectTransform));
+            tools.transform.SetParent(checkScreen, false);
+            Stretch((RectTransform)tools.transform);
+            var add = CreateButton("Button_AddBox", tools.transform, "check.addBox");
+            Anchor((RectTransform)add.transform, new Vector2(0f, 0f), new Vector2(660f, 140f), new Vector2(380, 160));
+            add.GetComponent<Image>().color = new Color(0.85f, 0.95f, 1f);
+            var undo = CreateButton("Button_Undo", tools.transform, "check.undo");
+            Anchor((RectTransform)undo.transform, new Vector2(0f, 0f), new Vector2(1080f, 140f), new Vector2(380, 160));
+            var hint = CreateWordingLabel("AddBoxHint", tools.transform, "check.addBoxHint", 56);
+            Anchor((RectTransform)hint.transform, new Vector2(0.5f, 1f), new Vector2(0f, -330f), new Vector2(1400, 100));
+            hint.color = new Color(0.75f, 0.45f, 0f);
+
+            // 選んだ箱のそばに出す「けす」と「上下の取っ手」（位置は AssistController が毎フレーム合わせる）
+            var delete = CreateButton("Button_DeleteBox", area.transform, "check.delete");
+            Anchor((RectTransform)delete.transform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(260, 160));
+            delete.GetComponent<Image>().color = new Color(1f, 0.85f, 0.85f);
+            var handle = CreateButton("HeightHandle", area.transform, "check.heightHandle");
+            Anchor((RectTransform)handle.transform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(170, 170));
+            handle.GetComponent<Image>().sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+            handle.GetComponent<Image>().color = new Color(1f, 0.85f, 0.2f);
+
+            var controller = area.AddComponent<AssistController>();
+            controller.Set(AssetDatabase.LoadAssetAtPath<ViewLook>(CreateLookAssets.ViewLookPath), fix, tools, add, undo, delete,
+                (RectTransform)handle.transform, hint);
+            handle.gameObject.AddComponent<AssistHandle>().SetController(controller);
+
+            // B の補助ができるまで、依頼を受けて箱を変える開発用の部品
+            var stub = new GameObject("DEV_AssistStub");
+            stub.AddComponent<DevMarker>();
+            stub.AddComponent<DevAssistStub>();
         }
 
         static void CreateDevPanel(RectTransform parent, ScreenRouter router, GuidanceView guidance)

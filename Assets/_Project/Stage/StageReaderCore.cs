@@ -26,6 +26,12 @@ namespace DeskStage.Stage
 
         /// <summary>長さの基準に使った物（ログ用）。</summary>
         public string ScaleReference = "";
+
+        /// <summary>1枚目の写真の中の、机の四隅（0〜1 の割合）。分からなければ null。</summary>
+        public Vector2[] DeskQuad;
+
+        /// <summary>1枚目の写真の中の、箱の上面の四隅（0〜1 の割合）。箱の id ごと。分からない箱は入れない。</summary>
+        public Dictionary<string, Vector2[]> TopFaceQuads = new Dictionary<string, Vector2[]>();
     }
 
     /// <summary>
@@ -89,6 +95,7 @@ namespace DeskStage.Stage
             }
             result.PaperFound = answer.paperFound;
             result.ScaleReference = answer.scaleReference ?? "";
+            result.DeskQuad = PhotoTextureMath.ValidQuad(answer.deskInPhoto1);
 
             // 1. 範囲に入る物だけを残す
             var blocks = new List<LlmBlock>();
@@ -146,9 +153,15 @@ namespace DeskStage.Stage
                     result.Skipped++;
                     continue;
                 }
+                var boxId = $"box-{raw.Count + 1:00}";
+                var topFace = PhotoTextureMath.ValidQuad(b.topFaceInPhoto1);
+                if (topFace != null)
+                {
+                    result.TopFaceQuads[boxId] = topFace;
+                }
                 raw.Add(new BoxData
                 {
-                    id = $"box-{raw.Count + 1:00}",
+                    id = boxId,
                     center = new[] { x, height / 2f, z },
                     size = new[] { b.widthCm / 100f, height, b.depthCm / 100f },
                     // 答えは上から見て反時計回り。Unity の Y 軸まわりは上から見て時計回り

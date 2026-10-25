@@ -33,6 +33,10 @@ namespace DeskStage.AR
         public string LastSavedFolder { get; private set; } = "";
 
         WebCamTexture webcam;
+
+        // WebCamTexture を、画面の向きに合わせて起こした映像。プレビューと JPEG は、これを使う
+        RenderTexture upright;
+        string lastOrientation = "";
         Texture2D testTop;
         Texture2D testSide;
 
@@ -58,6 +62,67 @@ namespace DeskStage.AR
             UiRequests.TakePhoto -= OnTakePhoto;
             UiRequests.Rescan -= Begin;
             StopCamera();
+        }
+
+        void Update()
+        {
+            UpdateUpright();
+        }
+
+        /// <summary>
+        /// WebCamTexture の映像は、端末の向きに合わない向きで届くことがある（実機では上下左右が逆に映った）。
+        /// videoRotationAngle と videoVerticallyMirrored で起こした映像を、毎フレーム作り、CameraPreview にする。
+        /// </summary>
+        void UpdateUpright()
+        {
+            // 最初の映像が届くまで、WebCamTexture は 16x16 のまま
+            if (webcam == null || webcam.width <= 16 || !webcam.didUpdateThisFrame)
+            {
+                return;
+            }
+
+            var angle = webcam.videoRotationAngle;
+            var mirrored = webcam.videoVerticallyMirrored;
+            LogOrientation(angle, mirrored);
+
+            if (!PhotoMath.TryUprightTransform(angle, mirrored, out var scale, out var offset))
+            {
+                return; // 90 度と 270 度は扱わない。補正せず、WebCamTexture のまま使う
+            }
+
+            if (upright == null || upright.width != webcam.width || upright.height != webcam.height)
+            {
+                ReleaseUpright();
+                upright = new RenderTexture(webcam.width, webcam.height, 0);
+            }
+
+            Graphics.Blit(webcam, upright, scale, offset);
+            if (ScanContext.CameraPreview != upright)
+            {
+                ScanContext.CameraPreview = upright;
+            }
+        }
+
+        void LogOrientation(int angle, bool mirrored)
+        {
+            var now = $"角度 {angle}、上下反転 {mirrored}、画面の向き {Screen.orientation}、映像 {webcam.width}x{webcam.height}";
+            if (now == lastOrientation)
+            {
+                return;
+            }
+            lastOrientation = now;
+            var supported = PhotoMath.TryUprightTransform(angle, mirrored, out _, out _);
+            Debug.Log($"[Photo] カメラの向き：{now}" + (supported ? "" : "（扱えない角度。補正しない）"));
+        }
+
+        void ReleaseUpright()
+        {
+            if (upright != null)
+            {
+                upright.Release();
+                Destroy(upright);
+                upright = null;
+            }
         }
 
         void Begin()
@@ -115,7 +180,8 @@ namespace DeskStage.AR
                 return;
             }
 
-            var source = UseTestPhotos ? (TopJpeg == null ? testTop : testSide) : (Texture)webcam;
+            // 実機：起こした映像（CameraPreview）。まだ届いていなければ WebCamTexture のまま
+            var source = UseTestPhotos ? (TopJpeg == null ? testTop : testSide) : ScanContext.CameraPreview;
             var jpeg = Encode(source, out var quality);
             LastQuality = quality;
 
@@ -209,6 +275,15 @@ namespace DeskStage.AR
             Debug.Log($"[Photo] 2枚撮りました（真上 {TopJpeg.Length / 1024} KB、斜め {SideJpeg.Length / 1024} KB）。保存した場所：{folder}");
         }
 
+        /// <summary>撮影をやめる（カメラを閉じ、撮った写真を捨てる）。撮影の画面から出るときに、UI が呼ぶ。</summary>
+        public void StopScan()
+        {
+            StopAllCoroutines();
+            StopCamera();
+            TopJpeg = null;
+            SideJpeg = null;
+        }
+
         void StopCamera()
         {
             if (webcam != null)
@@ -217,6 +292,8 @@ namespace DeskStage.AR
                 Destroy(webcam);
                 webcam = null;
             }
+            ReleaseUpright();
+            lastOrientation = "";
             ScanContext.CameraPreview = null;
         }
 
