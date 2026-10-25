@@ -21,7 +21,7 @@
 だったら、画面を取り上げるのではなく、**画面の時間そのものを、手を動かす遊びに変えてしまおう！**
 「ならべて！ステージ」は、スマホの中だけで終わっていた遊びと、外で体を動かす遊びをつなぐ、最初の一歩になるアプリです。
 
-**想定する利用者**（開発チームが想定した利用者です）
+**想定する利用者**
 
 - **子ども**：未就学から小学生まで。積み木・箱・人形で、街や冒険を作って遊ぶのが好き。画面の言葉はひらがな中心で、読めない子は、親が読んであげれば遊べる
 - **親**：子どもに、ただ見るだけでなく、**自分で作る遊び**をさせたい。休日や夕方に、家にある物で、親子で一緒に遊びたい
@@ -216,16 +216,16 @@ iPhone で机を2枚撮るだけで、並べた物の形がそのまま3Dのス�
 
 #### ハッカソンで開発した独自機能・技術
 
+特に力を入れた部分は、ファイルへのリンクを、それぞれの項目に付けています。
+
 * **写真から箱の地形を作る仕組み**：Claude の答え（物ごとの中心・大きさ・回転）を、机の中心を原点にした箱の一覧に直し、すき間や高さのずれを整えて、キャラが乗れる地形にする
-* **小さな世界の物理の実測**：身長3cm のキャラが箱の上を引っかからずに動けるよう、自動テストで段の高さ・すき間・角・壁を確かめ、ジャンプの高さと「跳べる段の上限」を実測で決めた
+  * 読み取りサーバー：[Server/app.py](Server/app.py)、Claude への指示文 [scan_prompt.md](Assets/_Project/Stage/Llm/scan_prompt.md)
+  * 答えを箱の一覧に直す：[StageReaderCore.cs](Assets/_Project/Stage/StageReaderCore.cs)
+* **小さな世界の物理の実測**：身長3cm のキャラが箱の上を引っかからずに動けるよう、自動テストで段の高さ・すき間・角・壁を確かめ、ジャンプの高さと「跳べる段の上限」を実測で決めた（1回のジャンプで 12.5cm、2段ジャンプで 24cm の箱まで乗れる）
+  * [SmallWorldPhysicsTests.cs](Assets/_Project/Gameplay/Tests/PlayMode/SmallWorldPhysicsTests.cs)
 * **ゴールまで行けるかの判定**：机と箱の上面を「場所」とし、上りは 22cm まで（2段ジャンプ）・下りは自由として道をたどる。行けないコースは置く時点で知らせる
+  * [CourseReachability.cs](Assets/_Project/Gameplay/CourseReachability.cs)、コミット `c7d92ff`
 * **子どもが見失わないカメラ**：キャラを追い、箱の裏に回るとカメラを持ち上げて上から見る
-
-#### 特に力を入れた部分（ファイルとコミット）
-
-* キャラの物理の実測：[SmallWorldPhysicsTests.cs](Assets/_Project/Gameplay/Tests/PlayMode/SmallWorldPhysicsTests.cs)（1回のジャンプで 12.5cm、2段ジャンプで 24cm の箱まで乗れることを測定）
-* ゴールまで行けるかの判定：[CourseReachability.cs](Assets/_Project/Gameplay/CourseReachability.cs)、コミット `c7d92ff`
-* 子どもが見失わないカメラ：[ViewCamera.cs](Assets/_Project/Gameplay/ViewCamera.cs)
-* 写真の読み取りサーバー：[Server/app.py](Server/app.py)、指示文 [scan_prompt.md](Assets/_Project/Stage/Llm/scan_prompt.md)
+  * [ViewCamera.cs](Assets/_Project/Gameplay/ViewCamera.cs)
 
 [^1]: こども家庭庁「令和7年度 青少年のインターネット利用環境実態調査 調査結果（速報）」（令和8年2月）。インターネットを利用している0〜9歳の子どもの、平日1日あたりの平均利用時間。前の年度より約9分増えた。https://www.cfa.go.jp/assets/contents/node/basic_page/field_ref_resources/9a55b57d-cd9d-4cf6-8ed4-3da8efa12d63/23fcf9bc/20260226_policies_youth-kankyou_internet_research_results-etc_20.pdf
