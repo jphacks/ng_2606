@@ -97,11 +97,21 @@ namespace DeskStage.Gameplay.PlayTests
         [UnityTest]
         public IEnumerator 高さ4_5cmの箱はジャンプで登れる() { return ClimbsOnto(0.045f); }
 
+        // 2026-10-25：ジャンプを 12cm にして、2 段ジャンプにした。1 回のジャンプで登れる高さと、2 段で登れる高さを、それぞれ確かめる
         [UnityTest]
-        public IEnumerator 高さ5cmの箱はジャンプでも登れない() { return CannotClimb(0.05f); }
+        public IEnumerator 高さ10cmの箱は1回のジャンプで登れる() { return ClimbsOnto(0.10f, twoJumps: false); }
 
         [UnityTest]
-        public IEnumerator 高さ8cmの箱はジャンプでも登れない() { return CannotClimb(0.08f); }
+        public IEnumerator 高さ16cmの箱は1回のジャンプでは登れない() { return CannotClimb(0.16f, twoJumps: false); }
+
+        [UnityTest]
+        public IEnumerator 高さ16cmの箱は2段ジャンプで登れる() { return ClimbsOnto(0.16f, twoJumps: true); }
+
+        [UnityTest]
+        public IEnumerator 高さ20cmの箱は2段ジャンプで登れる() { return ClimbsOnto(0.20f, twoJumps: true); }
+
+        [UnityTest]
+        public IEnumerator 高さ30cmの箱は2段ジャンプでも登れない() { return CannotClimb(0.30f, twoJumps: true); }
 
         [UnityTest]
         public IEnumerator 高さ2cmを足場にして6cmへ登れる()
@@ -201,25 +211,35 @@ namespace DeskStage.Gameplay.PlayTests
         [UnityTest]
         public IEnumerator 登れる高さの上限を測る()
         {
-            // 合否ではなく、数値を決めるための測定。4.0〜6.0cm を 0.25cm ごとに試し、結果をログに出す
-            float highestClimbed = 0f;
-            var log = new System.Text.StringBuilder("[Step 8] 登れる高さ：");
-            for (float h = 0.04f; h <= 0.0601f; h += 0.0025f)
+            // 合否ではなく、数値を決めるための測定。1 回のジャンプ（10〜14cm）と、2 段ジャンプ（18〜28cm）を、0.5cm〜1cm ごとに試し、結果をログに出す
+            var single = new System.Text.StringBuilder("[Step 8] 1回のジャンプで登れる高さ：");
+            float highestSingle = 0f;
+            for (float h = 0.10f; h <= 0.1401f; h += 0.005f)
             {
                 yield return ResetWorld();
                 CreateStep(h);
                 yield return Spawn(new Vector3(0f, 0f, -0.05f));
-                yield return WalkForwardJumpingWhenBlocked(2f, h - 0.003f);
+                yield return WalkForwardJumpingWhenBlocked(2f, h - 0.003f, twoJumps: false);
                 bool climbed = motor.transform.position.y > h - 0.003f;
-                if (climbed)
-                {
-                    highestClimbed = h;
-                }
-                log.Append($" {h * 100f:0.00}cm={(climbed ? "○" : "×")}");
+                if (climbed) highestSingle = h;
+                single.Append($" {h * 100f:0.0}cm={(climbed ? "○" : "×")}");
             }
-            Debug.Log(log.ToString());
-            Debug.Log($"[Step 8] 登れた一番高い箱：{highestClimbed * 100f:0.00}cm（決まりでは 4.5cm まで）");
-            Assert.Pass(log.ToString());
+            var doubleLog = new System.Text.StringBuilder("[Step 8] 2段ジャンプで登れる高さ：");
+            float highestDouble = 0f;
+            for (float h = 0.18f; h <= 0.2801f; h += 0.01f)
+            {
+                yield return ResetWorld();
+                CreateStep(h);
+                yield return Spawn(new Vector3(0f, 0f, -0.05f));
+                yield return WalkForwardJumpingWhenBlocked(2f, h - 0.003f, twoJumps: true);
+                bool climbed = motor.transform.position.y > h - 0.003f;
+                if (climbed) highestDouble = h;
+                doubleLog.Append($" {h * 100f:0.0}cm={(climbed ? "○" : "×")}");
+            }
+            Debug.Log(single.ToString());
+            Debug.Log(doubleLog.ToString());
+            Debug.Log($"[Step 8] 登れた一番高い箱：1回 {highestSingle * 100f:0.0}cm、2段 {highestDouble * 100f:0.0}cm（決まりでは 22cm まで）");
+            Assert.Pass(single + "\n" + doubleLog);
         }
 
         // ---- 手順 ----
@@ -233,19 +253,19 @@ namespace DeskStage.Gameplay.PlayTests
             CreateBox(new Vector3(0f, -0.005f, 0f), new Vector3(0.6f, 0.01f, 0.6f));
         }
 
-        IEnumerator ClimbsOnto(float height)
+        IEnumerator ClimbsOnto(float height, bool twoJumps = false)
         {
             CreateStep(height);
             yield return Spawn(new Vector3(0f, 0f, -0.05f));
-            yield return WalkForwardJumpingWhenBlocked(2f, height - 0.003f);
+            yield return WalkForwardJumpingWhenBlocked(2f, height - 0.003f, twoJumps);
             Assert.Greater(motor.transform.position.y, height - 0.003f, $"高さ {height * 100f}cm の箱に登れなかった");
         }
 
-        IEnumerator CannotClimb(float height)
+        IEnumerator CannotClimb(float height, bool twoJumps = false)
         {
             CreateStep(height);
             yield return Spawn(new Vector3(0f, 0f, -0.05f));
-            yield return WalkForwardJumpingWhenBlocked(2f, height - 0.003f);
+            yield return WalkForwardJumpingWhenBlocked(2f, height - 0.003f, twoJumps);
             motor.SetTestInput(Vector2.zero);
             yield return new WaitForSeconds(0.5f);
             Assert.Less(motor.transform.position.y, 0.003f, $"高さ {height * 100f}cm の箱に登れてしまった");
@@ -253,12 +273,14 @@ namespace DeskStage.Gameplay.PlayTests
 
         // 前へ歩き続け、地面にいて前へ進めなくなったらジャンプを押す（子どもが段の前で跳ぶのと同じ）。
         // stopAboveY より高い所に着いたら止まる（箱の向こう側へ歩いて落ちないように）
-        IEnumerator WalkForwardJumpingWhenBlocked(float seconds, float stopAboveY)
+        // twoJumps が true なら、ジャンプの頂点のあたり（0.2 秒後）で、もう一度押す（2 段ジャンプ）。低い箱では、2 段にすると箱を飛び越えてしまうので、1 回のジャンプで届かない高さのときだけ使う
+        IEnumerator WalkForwardJumpingWhenBlocked(float seconds, float stopAboveY, bool twoJumps = false)
         {
             motor.SetTestInput(Vector2.up);
             float bestZ = motor.transform.position.z;
             float lastProgress = Time.time;
             float nextJumpAllowed = 0f;
+            float secondJumpAt = -1f;
             for (float t = 0f; t < seconds; t += Time.deltaTime)
             {
                 if (controller.isGrounded && motor.transform.position.y > stopAboveY)
@@ -275,6 +297,15 @@ namespace DeskStage.Gameplay.PlayTests
                 {
                     motor.PressJumpForTest();
                     nextJumpAllowed = Time.time + 0.3f;
+                    if (twoJumps) secondJumpAt = Time.time + 0.2f;
+                }
+                if (secondJumpAt > 0f && Time.time >= secondJumpAt)
+                {
+                    if (!controller.isGrounded)
+                    {
+                        motor.PressJumpForTest();
+                    }
+                    secondJumpAt = -1f;
                 }
                 yield return null;
             }
