@@ -1,12 +1,12 @@
 # ならべて！ステージ
 
-[![ならべて！ステージ　家にあるものが、そのままステージに](Docs/images/eyecatch.png)](https://youtu.be/EEbAB2pftfA)
+[![ならべて！ステージ　家にあるものが、そのままステージに](Docs/images/eyecatch.png)](https://youtu.be/VaGDQbAmtqg)
 
 | リンク | |
 | --- | --- |
 | スライド | [ならべて！ステージ JPHACKS Award Day（PDF）](Docs/slides.pdf) |
-| デモ動画 1（アプリの動作の概要） | https://youtu.be/EEbAB2pftfA |
-| デモ動画 2（想定する子どもが、どのように遊ぶか） | https://youtu.be/VaGDQbAmtqg |
+| デモ動画 1（想定する子どもが、どのように遊ぶか） | https://youtu.be/VaGDQbAmtqg |
+| デモ動画 2（アプリの動作の概要） | https://youtu.be/EEbAB2pftfA |
 
 ---
 
