@@ -227,7 +227,7 @@ iPhone で机を2枚撮るだけで、並べた物の形がそのまま3Dのス�
 * **小さな世界の物理の実測**：身長3cm のキャラが箱の上を引っかからずに動けるよう、自動テストで段の高さ・すき間・角・壁を確かめ、ジャンプの高さと「跳べる段の上限」を実測で決めた（1回のジャンプで 12.5cm、2段ジャンプで 24cm の箱まで乗れる）
   * [SmallWorldPhysicsTests.cs](Assets/_Project/Gameplay/Tests/PlayMode/SmallWorldPhysicsTests.cs)
 * **ゴールまで行けるかの判定**：机と箱の上面を「場所」とし、上りは 22cm まで（2段ジャンプ）・下りは自由として道をたどる。行けないコースは置く時点で知らせる
-  * [CourseReachability.cs](Assets/_Project/Gameplay/CourseReachability.cs)、コミット `c7d92ff`
+  * [CourseReachability.cs](Assets/_Project/Gameplay/CourseReachability.cs)
 * **子どもが見失わないカメラ**：キャラを追い、箱の裏に回るとカメラを持ち上げて上から見る
   * [ViewCamera.cs](Assets/_Project/Gameplay/ViewCamera.cs)
 
