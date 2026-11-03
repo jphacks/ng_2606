@@ -38,6 +38,9 @@ namespace DeskStage.Stage
         public float heightCm;
         public float yawDegrees;
         public float confidence;
+        // 斜めに立てかけた板など。のぼる向きは、上から見て +X から反時計回りに何度か（坂でないときは 0）
+        public bool isRamp;
+        public float uphillYawDegrees;
         // 1枚目（真上）の写真の中の、上面の四隅（絵を貼るため）。なければ中身が 0
         public LlmQuad topFaceInPhoto1;
     }

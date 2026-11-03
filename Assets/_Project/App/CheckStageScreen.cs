@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DeskStage.Merge;
 using DeskStage.Shared;
 using DeskStage.UI;
@@ -35,7 +36,16 @@ namespace DeskStage.App
         AppButton goalButton;
         RectTransform assistTools;
         TMP_Text assistHint;
+        RectTransform flowLayer;
+        readonly List<AppButton> flowButtons = new List<AppButton>();
+        readonly List<string> flowIds = new List<string>();
         TapCatcher catcher;
+        GameObject topBar;
+        GameObject topSafe;
+        GameObject bottomBar;
+        GameObject bottomSafe;
+        GameObject placeGroup;
+        TMP_Text placeHint;
 
         Mode mode;
         CourseItem? armed;
@@ -52,14 +62,18 @@ namespace DeskStage.App
             marks.Set(Context.Wording, Theme.Font, UiKit.CircleSprite);
             markHolder.gameObject.SetActive(true);
 
+            // 水の箱の上に出る「ながれの むき」のボタン（ふだんの状態で。押すたびに 90 度まわる）。帯より奥に置く
+            flowLayer = UiKit.Fill(UiKit.NewRect("FlowButtons", Rect));
+
             var catcherImage = UiParts.Clear(Rect, "CourseCatcher", true);
             catcher = catcherImage.gameObject.AddComponent<TapCatcher>();
             catcher.Tapped = OnCourseTap;
             catcherImage.gameObject.SetActive(false);
 
             // 上の帯
-            UiParts.Bar(Rect, "TopBar", true, 240f);
+            topBar = UiParts.Bar(Rect, "TopBar", true, 240f).gameObject;
             var safe = UiKit.Fill(UiKit.NewRect("Safe", Rect));
+            topSafe = safe.gameObject;
             var back = UiKit.Button(safe, AppText.Back, UiKit.ButtonStyle.Overlay, new Vector2(330f, Theme.SmallButtonHeight),
                 () => OnBack(), "Back", Theme.Body);
             UiKit.Place(back.Rect, new Vector2(0f, 1f), new Vector2(Theme.Margin, -40f), back.Rect.sizeDelta);
@@ -79,12 +93,15 @@ namespace DeskStage.App
             UiKit.Place(hintBack.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -190f), new Vector2(1500f, 100f));
             hint.transform.SetParent(hintBack.rectTransform, false);
             UiKit.Fill(hint.rectTransform);
+            hintBack.raycastTarget = false; // ひとことの板は、タップをじゃましない
+            hint.raycastTarget = false;
             hintBack.gameObject.SetActive(false);
             hintBackRect = hintBack.gameObject;
 
             // 下の帯
-            UiParts.Bar(Rect, "BottomBar", false, 300f);
+            bottomBar = UiParts.Bar(Rect, "BottomBar", false, 300f).gameObject;
             var barSafe = UiKit.Fill(UiKit.NewRect("BarSafe", Rect));
+            bottomSafe = barSafe.gameObject;
             var rescan = UiKit.Button(barSafe, AppText.CheckRescanButton, UiKit.ButtonStyle.Secondary, new Vector2(620f, Theme.ButtonHeight),
                 AskRescan, "Rescan", Theme.H2);
             UiKit.Place(rescan.Rect, new Vector2(0f, 0f), new Vector2(Theme.Margin, 50f), rescan.Rect.sizeDelta);
@@ -160,6 +177,21 @@ namespace DeskStage.App
 
             // 「なおす」の押し分け（AssistController と同じ押しで、文字と、コースの操作を切り替える）
             fixButton.OnClick(OnFixClicked);
+
+            // 置く場所をタップしている間は、ほかの帯とボタンを隠して、画面ぜんぶをタップできるようにする。出るのは、ひとことと「やめる」だけ
+            var group = UiKit.Fill(UiKit.NewRect("PlaceGroup", Rect));
+            placeGroup = group.gameObject;
+            var placeBack = UiKit.Panel(group, "PlaceHintBack", Theme.WithAlpha(Theme.Navy, 0.82f), 60f);
+            // 画面の上は、置く場所として空けておく。ひとことは、下の「やめる」の上に出す
+            UiKit.Place(placeBack.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 60f + Theme.SmallButtonHeight + 24f), new Vector2(1500f, 100f));
+            placeBack.raycastTarget = false;
+            placeHint = UiKit.Label(placeBack.rectTransform, "", Theme.Body, Color.white, TextAlignmentOptions.Center, true, "Hint");
+            UiKit.Fill(placeHint.rectTransform);
+            placeHint.raycastTarget = false; // 文字の上も、タップして置ける
+            var cancel = UiKit.Button(group, AppText.No, UiKit.ButtonStyle.Secondary, new Vector2(420f, Theme.SmallButtonHeight),
+                CancelPlacing, "CancelPlace", Theme.Body);
+            UiKit.Place(cancel.Rect, new Vector2(0.5f, 0f), new Vector2(0f, 60f), cancel.Rect.sizeDelta);
+            placeGroup.SetActive(false);
         }
 
         GameObject hintBackRect;
@@ -168,7 +200,7 @@ namespace DeskStage.App
         {
             mode = Mode.None;
             armed = null;
-            catcher.gameObject.SetActive(false);
+            SetPlacing(false, null);
             courseGroup.gameObject.SetActive(false);
             fixButton.SetText(AppText.CheckFix);
             hintBackRect.SetActive(false);
@@ -199,6 +231,7 @@ namespace DeskStage.App
             GameEvents.CoursePlaced -= OnCoursePlaced;
             StagePhotoTexturer.GimmicksChanged -= OnGimmicksChanged;
             armed = null;
+            SetPlacing(false, null);
         }
 
         // 保存していないときは、確認してから出る
@@ -247,7 +280,7 @@ namespace DeskStage.App
             courseGroup.gameObject.SetActive(true);
             courseButton.SetStyle(UiKit.ButtonStyle.Primary);
             courseButton.SetText(AppText.CheckCourseClose);
-            ShowHint(AppText.CheckCourse == null ? "" : AppText.CheckModeCourseHint);
+            ShowHint(AppText.CheckCourseChoose);
         }
 
         void CloseCourse()
@@ -257,7 +290,7 @@ namespace DeskStage.App
                 mode = Mode.None;
             }
             armed = null;
-            catcher.gameObject.SetActive(false);
+            SetPlacing(false, null);
             courseGroup.gameObject.SetActive(false);
             courseButton.SetStyle(UiKit.ButtonStyle.Soft);
             courseButton.SetText(AppText.CheckCourse);
@@ -273,10 +306,33 @@ namespace DeskStage.App
         void Arm(CourseItem item)
         {
             armed = item;
-            catcher.gameObject.SetActive(true);
-            // 押せるボタンが、置く場所のタップより手前に出るよう、板をボタンの後ろへ
-            catcher.transform.SetSiblingIndex(2);
-            ShowHint(item == CourseItem.Start ? AppText.CheckPlaceStartHint : AppText.CheckPlaceGoalHint);
+            SetPlacing(true, item);
+        }
+
+        // 置く場所をタップしている間（on）は、帯とボタンを隠す。やめる・置き終わったら、もどす
+        void SetPlacing(bool on, CourseItem? item)
+        {
+            topBar.SetActive(!on);
+            topSafe.SetActive(!on);
+            bottomBar.SetActive(!on);
+            bottomSafe.SetActive(!on);
+            catcher.gameObject.SetActive(on);
+            placeGroup.SetActive(on);
+            if (on)
+            {
+                Context.Overlays.HideToast(); // 「スタートを おいたよ」などが、上に残って じゃまをしないように
+                placeHint.text = item == CourseItem.Start ? AppText.CheckPlaceStartHint : AppText.CheckPlaceGoalHint;
+                // タップを受ける板が、ほかのどれよりも手前。ただし「やめる」だけは、その上
+                catcher.transform.SetAsLastSibling();
+                placeGroup.transform.SetAsLastSibling();
+            }
+        }
+
+        void CancelPlacing()
+        {
+            armed = null;
+            SetPlacing(false, null);
+            ShowHint(AppText.CheckCourseChoose);
         }
 
         void OnCourseTap(Vector2 position)
@@ -287,7 +343,7 @@ namespace DeskStage.App
             }
             var item = armed.Value;
             armed = null;
-            catcher.gameObject.SetActive(false);
+            SetPlacing(false, null);
             UiRequests.RequestPlaceCourseItem(item, position);
         }
 
@@ -299,9 +355,8 @@ namespace DeskStage.App
                 case PlacementResult.Rejected:
                     UiSound.Play(UiSound.Cue.Error);
                     Context.Overlays.Toast(AppText.CheckPlaceFailed, AppOverlays.ToastKind.Bad);
-                    ShowHint(item == CourseItem.Start ? AppText.CheckPlaceStartHint : AppText.CheckPlaceGoalHint);
                     armed = item;
-                    catcher.gameObject.SetActive(true);
+                    SetPlacing(true, item);
                     return;
                 case PlacementResult.MayBeUnreachable:
                     UiSound.Play(UiSound.Cue.Success);
@@ -312,12 +367,13 @@ namespace DeskStage.App
                     Context.Overlays.Toast(string.Format(AppText.CheckPlaced, name), AppOverlays.ToastKind.Good);
                     break;
             }
-            ShowHint(AppText.CheckModeCourseHint);
+            ShowHint(AppText.CheckCourseChoose);
         }
 
         void Update()
         {
             Refresh();
+            PlaceFlowButtons();
         }
 
         void Refresh()
@@ -332,6 +388,56 @@ namespace DeskStage.App
 
             var canPlay = flow.StartPlaced && flow.GoalPlaced;
             needCourse.gameObject.SetActive(!canPlay);
+        }
+
+        // 水の箱それぞれの上面の上に、「ながれの むき」のボタンを合わせる（ふだんの状態だけ。なおす・コースの間と、置く場所を選ぶ間は隠す）
+        void PlaceFlowButtons()
+        {
+            var show = mode == Mode.None && armed == null;
+            if (show)
+            {
+                Context.Gimmicks.WaterBoxIds(flowIds);
+            }
+            else
+            {
+                flowIds.Clear();
+            }
+            var cam = Camera.main;
+            var root = StageContext.StageRoot;
+            var used = 0;
+            foreach (var id in flowIds)
+            {
+                var box = root != null ? root.Find(id) : null;
+                if (box == null || cam == null)
+                {
+                    continue;
+                }
+                // 坂は、斜めの面の真ん中（箱の座標で y = 0）、箱は上面の真ん中
+                var ramp = box.GetComponent<MeshCollider>() != null;
+                var screen = cam.WorldToScreenPoint(box.TransformPoint(new Vector3(0f, ramp ? 0f : 0.5f, 0f)));
+                if (screen.z <= 0f)
+                {
+                    continue;
+                }
+                if (used == flowButtons.Count)
+                {
+                    var created = UiKit.Button(flowLayer, AppText.CheckFlow, UiKit.ButtonStyle.Soft, new Vector2(360f, Theme.SmallButtonHeight),
+                        null, "Flow", Theme.Body);
+                    flowButtons.Add(created);
+                }
+                var button = flowButtons[used++];
+                var target = id;
+                button.Button.onClick.RemoveAllListeners();
+                button.Button.onClick.AddListener(() => Context.Gimmicks.CycleFlow(target));
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(flowLayer, screen, null, out var local);
+                button.Rect.anchorMin = button.Rect.anchorMax = new Vector2(0.5f, 0.5f);
+                button.Rect.anchoredPosition = local + new Vector2(0f, 90f);
+                button.gameObject.SetActive(true);
+            }
+            for (var i = used; i < flowButtons.Count; i++)
+            {
+                flowButtons[i].gameObject.SetActive(false);
+            }
         }
 
         static void SetDone(AppButton button, bool done, string normal, string doneText)

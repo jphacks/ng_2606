@@ -41,6 +41,10 @@ namespace DeskStage.Stage
                     {
                         var a = boxes[i];
                         var b = boxes[j];
+                        if (a.ramp || b.ramp)
+                        {
+                            continue; // 坂の高さは、そろえない（斜めの面の、高い方の端の高さ）
+                        }
                         var diff = a.size[1] - b.size[1];
                         if (diff == 0f || Mathf.Abs(diff) >= threshold || !Near(a, b, gapClose))
                         {
@@ -70,6 +74,10 @@ namespace DeskStage.Stage
                 {
                     var a = boxes[i];
                     var b = boxes[j];
+                    if (a.ramp || b.ramp)
+                    {
+                        continue; // 坂は、すき間をふさぐために広げない
+                    }
                     var relative = Mathf.DeltaAngle(a.yawDegrees, b.yawDegrees);
                     var quarterTurns = Mathf.RoundToInt(relative / 90f);
                     if (Mathf.Abs(relative - quarterTurns * 90f) > SameYawTolerance)
@@ -158,6 +166,9 @@ namespace DeskStage.Stage
                 yawDegrees = b.yawDegrees,
                 source = b.source,
                 texture = b.texture,
+                gimmick = b.gimmick,
+                flow = b.flow,
+                ramp = b.ramp,
             };
         }
     }

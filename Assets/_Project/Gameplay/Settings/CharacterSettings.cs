@@ -29,6 +29,9 @@ namespace DeskStage.Gameplay
         [Tooltip("登れる坂の角度（度）")]
         [Range(0f, 90f)] public float slopeLimit = 45f;
 
+        /// <summary>ジャンプで上がっている間（上向きの速さがある間）に、のぼれる坂の傾き（度）。45 度より急な坂も、跳べばのぼれる。箱の側面（90 度）は壁のまま</summary>
+        [Range(0f, 89f)] public float airSlopeLimit = 80f;
+
         [Tooltip("これより短い移動は無視する（m）")]
         [Min(0f)] public float minMoveDistance = 0f;
 

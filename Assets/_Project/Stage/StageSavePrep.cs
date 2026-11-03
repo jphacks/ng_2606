@@ -29,6 +29,8 @@ namespace DeskStage.Stage
                     source = b.source,
                     texture = b.texture ?? "",
                     gimmick = b.gimmick ?? "",
+                    flow = b.flow,
+                    ramp = b.ramp,
                 });
             }
 

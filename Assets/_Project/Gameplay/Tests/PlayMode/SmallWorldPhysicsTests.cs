@@ -353,5 +353,58 @@ namespace DeskStage.Gameplay.PlayTests
         }
 
         static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
+
+        // ---- 坂（ramp-support の REQ-3・9） ----
+
+        // z = 0 から +z の方へ、角度 degrees でのぼる板（長さ 30cm、幅 8cm、厚さ 1cm）
+        void CreateRampPlate(float degrees)
+        {
+            const float length = 0.30f;
+            var rad = degrees * Mathf.Deg2Rad;
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.layer = Layers.Terrain;
+            go.transform.SetParent(world.transform, false);
+            go.transform.rotation = Quaternion.Euler(-degrees, 0f, 0f);
+            go.transform.position = new Vector3(0f, Mathf.Sin(rad) * length / 2f - Mathf.Cos(rad) * 0.005f, Mathf.Cos(rad) * length / 2f + Mathf.Sin(rad) * 0.005f);
+            go.transform.localScale = new Vector3(BoxWidth, 0.01f, length);
+        }
+
+        [UnityTest]
+        public IEnumerator ゆるやかな坂は_歩いてのぼれる()
+        {
+            CreateRampPlate(30f);
+            yield return Spawn(new Vector3(0f, 0f, -0.03f));
+            motor.SetTestInput(Vector2.up);
+            yield return new WaitForSeconds(1.2f);
+            motor.SetTestInput(Vector2.zero);
+            Assert.Greater(motor.transform.position.y, 0.05f, "30 度の坂を、歩いてのぼれなかった");
+        }
+
+        [UnityTest]
+        public IEnumerator 急な坂は_歩くだけではのぼれない()
+        {
+            CreateRampPlate(60f);
+            yield return Spawn(new Vector3(0f, 0f, -0.03f));
+            motor.SetTestInput(Vector2.up);
+            float maxY = 0f;
+            for (float t = 0f; t < 1.5f; t += Time.deltaTime)
+            {
+                yield return null;
+                maxY = Mathf.Max(maxY, motor.transform.position.y);
+            }
+            motor.SetTestInput(Vector2.zero);
+            Assert.Less(maxY, 0.03f, "60 度の坂を、歩くだけでのぼれてしまった");
+        }
+
+        [UnityTest]
+        public IEnumerator 急な坂は_ジャンプを使えばのぼれる()
+        {
+            CreateRampPlate(60f);
+            yield return Spawn(new Vector3(0f, 0f, -0.03f));
+            // 1 回のジャンプ（約 12.5cm）より高い所まで、跳びながらのぼる
+            yield return WalkForwardJumpingWhenBlocked(5f, 0.16f);
+            Debug.Log($"[ramp] 60 度の坂で、ジャンプしながら着いた高さ：{motor.transform.position.y * 100f:0.0}cm");
+            Assert.Greater(motor.transform.position.y, 0.15f, "60 度の坂を、ジャンプを使ってものぼれなかった");
+        }
     }
 }

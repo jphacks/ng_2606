@@ -22,8 +22,8 @@ namespace DeskStage.Gameplay
         /// <summary>スタートからゴールへ、壁を通らないと行けないかもしれない</summary>
         public const string ReasonMayBeUnreachable = "may-be-unreachable";
 
-        /// <summary>上向きの面とみなす、面の向きの上の成分の下限（約30度まで）</summary>
-        public const float MinUpNormal = 0.866f;
+        /// <summary>上向きの面とみなす、面の向きの上の成分の下限（約45度まで。キャラが歩いてのぼれる坂の傾き）</summary>
+        public const float MinUpNormal = 0.707f;
 
         /// <summary>既にあるチェックポイントのこの距離以内をタップしたら、それを消す（m）</summary>
         public const float CheckpointRemoveDistance = 0.03f;

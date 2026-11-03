@@ -160,6 +160,8 @@ namespace DeskStage.Gameplay
             // 段差を自動で登る機能（Step Offset）は地面にいるときだけ使う。空中でも働くと、
             // ジャンプの頂点（5cm）に 0.8cm が足されて、壁のはずの 5cm の箱に乗れてしまう（Step 8）
             controller.stepOffset = grounded ? settings.stepOffset : 0f;
+            // 坂：歩いてのぼれるのは slopeLimit（45 度）まで。ジャンプで上がっている間だけ、もっと急な坂（airSlopeLimit）も、のぼれる
+            controller.slopeLimit = verticalSpeed > 0f ? settings.airSlopeLimit : settings.slopeLimit;
             controller.Move((horizontal + ExternalVelocity + Vector3.up * verticalSpeed) * dt);
 
             // 8：動いているときは進む方向へなめらかに向く

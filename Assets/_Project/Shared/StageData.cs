@@ -95,6 +95,20 @@ namespace DeskStage.Shared
         /// 古い保存データには無いので、読み込むと空（しかけ無し）になる。
         /// </summary>
         public string gimmick = "";
+
+        /// <summary>
+        /// 水の箱の、流れる向き。0 は「箱の id から決まる向き」（古い保存データ・まだ選んでいない箱）。
+        /// 1〜4 は、箱の座標の +x、+z、-x、-z（遊ぶ人が、たしかめの画面で選ぶ）。
+        /// </summary>
+        public int flow;
+
+        /// <summary>
+        /// 坂（斜めに立てかけた板など）。true のとき、箱ではなく、くさび形になる。
+        /// 上から見た形は size[0]（のぼる向きの長さ）× size[2]（横はば）で、箱の座標の +x の方へのぼる。
+        /// -x の端は机の高さ 0、+x の端は size[1]（高さ）。向きは yawDegrees で決める。
+        /// 古い保存データには無いので、読み込むと false（ふつうの箱）になる。
+        /// </summary>
+        public bool ramp;
     }
 
     /// <summary>スタート地点。</summary>

@@ -58,6 +58,8 @@
           "depthCm",
           "heightCm",
           "yawDegrees",
+          "isRamp",
+          "uphillYawDegrees",
           "topFaceInPhoto1",
           "confidence"
         ],
@@ -89,6 +91,14 @@
           "yawDegrees": {
             "type": "number",
             "description": "上から見て、長い方の辺が右（+X）の向きから反時計回りに何度回っているか。0 以上 180 未満"
+          },
+          "isRamp": {
+            "type": "boolean",
+            "description": "斜めに立てかけた板や、斜めに置いた物（片方の端が机に付き、反対の端が持ち上がっている物）なら true。ふつうの箱は false"
+          },
+          "uphillYawDegrees": {
+            "type": "number",
+            "description": "isRamp が true のとき、のぼる向き（低い端から高い端へ）。上から見て、+X の向きから反時計回りに何度か（0 以上 360 未満）。false のときは 0"
           },
           "confidence": {
             "type": "number",

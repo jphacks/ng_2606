@@ -195,5 +195,22 @@ namespace DeskStage.Stage.Tests
 
             Assert.That(changes, Is.Empty);
         }
+
+        [Test]
+        public void 坂は_高さをそろえたり_すき間をふさぐために広げたりしない()
+        {
+            var ramp = Box("box-01", 0f, 0.20f, 0f, 0.10f, 0.100f);
+            ramp.ramp = true;
+            var neighbour = Box("box-02", 0.205f, 0.30f, 0f, 0.10f, 0.095f); // 坂のすぐ隣（すき間 5mm）で、高さの差も小さい
+            var boxes = new List<BoxData> { ramp, neighbour };
+
+            var result = BoxRefiner.Refine(boxes, HeightMerge, GapClose);
+
+            Assert.That(result[0].ramp, Is.True, "坂の印が残る");
+            Assert.That(result[0].size[1], Is.EqualTo(0.100f).Within(Tolerance));
+            Assert.That(result[1].size[1], Is.EqualTo(0.095f).Within(Tolerance), "隣の箱の高さは、坂に合わせない");
+            Assert.That(XMax(result[0]), Is.EqualTo(0.20f).Within(Tolerance), "坂は広がらない");
+            Assert.That(XMin(result[1]), Is.EqualTo(0.205f).Within(Tolerance), "隣の箱も、坂へ広がらない");
+        }
     }
 }
