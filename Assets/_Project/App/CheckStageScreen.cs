@@ -13,7 +13,7 @@ namespace DeskStage.App
     ///  ・コース：「スタートを おく」「ゴールを おく」を押して、机の上をタップ（C の CoursePlacer に依頼）
     ///  ・ほぞん：保存して、いちらんに出す
     ///  ・あそぶ：スタートとゴールが無いときは、理由を出して進まない
-    ///  ・箱の上の「とぶ」「ばつ」の印は、D の StepMarksView
+    ///  ・登れない箱の上の「ばつ」の印は、D の StepMarksView。スタートとゴールの「START」「GOAL」の札は、D の CourseLabelsView
     /// </summary>
     public class CheckStageScreen : AppScreen
     {
@@ -56,6 +56,10 @@ namespace DeskStage.App
             catcher = catcherImage.gameObject.AddComponent<TapCatcher>();
             catcher.Tapped = OnCourseTap;
             catcherImage.gameObject.SetActive(false);
+
+            // スタートとゴールの目印の上の「START」「GOAL」（置いた物だけ出す）。タップは受けない
+            var courseLabels = UiKit.Fill(UiKit.NewRect("CourseLabels", Rect)).gameObject.AddComponent<CourseLabelsView>();
+            courseLabels.Set(Theme.Font, UiKit.RoundedSprite, () => Context.Flow.StartPlaced, () => Context.Flow.GoalPlaced);
 
             // 上の帯
             UiParts.Bar(Rect, "TopBar", true, 240f);

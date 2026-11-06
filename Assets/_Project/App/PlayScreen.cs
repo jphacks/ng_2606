@@ -31,6 +31,10 @@ namespace DeskStage.App
             var gesture = gestureImage.gameObject.AddComponent<ViewGesture>();
             gesture.SetSettings(Context.ViewGestureSettings);
 
+            // スタートとゴールの目印の上の「START」「GOAL」（スティック・ボタンより奥）
+            var courseLabels = UiKit.Fill(UiKit.NewRect("CourseLabels", Rect)).gameObject.AddComponent<CourseLabelsView>();
+            courseLabels.Set(Theme.Font, UiKit.RoundedSprite);
+
             var safe = UiKit.Fill(UiKit.NewRect("Safe", Rect));
 
             // 上：いちじていし と タイム

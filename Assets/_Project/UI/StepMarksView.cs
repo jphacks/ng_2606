@@ -8,7 +8,8 @@ namespace DeskStage.UI
 {
     /// <summary>
     /// たしかめ画面で、各箱の上面に段の印を出す（Step 10）。
-    /// Jump は緑の丸と「とぶ」、Wall は赤の四角と「ばつ」（色だけで伝えないよう、形と文字も変える）。
+    /// Wall の箱にだけ、赤の四角と「ばつ」を出す（色だけで伝えないよう、形と文字も付ける）。
+    /// Jump の緑の「とぶ」は出さない（2 段ジャンプで、ほとんどの箱が Jump になり、押せるボタンに見えて紛らわしいため。2026-11-06）。
     /// Wall の箱のそばには、低い物を隣に置いてもういちどスキャンするよう小さく出す。
     /// 印は画面の上の部品で、箱の上面の位置に毎フレーム合わせる。
     /// </summary>
@@ -97,7 +98,7 @@ namespace DeskStage.UI
             var used = 0;
             for (int i = 0; i < marks.Length; i++)
             {
-                if (marks[i] == StepMarkLogic.Mark.Walk || cam == null)
+                if (marks[i] != StepMarkLogic.Mark.Wall || cam == null)
                 {
                     continue;
                 }
@@ -110,11 +111,10 @@ namespace DeskStage.UI
                 var ui = Get(used++);
                 RectTransformUtility.ScreenPointToLocalPointInRectangle(container, screen, null, out var local);
                 ui.Root.anchoredPosition = local + new Vector2(0f, MarkSize * 0.6f);
-                var wall = marks[i] == StepMarkLogic.Mark.Wall;
-                ui.Back.color = wall ? new Color(0.92f, 0.3f, 0.28f) : new Color(0.3f, 0.75f, 0.35f);
-                ui.Back.sprite = wall ? null : circle;
-                ui.Label.text = wording != null ? wording.Get(wall ? "check.mark.wall" : "check.mark.jump") : "";
-                ui.Hint.gameObject.SetActive(wall);
+                ui.Back.color = new Color(0.92f, 0.3f, 0.28f);
+                ui.Back.sprite = null;
+                ui.Label.text = wording != null ? wording.Get("check.mark.wall") : "";
+                ui.Hint.gameObject.SetActive(true);
             }
             for (int i = used; i < pool.Count; i++)
             {
