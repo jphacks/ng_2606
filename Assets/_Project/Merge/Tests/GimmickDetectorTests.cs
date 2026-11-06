@@ -114,5 +114,52 @@ namespace DeskStage.Merge.Tests
         {
             Assert.AreEqual("", GimmickDetector.Detect(Fill(400, new Color32(240, 130, 30, 255))));
         }
+
+        // ---- 2026-11-06 に足した色（実機ではまだ測っていない） ----
+
+        [Test]
+        public void 一面の黄色はジャンプ台()
+        {
+            Assert.AreEqual(BoxData.GimmickJumpPad, GimmickDetector.Detect(Fill(400, new Color32(240, 200, 30, 255))));
+            Assert.AreEqual(BoxData.GimmickJumpPad, GimmickDetector.Detect(Fill(400, new Color32(250, 225, 60, 255))));
+        }
+
+        [Test]
+        public void 一面の紫は敵()
+        {
+            Assert.AreEqual(BoxData.GimmickEnemy, GimmickDetector.Detect(Fill(400, new Color32(130, 60, 190, 255))));
+            Assert.AreEqual(BoxData.GimmickEnemy, GimmickDetector.Detect(Fill(400, new Color32(90, 50, 150, 255))));
+        }
+
+        [Test]
+        public void 一面のピンクはワープ()
+        {
+            Assert.AreEqual(BoxData.GimmickWarp, GimmickDetector.Detect(Fill(400, new Color32(245, 150, 190, 255))));
+            Assert.AreEqual(BoxData.GimmickWarp, GimmickDetector.Detect(Fill(400, new Color32(250, 180, 190, 255))));
+            Assert.AreEqual(BoxData.GimmickWarp, GimmickDetector.Detect(Fill(400, new Color32(230, 80, 170, 255))));
+        }
+
+        [Test]
+        public void あざやかな赤は赤のままで淡い赤はピンク()
+        {
+            Assert.AreEqual(BoxData.GimmickFire, GimmickDetector.Detect(Fill(400, Red)));
+            Assert.AreEqual(BoxData.GimmickWarp, GimmickDetector.Detect(Fill(400, new Color32(250, 175, 180, 255))));
+        }
+
+        [Test]
+        public void 新しい色も85パーセント以上のときだけ()
+        {
+            var yellow = new Color32(240, 200, 30, 255);
+            Assert.AreEqual(BoxData.GimmickJumpPad, GimmickDetector.Detect(Mixed(400, yellow, White, 0.15f)));
+            Assert.AreEqual("", GimmickDetector.Detect(Mixed(400, yellow, White, 0.20f)));
+        }
+
+        [Test]
+        public void 段ボールとテープとオレンジは黄色にならない()
+        {
+            Assert.AreEqual("", GimmickDetector.Detect(Fill(400, Cardboard)));
+            Assert.AreEqual("", GimmickDetector.Detect(Fill(400, new Color32(150, 125, 95, 255))));
+            Assert.AreEqual("", GimmickDetector.Detect(Fill(400, new Color32(240, 130, 30, 255))));
+        }
     }
 }

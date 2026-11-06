@@ -2,7 +2,10 @@ using UnityEngine;
 
 namespace DeskStage.App
 {
-    /// <summary>しかけの絵（コードで描く小さな絵）。水の矢印、炎の地面、炎、回復の地面、＋。ファイルは持たない。</summary>
+    /// <summary>
+    /// しかけの絵（コードで描く小さな絵）。水の矢印、炎の地面、炎、回復の地面、＋、
+    /// ジャンプ台の地面、敵の出る地面、敵の顔、ワープの地面。ファイルは持たない。
+    /// </summary>
     public static class GimmickTextures
     {
         const int Size = 64;
@@ -122,6 +125,90 @@ namespace DeskStage.App
                 }
             }
             return New(pixels, TextureWrapMode.Clamp);
+        }
+
+        /// <summary>ジャンプ台の地面：黄色に、上を指す白い山形（＾）を 2 つ。</summary>
+        public static Texture2D JumpPad()
+        {
+            var pixels = new Color32[Size * Size];
+            for (var y = 0; y < Size; y++)
+            {
+                for (var x = 0; x < Size; x++)
+                {
+                    var p = new Vector2((x + 0.5f) / Size - 0.5f, (y + 0.5f) / Size - 0.5f);
+                    var chevron = false;
+                    foreach (var offset in new[] { -0.12f, 0.14f })
+                    {
+                        var dy = p.y - offset;
+                        chevron |= Mathf.Abs(dy + Mathf.Abs(p.x) * 0.9f) < 0.05f && Mathf.Abs(p.x) < 0.3f;
+                    }
+                    var glow = Mathf.Clamp01(1f - p.magnitude * 1.5f);
+                    var baseColor = Color.Lerp(new Color(1f, 0.78f, 0.1f), new Color(1f, 0.95f, 0.45f), glow);
+                    var color = chevron ? Color.white : baseColor;
+                    pixels[y * Size + x] = C(color.r, color.g, color.b, chevron ? 0.98f : 0.85f);
+                }
+            }
+            return New(pixels, TextureWrapMode.Repeat);
+        }
+
+        /// <summary>敵の出る地面：紫に、こい紫のうずまき。</summary>
+        public static Texture2D EnemyPad()
+        {
+            var pixels = new Color32[Size * Size];
+            for (var y = 0; y < Size; y++)
+            {
+                for (var x = 0; x < Size; x++)
+                {
+                    var p = new Vector2((x + 0.5f) / Size - 0.5f, (y + 0.5f) / Size - 0.5f);
+                    var r = p.magnitude;
+                    var angle = Mathf.Atan2(p.y, p.x);
+                    var swirl = 0.5f + 0.5f * Mathf.Sin(r * 40f - angle * 2f);
+                    var color = Color.Lerp(new Color(0.45f, 0.2f, 0.7f), new Color(0.7f, 0.45f, 0.95f), swirl * Mathf.Clamp01(1f - r * 1.4f));
+                    pixels[y * Size + x] = C(color.r, color.g, color.b, 0.88f);
+                }
+            }
+            return New(pixels, TextureWrapMode.Repeat);
+        }
+
+        /// <summary>敵の顔（紫の丸に、白い目と黒いひとみ。まわりは透明）。</summary>
+        public static Texture2D EnemyFace()
+        {
+            var pixels = new Color32[Size * Size];
+            for (var y = 0; y < Size; y++)
+            {
+                for (var x = 0; x < Size; x++)
+                {
+                    var p = new Vector2((x + 0.5f) / Size - 0.5f, (y + 0.5f) / Size - 0.5f);
+                    var body = p.magnitude < 0.46f;
+                    var eyeL = (p - new Vector2(-0.15f, 0.08f)).magnitude;
+                    var eyeR = (p - new Vector2(0.15f, 0.08f)).magnitude;
+                    Color color;
+                    if (eyeL < 0.05f || eyeR < 0.05f) color = new Color(0.1f, 0.05f, 0.15f);
+                    else if (eyeL < 0.11f || eyeR < 0.11f) color = Color.white;
+                    else color = Color.Lerp(new Color(0.55f, 0.25f, 0.85f), new Color(0.35f, 0.12f, 0.6f), Mathf.Clamp01(p.magnitude * 2f));
+                    pixels[y * Size + x] = C(color.r, color.g, color.b, body ? 1f : 0f);
+                }
+            }
+            return New(pixels, TextureWrapMode.Clamp);
+        }
+
+        /// <summary>ワープの地面：ピンクに、白い輪が重なった模様。</summary>
+        public static Texture2D Warp()
+        {
+            var pixels = new Color32[Size * Size];
+            for (var y = 0; y < Size; y++)
+            {
+                for (var x = 0; x < Size; x++)
+                {
+                    var p = new Vector2((x + 0.5f) / Size - 0.5f, (y + 0.5f) / Size - 0.5f);
+                    var r = p.magnitude;
+                    var ring = Mathf.Abs(Mathf.Repeat(r * 6f, 1f) - 0.5f) < 0.12f && r < 0.45f;
+                    var baseColor = Color.Lerp(new Color(1f, 0.45f, 0.72f), new Color(1f, 0.75f, 0.88f), Mathf.Clamp01(1f - r * 1.6f));
+                    var color = ring ? Color.white : baseColor;
+                    pixels[y * Size + x] = C(color.r, color.g, color.b, ring ? 0.95f : 0.85f);
+                }
+            }
+            return New(pixels, TextureWrapMode.Repeat);
         }
     }
 }

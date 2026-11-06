@@ -3,7 +3,8 @@
     "rootNamespace": "DeskStage.Gameplay.EditorTools",
     "references": [
         "DeskStage.Gameplay",
-        "DeskStage.Shared"
+        "DeskStage.Shared",
+        "DeskStage.App"
     ],
     "includePlatforms": [
         "Editor"

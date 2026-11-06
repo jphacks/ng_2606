@@ -111,6 +111,17 @@ namespace DeskStage.Gameplay
             Teleported?.Invoke();
         }
 
+        /// <summary>
+        /// 上へ跳ね上げる（黄色のジャンプ台）。height（m）の高さまで届く初速にする。
+        /// ジャンプの先行入力の記録は消し、空中のジャンプ（2 段ジャンプ）は使えるまま。
+        /// </summary>
+        public void Launch(float height)
+        {
+            verticalSpeed = Mathf.Sqrt(2f * settings.gravity * Mathf.Max(height, 0f));
+            jumpTimer.Reset();
+            airJumpsUsed = 0;
+        }
+
         void Update()
         {
             if (Paused)

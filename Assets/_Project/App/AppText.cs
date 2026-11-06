@@ -204,10 +204,15 @@ namespace DeskStage.App
         public const string GimmickWater = "みず";
         public const string GimmickFire = "ほのお";
         public const string GimmickHeal = "かいふく";
+        public const string GimmickJumpPad = "ジャンプだい";
+        public const string GimmickEnemy = "てき";
+        public const string GimmickWarp = "ワープ";
         public const string GimmickFound = "しかけを みつけたよ：{0}";
         public const string GimmickHit = "あちち！ ハートが へったよ";
+        public const string GimmickEnemyHit = "いたっ！ ハートが へったよ";
         public const string GimmickHealed = "かいふく！";
-        public const string GimmickHint = "おりがみを はこの うえ いっぱいに はると、\nしかけに なるよ\n（あお：みず　あか：ほのお　みどり：かいふく）";
+        public const string GimmickWarped = "ワープ！";
+        public const string GimmickHint = "おりがみを はこの うえ いっぱいに はると、\nしかけに なるよ\n（あお：みず　あか：ほのお　みどり：かいふく\n　きいろ：ジャンプだい　むらさき：てき　ピンク：ワープ）";
         public const string ReachGimmickBadge = "しかけ";
         public const string GameOverTitle = "ゲームオーバー";
         public const string GameOverHint = "ハートが なくなっちゃった";
