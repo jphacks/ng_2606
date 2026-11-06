@@ -611,16 +611,32 @@ namespace DeskStage.App
             });
         }
 
-        // 敵を少し動かす。進んだ先の足元を光線で調べ、段差は 0.9cm までしか登らない。机の外には出ない。下へは降りられる
+        // 敵を少し動かす。進めなければ、壁に沿って横にすべれるか（x だけ、z だけ）も試す
         static bool TryStepEnemy(Enemy e, Vector3 step)
         {
             if (step.sqrMagnitude < 1e-12f)
             {
                 return true;
             }
-            var next = e.Position + step;
-            if (!Physics.Raycast(next + Vector3.up * 0.02f, Vector3.down, out var hit, 0.5f, Layers.TerrainMask, QueryTriggerInteraction.Ignore)
-                || hit.normal.y < 0.9f || hit.point.y > e.Position.y + 0.009f)
+            return TryMoveEnemyTo(e, e.Position + step)
+                || TryMoveEnemyTo(e, e.Position + new Vector3(step.x, 0f, 0f))
+                || TryMoveEnemyTo(e, e.Position + new Vector3(0f, 0f, step.z));
+        }
+
+        // 進む先へ動けるなら動かす。箱や壁を通り抜けないよう、進む先に敵の体の大きさの球を置いてみて、
+        // 登れる段差（0.9cm）より上で箱に重なるなら進まない。そのうえで足元を光線で調べ、机の外には出ず、下へは降りられる
+        static bool TryMoveEnemyTo(Enemy e, Vector3 next)
+        {
+            var step = GimmickRules.EnemyMaxStep;
+            var r = GimmickRules.EnemyRadius * 1.1f;
+            var body = next + Vector3.up * (step + r + 0.001f);
+            if (Physics.CheckSphere(body, r, Layers.TerrainMask, QueryTriggerInteraction.Ignore))
+            {
+                return false;
+            }
+            // 光線は、登れる段差のすぐ上から落とす（それより高い箱は、上の球で止めてあるので、箱の中から落とすことはない）
+            if (!Physics.Raycast(next + Vector3.up * (step + 0.002f), Vector3.down, out var hit, 0.5f, Layers.TerrainMask, QueryTriggerInteraction.Ignore)
+                || hit.normal.y < 0.9f || hit.point.y > e.Position.y + step)
             {
                 return false;
             }

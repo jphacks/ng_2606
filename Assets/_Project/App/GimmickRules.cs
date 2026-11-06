@@ -29,6 +29,9 @@ namespace DeskStage.App
         /// <summary>敵の大きさ（半径 m）。当たりの判定にも使う。</summary>
         public const float EnemyRadius = 0.01f;
 
+        /// <summary>敵が登れる段差（m）。これより高い箱や壁は、通り抜けずに止まる。</summary>
+        public const float EnemyMaxStep = 0.009f;
+
         /// <summary>うろうろする敵が、向きを変えるまでの時間（秒）。</summary>
         public const float EnemyWanderSeconds = 2f;
 
