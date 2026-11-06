@@ -74,6 +74,10 @@ namespace DeskStage.App
             public GimmickRules.EnemyMode Mode;
             public Vector3 Direction;  // うろうろするときの向き
             public float WanderTimer;
+            public Vector3 Spawn;      // 出てきた所（抜け出せないときに戻す）
+            public Vector3 LastProgress;
+            public float StuckTimer;   // ほとんど動けていない時間
+            public float DetourTimer;  // 追いかける敵が、回り道をしている残りの時間
         }
 
         readonly List<Visual> visuals = new List<Visual>();
@@ -541,47 +545,24 @@ namespace DeskStage.App
         void UpdateEnemies(CharacterMotor motor)
         {
             var dt = Time.deltaTime;
-            // 紫の箱ごとに、7 秒ごとに 1 体出す（全部で最大 5 体）
+            // 紫の箱ごとに、7 秒ごとに 1 体出す（全部で最大 5 体）。箱の上が空いていなければ、空くまで待つ
             foreach (var v in visuals)
             {
                 if (v.Kind != BoxData.GimmickEnemy || v.Box == null) continue;
                 spawnTimers.TryGetValue(v.Id, out var timer);
                 timer += dt;
-                if (timer >= GimmickRules.EnemySpawnSeconds)
+                if (timer >= GimmickRules.EnemySpawnSeconds && enemies.Count < GimmickRules.MaxEnemies && TrySpawnEnemy(v.Box))
                 {
                     timer = 0f;
-                    if (enemies.Count < GimmickRules.MaxEnemies)
-                    {
-                        SpawnEnemy(v.Box.TransformPoint(new Vector3(0f, 0.5f, 0f)));
-                    }
                 }
-                spawnTimers[v.Id] = timer;
+                spawnTimers[v.Id] = Mathf.Min(timer, GimmickRules.EnemySpawnSeconds);
             }
 
             var feet = motor.transform.position;
             var hit = false;
             foreach (var e in enemies)
             {
-                Vector3 dir;
-                if (e.Mode == GimmickRules.EnemyMode.Chase)
-                {
-                    dir = GimmickRules.ChaseDirection(e.Position, feet);
-                }
-                else
-                {
-                    e.WanderTimer -= dt;
-                    if (e.WanderTimer <= 0f)
-                    {
-                        e.Direction = GimmickRules.WanderDirection(UnityEngine.Random.value);
-                        e.WanderTimer = GimmickRules.EnemyWanderSeconds;
-                    }
-                    dir = e.Direction;
-                }
-                if (!TryStepEnemy(e, dir * (GimmickRules.EnemySpeed * dt)) && e.Mode == GimmickRules.EnemyMode.Wander)
-                {
-                    // 進めなかったら、向きを変える
-                    e.WanderTimer = 0f;
-                }
+                MoveEnemy(e, feet, dt);
                 hit |= GimmickRules.EnemyTouches(e.Position, feet, motor.settings.radius, motor.settings.height);
             }
             // ハートを減らすのは、敵の一覧を見終わってから（0 になってゲームオーバーの画面に変わると、敵の一覧が消されることがあるため）
@@ -589,6 +570,90 @@ namespace DeskStage.App
             {
                 TryDamage(true);
             }
+        }
+
+        // 敵を 1 フレーム分動かす。進めなければ向きを変え、はまって抜け出せなければ、出てきた所に戻す
+        void MoveEnemy(Enemy e, Vector3 target, float dt)
+        {
+            e.DetourTimer -= dt;
+            var chasing = e.Mode == GimmickRules.EnemyMode.Chase && e.DetourTimer <= 0f;
+            if (!chasing)
+            {
+                e.WanderTimer -= dt;
+                if (e.WanderTimer <= 0f)
+                {
+                    e.Direction = GimmickRules.WanderDirection(UnityEngine.Random.value);
+                    e.WanderTimer = GimmickRules.EnemyWanderSeconds;
+                }
+            }
+            var dir = chasing ? GimmickRules.ChaseDirection(e.Position, target) : e.Direction;
+            if (!TryStepEnemy(e, dir * (GimmickRules.EnemySpeed * dt)))
+            {
+                // 進めなかった：進める向きを探して、そちらへ向きを変える。追いかける敵は、しばらく回り道をする
+                TurnToOpenDirection(e);
+            }
+
+            // ほとんど動けていなければ、向きを変える。それでも抜け出せなければ、出てきた所に戻す
+            if ((e.Position - e.LastProgress).sqrMagnitude > 0.003f * 0.003f)
+            {
+                e.LastProgress = e.Position;
+                e.StuckTimer = 0f;
+                return;
+            }
+            e.StuckTimer += dt;
+            if (e.StuckTimer >= GimmickRules.EnemyStuckRespawnSeconds)
+            {
+                if (!OverlapsOtherEnemy(e, e.Spawn))
+                {
+                    e.Position = e.Spawn;
+                }
+                e.LastProgress = e.Position;
+                e.StuckTimer = 0f;
+                TurnToOpenDirection(e);
+            }
+            else if (e.StuckTimer >= GimmickRules.EnemyStuckTurnSeconds && e.StuckTimer - dt < GimmickRules.EnemyStuckTurnSeconds)
+            {
+                TurnToOpenDirection(e);
+            }
+        }
+
+        // 8 方向をためして、少しでも進める向きに変える（見つからなければ、くじで決めた向き）
+        void TurnToOpenDirection(Enemy e)
+        {
+            var start = UnityEngine.Random.value;
+            for (var i = 0; i < 8; i++)
+            {
+                var dir = GimmickRules.WanderDirection(start + i / 8f);
+                if (CanMoveEnemyTo(e, e.Position + dir * 0.006f, out _))
+                {
+                    e.Direction = dir;
+                    break;
+                }
+                e.Direction = GimmickRules.WanderDirection(UnityEngine.Random.value);
+            }
+            e.WanderTimer = GimmickRules.EnemyWanderSeconds;
+            if (e.Mode == GimmickRules.EnemyMode.Chase)
+            {
+                e.DetourTimer = GimmickRules.EnemyDetourSeconds;
+            }
+        }
+
+        // 紫の箱の上に敵を出す。まん中に敵がいれば、上面の空いている所をさがす。どこも空いていなければ出さない
+        bool TrySpawnEnemy(Transform box)
+        {
+            var offsets = new[] { Vector2.zero, new Vector2(0.25f, 0f), new Vector2(-0.25f, 0f), new Vector2(0f, 0.25f), new Vector2(0f, -0.25f),
+                new Vector2(0.25f, 0.25f), new Vector2(-0.25f, 0.25f), new Vector2(0.25f, -0.25f), new Vector2(-0.25f, -0.25f) };
+            foreach (var o in offsets)
+            {
+                var feet = box.TransformPoint(new Vector3(o.x, 0.5f, o.y));
+                if (OverlapsOtherEnemy(null, feet))
+                {
+                    continue;
+                }
+                SpawnEnemy(feet);
+                return true;
+            }
+            return false;
         }
 
         void SpawnEnemy(Vector3 feet)
@@ -601,18 +666,27 @@ namespace DeskStage.App
             go.transform.localScale = Vector3.one * (GimmickRules.EnemyRadius * 2.4f);
             go.GetComponent<Renderer>().sharedMaterial = NewMaterial(GetTexture("enemyface", GimmickTextures.EnemyFace), Color.white);
             go.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            // 追いかける敵と歩き回る敵が、どちらも出るように決める
+            var chase = 0;
+            var wander = 0;
+            foreach (var other in enemies)
+            {
+                if (other.Mode == GimmickRules.EnemyMode.Chase) chase++; else wander++;
+            }
             enemies.Add(new Enemy
             {
                 Transform = go.transform,
                 Position = feet,
-                Mode = GimmickRules.ChooseEnemyMode(UnityEngine.Random.value),
+                Spawn = feet,
+                LastProgress = feet,
+                Mode = GimmickRules.ChooseEnemyMode(UnityEngine.Random.value, chase, wander),
                 Direction = GimmickRules.WanderDirection(UnityEngine.Random.value),
                 WanderTimer = GimmickRules.EnemyWanderSeconds,
             });
         }
 
         // 敵を少し動かす。進めなければ、壁に沿って横にすべれるか（x だけ、z だけ）も試す
-        static bool TryStepEnemy(Enemy e, Vector3 step)
+        bool TryStepEnemy(Enemy e, Vector3 step)
         {
             if (step.sqrMagnitude < 1e-12f)
             {
@@ -623,10 +697,22 @@ namespace DeskStage.App
                 || TryMoveEnemyTo(e, e.Position + new Vector3(0f, 0f, step.z));
         }
 
-        // 進む先へ動けるなら動かす。箱や壁を通り抜けないよう、進む先に敵の体の大きさの球を置いてみて、
-        // 登れる段差（0.9cm）より上で箱に重なるなら進まない。そのうえで足元を光線で調べ、机の外には出ず、下へは降りられる
-        static bool TryMoveEnemyTo(Enemy e, Vector3 next)
+        bool TryMoveEnemyTo(Enemy e, Vector3 next)
         {
+            if (!CanMoveEnemyTo(e, next, out var landed))
+            {
+                return false;
+            }
+            e.Position = landed;
+            return true;
+        }
+
+        // 進む先へ動けるか。箱や壁を通り抜けないよう、進む先に敵の体の大きさの球を置いてみて、
+        // 登れる段差（0.9cm）より上で箱に重なるなら進まない。ほかの敵とも重ならない（すでに重なっているときは、離れる向きなら進める）。
+        // そのうえで足元を光線で調べ、机の外には出ず、下へは降りられる。landed は、動いたあとの足元
+        bool CanMoveEnemyTo(Enemy e, Vector3 next, out Vector3 landed)
+        {
+            landed = next;
             var step = GimmickRules.EnemyMaxStep;
             var r = GimmickRules.EnemyRadius * 1.1f;
             var body = next + Vector3.up * (step + r + 0.001f);
@@ -640,9 +726,29 @@ namespace DeskStage.App
             {
                 return false;
             }
-            e.Position = new Vector3(next.x, hit.point.y, next.z);
+            landed = new Vector3(next.x, hit.point.y, next.z);
+            foreach (var other in enemies)
+            {
+                if (other == e || !GimmickRules.EnemiesOverlap(landed, other.Position)) continue;
+                // すでに重なっているなら、離れる向きにだけは動ける
+                var before = Flat(e.Position - other.Position).sqrMagnitude;
+                var after = Flat(landed - other.Position).sqrMagnitude;
+                if (after <= before) return false;
+            }
             return true;
         }
+
+        // ほかの敵と重なるか（self は除く。null なら全部の敵と比べる）
+        bool OverlapsOtherEnemy(Enemy self, Vector3 feet)
+        {
+            foreach (var other in enemies)
+            {
+                if (other != self && GimmickRules.EnemiesOverlap(feet, other.Position)) return true;
+            }
+            return false;
+        }
+
+        static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
 
         // 敵の見た目を、足元の少し上に置き、いつもカメラの方を向ける
         void AnimateEnemies()

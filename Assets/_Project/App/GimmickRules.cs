@@ -53,6 +53,36 @@ namespace DeskStage.App
         /// <summary>くじ（0〜1 の数）から、敵の動き方を決める。半分ずつ。</summary>
         public static EnemyMode ChooseEnemyMode(float random01) => random01 < 0.5f ? EnemyMode.Chase : EnemyMode.Wander;
 
+        /// <summary>
+        /// 次に出す敵の動き方。1 ステージの中で、追いかける敵と歩き回る敵の両方が出るように、
+        /// 今出ている敵が全部同じ動き方なら、もう一方にする。両方いるか、まだ 1 体もいなければ、くじで決める。
+        /// </summary>
+        public static EnemyMode ChooseEnemyMode(float random01, int chaseCount, int wanderCount)
+        {
+            if (chaseCount > 0 && wanderCount == 0) return EnemyMode.Wander;
+            if (wanderCount > 0 && chaseCount == 0) return EnemyMode.Chase;
+            return ChooseEnemyMode(random01);
+        }
+
+        /// <summary>
+        /// 敵どうしが重なるか（上から見た距離が、体 2 つ分より近く、高さもほぼ同じ）。
+        /// </summary>
+        public static bool EnemiesOverlap(Vector3 a, Vector3 b)
+        {
+            var flat = new Vector2(a.x - b.x, a.z - b.z);
+            var reach = EnemyRadius * 2f;
+            return flat.sqrMagnitude < reach * reach && Mathf.Abs(a.y - b.y) < EnemyRadius * 2f;
+        }
+
+        /// <summary>この時間ほとんど動けなければ、向きを変える（秒）。</summary>
+        public const float EnemyStuckTurnSeconds = 1f;
+
+        /// <summary>この時間たっても抜け出せなければ、出てきた紫の箱の上に戻す（秒）。</summary>
+        public const float EnemyStuckRespawnSeconds = 4f;
+
+        /// <summary>追いかける敵が壁で進めないとき、回り道（歩き回る）をする時間（秒）。</summary>
+        public const float EnemyDetourSeconds = 1.5f;
+
         /// <summary>敵がキャラに当たったか（上から見た距離と高さの差で見る）。</summary>
         public static bool EnemyTouches(Vector3 enemy, Vector3 playerFeet, float playerRadius, float playerHeight)
         {

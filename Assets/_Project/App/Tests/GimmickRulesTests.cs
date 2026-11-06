@@ -156,6 +156,33 @@ namespace DeskStage.App.Tests
         }
 
         [Test]
+        public void 出ている敵が全部同じ動き方なら次はもう一方になる()
+        {
+            // 追いかける敵だけなら、次は歩き回る敵（くじの値に関係なく）
+            Assert.AreEqual(GimmickRules.EnemyMode.Wander, GimmickRules.ChooseEnemyMode(0.1f, 2, 0));
+            // 歩き回る敵だけなら、次は追いかける敵
+            Assert.AreEqual(GimmickRules.EnemyMode.Chase, GimmickRules.ChooseEnemyMode(0.9f, 0, 3));
+        }
+
+        [Test]
+        public void 両方いるか1体もいなければくじで決める()
+        {
+            Assert.AreEqual(GimmickRules.EnemyMode.Chase, GimmickRules.ChooseEnemyMode(0.2f, 0, 0));
+            Assert.AreEqual(GimmickRules.EnemyMode.Wander, GimmickRules.ChooseEnemyMode(0.8f, 0, 0));
+            Assert.AreEqual(GimmickRules.EnemyMode.Chase, GimmickRules.ChooseEnemyMode(0.2f, 1, 1));
+            Assert.AreEqual(GimmickRules.EnemyMode.Wander, GimmickRules.ChooseEnemyMode(0.8f, 2, 1));
+        }
+
+        [Test]
+        public void 敵どうしは体2つ分より近いと重なる()
+        {
+            Assert.IsTrue(GimmickRules.EnemiesOverlap(Vector3.zero, new Vector3(0.015f, 0f, 0f)));
+            Assert.IsFalse(GimmickRules.EnemiesOverlap(Vector3.zero, new Vector3(0.025f, 0f, 0f)));
+            // 高さがちがえば（箱の上と机の上）、重ならない
+            Assert.IsFalse(GimmickRules.EnemiesOverlap(Vector3.zero, new Vector3(0.005f, 0.05f, 0f)));
+        }
+
+        [Test]
         public void 敵がキャラに重なると当たる()
         {
             var feet = new Vector3(0f, 0.05f, 0f);
