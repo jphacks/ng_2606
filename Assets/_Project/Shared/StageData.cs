@@ -90,8 +90,17 @@ namespace DeskStage.Shared
         /// <summary>回復の箱。上面が一面、緑の折り紙のとき。乗っている間、ハートが回復する。</summary>
         public const string GimmickHeal = "heal";
 
+        /// <summary>ジャンプ台の箱。上面が一面、黄色い折り紙のとき。乗ると自動で高く跳ね上がる。</summary>
+        public const string GimmickJumpPad = "jumppad";
+
+        /// <summary>敵の出る箱。上面が一面、紫の折り紙のとき。7 秒ごとに敵が 1 体出て、当たるとハートが 1 つ減る。</summary>
+        public const string GimmickEnemy = "enemy";
+
+        /// <summary>ワープの箱。上面が一面、ピンクの折り紙のとき。踏むと、机の上のどこかランダムな所へ飛ぶ。</summary>
+        public const string GimmickWarp = "warp";
+
         /// <summary>
-        /// 箱のしかけ（water / fire / heal）。なければ空。撮影の写真から、上面が一面その色のときに決まる（Merge の GimmickDetector）。
+        /// 箱のしかけ（water / fire / heal / jumppad / enemy / warp）。なければ空。撮影の写真から、上面が一面その色のときに決まる（Merge の GimmickDetector）。
         /// 古い保存データには無いので、読み込むと空（しかけ無し）になる。
         /// </summary>
         public string gimmick = "";

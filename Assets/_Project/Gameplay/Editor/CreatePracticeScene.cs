@@ -83,6 +83,12 @@ namespace DeskStage.Gameplay.EditorTools
             CreateBox(stageRoot, "Corner_Back", new Vector3(0.25f, 0.04f, 0.005f), new Vector3(0.1f, 0.08f, 0.01f));
             CreateBox(stageRoot, "Corner_Left", new Vector3(0.195f, 0.04f, -0.05f), new Vector3(0.01f, 0.08f, 0.1f));
 
+            // しかけの確かめ（Step 19）：練習用の床の右どなりに、つながった床と、ジャンプ台（黄）・敵（紫）・ワープ（ピンク）の箱
+            CreateBox(stageRoot, "GimmickFloor", new Vector3(0.5f, -0.005f, 0f), new Vector3(0.4f, 0.01f, 0.6f));
+            CreateBox(stageRoot, GameFlowDebugPanel.GimmickPrefix + BoxData.GimmickJumpPad, new Vector3(0.42f, 0.003f, -0.15f), new Vector3(BoxWidth, 0.006f, BoxWidth));
+            CreateBox(stageRoot, GameFlowDebugPanel.GimmickPrefix + BoxData.GimmickEnemy, new Vector3(0.6f, 0.003f, 0.15f), new Vector3(BoxWidth, 0.006f, BoxWidth));
+            CreateBox(stageRoot, GameFlowDebugPanel.GimmickPrefix + BoxData.GimmickWarp, new Vector3(0.6f, 0.003f, -0.15f), new Vector3(BoxWidth, 0.006f, BoxWidth));
+
             // Game_System（Step 13）：GameFlow、CourseMarkers、CoursePlacer、SafetyGuard、RecordStore と、遊ぶ画面の PlayCamera
             var system = (GameObject)PrefabUtility.InstantiatePrefab(systemPrefab);
             var gameFlow = system.GetComponent<GameFlow>();
@@ -97,6 +103,12 @@ namespace DeskStage.Gameplay.EditorTools
             debug.AddComponent<ViewDebugInput>();
             // 1・2・3 を押しながら左クリックで、スタート・ゴール・チェックポイントを置く（Step 12）
             debug.AddComponent<PlacementDebugInput>();
+            // しかけ（Step 19）：本番と同じ GimmickSystem で、色の箱に見た目と効き目をつける。ハートは左下に出す
+            var gimmicks = debug.AddComponent<DeskStage.App.GimmickSystem>();
+            var gimmicksSo = new SerializedObject(gimmicks);
+            gimmicksSo.FindProperty("unlit").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/App/Materials/GimmickUnlit.mat");
+            gimmicksSo.ApplyModifiedPropertiesWithoutUndo();
+            debug.AddComponent<DeskStage.App.GimmickDebugHud>().gimmicks = gimmicks;
             // 遊んでいる間は、見えている PlayCamera から置けるようにする
             var placer = system.GetComponent<CoursePlacer>();
             placer.placementCamera = gameFlow.playCamera.GetComponent<Camera>();

@@ -118,6 +118,7 @@ namespace DeskStage.App
             GameEvents.Fell += OnFell;
             Context.Gimmicks.Damaged += OnDamaged;
             Context.Gimmicks.Healed += OnHealed;
+            Context.Gimmicks.Warped += OnWarped;
             flashTime = 1f;
             damageFlash.color = new Color(1f, 0.15f, 0.15f, 0f);
             hearts.Set(Context.Gimmicks.Health.Hearts);
@@ -130,6 +131,7 @@ namespace DeskStage.App
             GameEvents.Fell -= OnFell;
             Context.Gimmicks.Damaged -= OnDamaged;
             Context.Gimmicks.Healed -= OnHealed;
+            Context.Gimmicks.Warped -= OnWarped;
         }
 
         void Update()
@@ -146,13 +148,20 @@ namespace DeskStage.App
         {
             flashTime = 0f;
             UiSound.Play(UiSound.Cue.Error);
-            Context.Overlays.Toast(AppText.GimmickHit, AppOverlays.ToastKind.Bad, 1.6f);
+            var text = Context.Gimmicks.LastDamageWasEnemy ? AppText.GimmickEnemyHit : AppText.GimmickHit;
+            Context.Overlays.Toast(text, AppOverlays.ToastKind.Bad, 1.6f);
         }
 
         void OnHealed(int remaining)
         {
             UiSound.Play(UiSound.Cue.Success);
             Context.Overlays.Toast(AppText.GimmickHealed, AppOverlays.ToastKind.Good, 1.2f);
+        }
+
+        void OnWarped()
+        {
+            UiSound.Play(UiSound.Cue.Success);
+            Context.Overlays.Toast(AppText.GimmickWarped, AppOverlays.ToastKind.Good, 1.0f);
         }
 
         // 端末の戻る操作は、とめる／つづける

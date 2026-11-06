@@ -137,5 +137,75 @@ namespace DeskStage.App.Tests
             Assert.AreEqual(3, h.Hearts);
             Assert.IsTrue(h.TryDamage(0.1f)); // まもられていた時間も、リセットされる
         }
+
+        // ---- 2026-11-06 に足したしかけ（ジャンプ台・敵・ワープ） ----
+
+        [Test]
+        public void 新しいしかけの名前()
+        {
+            Assert.AreEqual(AppText.GimmickJumpPad, GimmickRules.Name(BoxData.GimmickJumpPad));
+            Assert.AreEqual(AppText.GimmickEnemy, GimmickRules.Name(BoxData.GimmickEnemy));
+            Assert.AreEqual(AppText.GimmickWarp, GimmickRules.Name(BoxData.GimmickWarp));
+        }
+
+        [Test]
+        public void 敵の動き方はくじで追いかけるか歩き回るかに分かれる()
+        {
+            Assert.AreEqual(GimmickRules.EnemyMode.Chase, GimmickRules.ChooseEnemyMode(0.2f));
+            Assert.AreEqual(GimmickRules.EnemyMode.Wander, GimmickRules.ChooseEnemyMode(0.7f));
+        }
+
+        [Test]
+        public void 敵がキャラに重なると当たる()
+        {
+            var feet = new Vector3(0f, 0.05f, 0f);
+            Assert.IsTrue(GimmickRules.EnemyTouches(new Vector3(0.015f, 0.05f, 0f), feet, 0.008f, 0.03f));
+            Assert.IsFalse(GimmickRules.EnemyTouches(new Vector3(0.03f, 0.05f, 0f), feet, 0.008f, 0.03f));
+        }
+
+        [Test]
+        public void 高さがちがうと敵に当たらない()
+        {
+            // 敵は机の上、キャラは 10cm の箱の上
+            var feet = new Vector3(0f, 0.10f, 0f);
+            Assert.IsFalse(GimmickRules.EnemyTouches(new Vector3(0f, 0f, 0f), feet, 0.008f, 0.03f));
+        }
+
+        [Test]
+        public void 追いかける敵はキャラの方へ進む()
+        {
+            var dir = GimmickRules.ChaseDirection(Vector3.zero, new Vector3(0.1f, 0.05f, 0f));
+            Assert.AreEqual(1f, dir.x, 1e-5f);
+            Assert.AreEqual(0f, dir.y);
+            Assert.AreEqual(Vector3.zero, GimmickRules.ChaseDirection(Vector3.zero, Vector3.zero));
+        }
+
+        [Test]
+        public void 歩き回る向きは水平で長さ1()
+        {
+            var dir = GimmickRules.WanderDirection(0.3f);
+            Assert.AreEqual(0f, dir.y);
+            Assert.AreEqual(1f, dir.magnitude, 1e-5f);
+        }
+
+        [Test]
+        public void ワープ先の候補は机のふちより内側()
+        {
+            var a = GimmickRules.WarpCandidate(0f, 0f, 0.6f, 0.4f, 0.03f);
+            var b = GimmickRules.WarpCandidate(1f, 1f, 0.6f, 0.4f, 0.03f);
+            Assert.AreEqual(-0.27f, a.x, 1e-5f);
+            Assert.AreEqual(-0.17f, a.y, 1e-5f);
+            Assert.AreEqual(0.27f, b.x, 1e-5f);
+            Assert.AreEqual(0.17f, b.y, 1e-5f);
+        }
+
+        [Test]
+        public void 決まりの数値()
+        {
+            Assert.AreEqual(7f, GimmickRules.EnemySpawnSeconds);
+            Assert.AreEqual(5, GimmickRules.MaxEnemies);
+            Assert.AreEqual(3f, GimmickRules.WarpCooldownSeconds);
+            Assert.AreEqual(2f, GimmickRules.JumpPadHeightScale);
+        }
     }
 }

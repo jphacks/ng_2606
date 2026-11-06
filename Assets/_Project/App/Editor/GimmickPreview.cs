@@ -8,7 +8,7 @@ using UnityEngine;
 namespace DeskStage.App.EditorTools
 {
     /// <summary>
-    /// 箱のしかけ（水・炎・回復）の 3D の見た目を、画像（PNG）に書き出して確かめる（開発用）。実機に入れなくても、見た目が分かる。
+    /// 箱のしかけ（水・炎・回復・ジャンプ台・敵・ワープ）の 3D の見た目を、画像（PNG）に書き出して確かめる（開発用）。実機に入れなくても、見た目が分かる。
     /// バッチで使う：-executeMethod DeskStage.App.EditorTools.GimmickPreview.Run -out 出力のフォルダ
     /// </summary>
     public static class GimmickPreview
@@ -36,7 +36,7 @@ namespace DeskStage.App.EditorTools
             camera.transform.LookAt(new Vector3(0f, 0.03f, 0f));
             camera.tag = "MainCamera";
 
-            // ステージ：机と、箱 4 つ（水、炎、回復、しかけなし）
+            // ステージ：机と、箱 7 つ（水、炎、回復、ジャンプ台、敵、ワープ、しかけなし）
             var root = new GameObject("StageRoot").transform;
             StageContext.StageRoot = root;
             var unlit = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Sprites/Default");
@@ -49,10 +49,13 @@ namespace DeskStage.App.EditorTools
 
             var boxes = new[]
             {
-                Box(root, unlit, "box-01", -0.30f, 0.16f, BoxData.GimmickWater, new Color(0.85f, 0.7f, 0.5f)),
-                Box(root, unlit, "box-02", -0.10f, 0.12f, BoxData.GimmickFire, new Color(0.85f, 0.7f, 0.5f)),
-                Box(root, unlit, "box-03", 0.12f, 0.08f, BoxData.GimmickHeal, new Color(0.85f, 0.7f, 0.5f)),
-                Box(root, unlit, "box-04", 0.32f, 0.10f, "", new Color(0.85f, 0.7f, 0.5f)),
+                Box(root, unlit, "box-01", -0.36f, 0.16f, BoxData.GimmickWater, new Color(0.85f, 0.7f, 0.5f)),
+                Box(root, unlit, "box-02", -0.24f, 0.12f, BoxData.GimmickFire, new Color(0.85f, 0.7f, 0.5f)),
+                Box(root, unlit, "box-03", -0.12f, 0.08f, BoxData.GimmickHeal, new Color(0.85f, 0.7f, 0.5f)),
+                Box(root, unlit, "box-04", 0f, 0.06f, BoxData.GimmickJumpPad, new Color(0.85f, 0.7f, 0.5f)),
+                Box(root, unlit, "box-05", 0.12f, 0.10f, BoxData.GimmickEnemy, new Color(0.85f, 0.7f, 0.5f)),
+                Box(root, unlit, "box-06", 0.24f, 0.08f, BoxData.GimmickWarp, new Color(0.85f, 0.7f, 0.5f)),
+                Box(root, unlit, "box-07", 0.36f, 0.10f, "", new Color(0.85f, 0.7f, 0.5f)),
             };
             StageContext.CurrentStage = new StageData { boxes = boxes };
 
@@ -72,14 +75,14 @@ namespace DeskStage.App.EditorTools
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
             go.name = id;
             go.transform.SetParent(root, false);
-            go.transform.localScale = new Vector3(0.14f, height, 0.14f);
+            go.transform.localScale = new Vector3(0.10f, height, 0.14f);
             go.transform.localPosition = new Vector3(x, height * 0.5f, 0f);
             go.GetComponent<Renderer>().sharedMaterial = new Material(shader) { color = color };
             return new BoxData
             {
                 id = id,
                 center = new[] { x, height * 0.5f, 0f },
-                size = new[] { 0.14f, height, 0.14f },
+                size = new[] { 0.10f, height, 0.14f },
                 gimmick = gimmick,
             };
         }

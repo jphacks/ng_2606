@@ -8,10 +8,13 @@ using UnityEngine;
 namespace DeskStage.App
 {
     /// <summary>
-    /// 箱のしかけ（折り紙の色）。上面が一面 青・赤・緑 の箱に、見た目と動きをつける。
+    /// 箱のしかけ（折り紙の色）。上面が一面 青・赤・緑・黄・紫・ピンク の箱に、見た目と動きをつける。
     ///  ・水（青）：水面に流れる矢印。乗ると、決まった向きに、少し流される
     ///  ・炎（赤）：燃える炎。乗るとハートが 1 つ減る（減ったあとの 1.5 秒は、続けて減らない）
     ///  ・回復（緑）：光る＋。乗っている間、1 秒ごとにハートが 1 つ回復する
+    ///  ・ジャンプ台（黄）：上向きの山形。乗ると自動で、ふつうのジャンプの 2 倍の高さまで跳ね上がる
+    ///  ・敵（紫）：うずまき。7 秒ごとに敵が 1 体出る（最大 5 体）。敵は出るたびに、追いかけるか歩き回るかをくじで決める。当たるとハートが 1 つ減る
+    ///  ・ワープ（ピンク）：輪の模様。踏むと、机の上か箱の上の、どこかランダムな所へ飛ぶ（飛んだあとの 3 秒は、続けてワープしない）
     /// どの箱がどのしかけかは、BoxData.gimmick（撮影の写真から決まる。保存したステージにも残る）。
     /// ハートは 3 つ。0 になると GameOver を出す（画面は AppFlow が切り替える）。ゲームを始める・やり直すたびに、3 つに戻る。
     /// C のゲームの中身は変えず、キャラの位置を読み、CharacterController に流される分だけを足す。
@@ -38,6 +41,15 @@ namespace DeskStage.App
         /// <summary>ハートが 0 になった。</summary>
         public event Action GameOver;
 
+        /// <summary>ワープした。</summary>
+        public event Action Warped;
+
+        /// <summary>今、机の上に出ている敵の数。</summary>
+        public int EnemyCount => enemies.Count;
+
+        /// <summary>最後にハートが減ったのが、敵に当たったからか（炎なら false）。画面の言葉を変えるのに使う。</summary>
+        public bool LastDamageWasEnemy { get; private set; }
+
         class Visual
         {
             public string Id;
@@ -55,7 +67,21 @@ namespace DeskStage.App
             public float Phase;
         }
 
+        class Enemy
+        {
+            public Transform Transform;
+            public Vector3 Position;   // 足元（世界の座標）
+            public GimmickRules.EnemyMode Mode;
+            public Vector3 Direction;  // うろうろするときの向き
+            public float WanderTimer;
+        }
+
         readonly List<Visual> visuals = new List<Visual>();
+        readonly List<Enemy> enemies = new List<Enemy>();
+        // 紫の箱ごとの、次の敵が出るまでの時間
+        readonly Dictionary<string, float> spawnTimers = new Dictionary<string, float>();
+        float jumpPadReadyAt;
+        float warpReadyAt;
         readonly List<UnityEngine.Object> created = new List<UnityEngine.Object>();
         readonly Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>();
         GameFlow flow;
@@ -65,22 +91,18 @@ namespace DeskStage.App
         /// <summary>しかけのある箱の数（種類ごと）。たしかめ画面で、見つけた数を伝えるのに使う。</summary>
         public string Summary()
         {
-            var water = 0;
-            var fire = 0;
-            var heal = 0;
+            var kinds = new[] { BoxData.GimmickWater, BoxData.GimmickFire, BoxData.GimmickHeal, BoxData.GimmickJumpPad, BoxData.GimmickEnemy, BoxData.GimmickWarp };
+            var counts = new int[kinds.Length];
             foreach (var b in CurrentBoxes())
             {
-                switch (b.gimmick)
-                {
-                    case BoxData.GimmickWater: water++; break;
-                    case BoxData.GimmickFire: fire++; break;
-                    case BoxData.GimmickHeal: heal++; break;
-                }
+                var i = Array.IndexOf(kinds, b.gimmick);
+                if (i >= 0) counts[i]++;
             }
             var parts = new List<string>();
-            if (water > 0) parts.Add($"{AppText.GimmickWater} {water}");
-            if (fire > 0) parts.Add($"{AppText.GimmickFire} {fire}");
-            if (heal > 0) parts.Add($"{AppText.GimmickHeal} {heal}");
+            for (var i = 0; i < kinds.Length; i++)
+            {
+                if (counts[i] > 0) parts.Add($"{GimmickRules.Name(kinds[i])} {counts[i]}");
+            }
             return string.Join("　", parts);
         }
 
@@ -110,6 +132,12 @@ namespace DeskStage.App
         {
             Health.Reset();
             healTimer = 0f;
+            LastDamageWasEnemy = false;
+            // はじめから（やり直し）：敵は全部消し、出るまでの時間と、ジャンプ台・ワープの待ち時間も戻す
+            ClearEnemies();
+            spawnTimers.Clear();
+            jumpPadReadyAt = 0f;
+            warpReadyAt = 0f;
         }
 
         IEnumerable<BoxData> CurrentBoxes()
@@ -152,6 +180,8 @@ namespace DeskStage.App
 
         void Clear()
         {
+            ClearEnemies();
+            spawnTimers.Clear();
             foreach (var v in visuals)
             {
                 foreach (var bb in v.Billboards)
@@ -204,6 +234,15 @@ namespace DeskStage.App
                 case BoxData.GimmickFire:
                     texture = GetTexture("fire", GimmickTextures.Fire);
                     break;
+                case BoxData.GimmickJumpPad:
+                    texture = GetTexture("jumppad", GimmickTextures.JumpPad);
+                    break;
+                case BoxData.GimmickEnemy:
+                    texture = GetTexture("enemy", GimmickTextures.EnemyPad);
+                    break;
+                case BoxData.GimmickWarp:
+                    texture = GetTexture("warp", GimmickTextures.Warp);
+                    break;
                 default:
                     texture = GetTexture("heal", GimmickTextures.Heal);
                     break;
@@ -227,7 +266,8 @@ namespace DeskStage.App
         // 炎と回復の「立ち上がる」飾り（いつも カメラの方を向く）
         void BuildBillboards(Visual v)
         {
-            if (v.Kind == BoxData.GimmickWater)
+            // 立ち上がる飾りは、炎と回復だけ
+            if (v.Kind != BoxData.GimmickFire && v.Kind != BoxData.GimmickHeal)
             {
                 return;
             }
@@ -285,7 +325,11 @@ namespace DeskStage.App
             ApplyEffects();
         }
 
-        void LateUpdate() => AnimateBillboards();
+        void LateUpdate()
+        {
+            AnimateBillboards();
+            AnimateEnemies();
+        }
 
         void AnimatePads()
         {
@@ -302,6 +346,17 @@ namespace DeskStage.App
                     case BoxData.GimmickFire:
                         v.Material.mainTextureOffset = new Vector2(0f, -(t * 0.6f % 1f));
                         v.Material.color = Color.Lerp(new Color(1f, 0.8f, 0.7f, 1f), Color.white, 0.5f + 0.5f * Mathf.Sin(t * 11f));
+                        break;
+                    case BoxData.GimmickJumpPad:
+                        // 山形が、上（跳ぶ向き）へ流れる
+                        v.Material.mainTextureOffset = new Vector2(0f, -(t * 0.8f % 1f));
+                        break;
+                    case BoxData.GimmickEnemy:
+                        v.Material.color = new Color(1f, 1f, 1f, 0.75f + 0.25f * Mathf.Sin(t * 4f));
+                        break;
+                    case BoxData.GimmickWarp:
+                        // 輪が、ちかちか光る
+                        v.Material.color = new Color(1f, 1f, 1f, 0.8f + 0.2f * Mathf.Sin(t * 6f));
                         break;
                     default:
                         v.Material.color = new Color(1f, 1f, 1f, 0.8f + 0.2f * Mathf.Sin(t * 3f));
@@ -362,7 +417,13 @@ namespace DeskStage.App
             if (flow == null || flow.Motor == null)
             {
                 healTimer = 0f;
+                ClearEnemies();
                 return;
+            }
+            if (flow.State == GameState.WaitingStage)
+            {
+                // ステージ一覧へ戻った：敵は全部消す
+                ClearEnemies();
             }
             // 流される分は、キャラの動きに足す（別に Move を呼ぶと、接地の判定が狂って、ジャンプできなくなる）。乗っていなければ、毎フレーム ゼロに戻す
             var push = Vector3.zero;
@@ -372,8 +433,11 @@ namespace DeskStage.App
                 healTimer = 0f;
                 return;
             }
-            var feet = flow.Motor.transform.position;
+            var motor = flow.Motor;
+            var feet = motor.transform.position;
             var healing = false;
+            var warp = false;
+            UpdateEnemies(motor);
             foreach (var v in visuals)
             {
                 if (v.Box == null) continue;
@@ -385,18 +449,29 @@ namespace DeskStage.App
                         push += PushOf(v);
                         break;
                     case BoxData.GimmickFire:
-                        if (Health.TryDamage(Time.time))
-                        {
-                            Damaged?.Invoke(Health.Hearts);
-                            if (Health.IsDead) GameOver?.Invoke();
-                        }
+                        TryDamage(false);
                         break;
                     case BoxData.GimmickHeal:
                         healing = true;
                         break;
+                    case BoxData.GimmickJumpPad:
+                        if (Time.time >= jumpPadReadyAt)
+                        {
+                            jumpPadReadyAt = Time.time + GimmickRules.JumpPadCooldownSeconds;
+                            motor.Launch(motor.settings.jumpHeight * GimmickRules.JumpPadHeightScale);
+                        }
+                        break;
+                    case BoxData.GimmickWarp:
+                        warp = true;
+                        break;
                 }
             }
             flow.Motor.ExternalVelocity = push;
+            if (warp && Time.time >= warpReadyAt && TryWarp(motor))
+            {
+                warpReadyAt = Time.time + GimmickRules.WarpCooldownSeconds;
+                Warped?.Invoke();
+            }
             if (healing)
             {
                 healTimer += Time.deltaTime;
@@ -413,6 +488,167 @@ namespace DeskStage.App
             {
                 healTimer = 0f;
             }
+        }
+
+        // ハートを 1 つ減らす（減ったあとの 1.5 秒は、続けて減らない）。0 ならゲームオーバー
+        void TryDamage(bool byEnemy)
+        {
+            if (!Health.TryDamage(Time.time))
+            {
+                return;
+            }
+            LastDamageWasEnemy = byEnemy;
+            Damaged?.Invoke(Health.Hearts);
+            if (Health.IsDead) GameOver?.Invoke();
+        }
+
+        // ---- ワープ（ピンク） ----
+
+        // 机の上か箱の上の、どこかランダムな所へ飛ぶ。机の長方形の中から点をくじで選び、真上から光線を落として、
+        // 一番上の平らな面に置く（机から落ちる所には飛ばない）。キャラが入れない所（壁の中など）なら、選び直す
+        bool TryWarp(CharacterMotor motor)
+        {
+            var root = StageContext.StageRoot;
+            var stage = StageContext.CurrentStage;
+            if (root == null || stage == null)
+            {
+                return false;
+            }
+            var settings = motor.settings;
+            for (var i = 0; i < 30; i++)
+            {
+                var c = GimmickRules.WarpCandidate(UnityEngine.Random.value, UnityEngine.Random.value, stage.desk.width, stage.desk.depth, GimmickRules.WarpEdgeInset);
+                var from = root.TransformPoint(new Vector3(c.x, 1f, c.y));
+                if (!Physics.Raycast(from, Vector3.down, out var hit, 3f, Layers.TerrainMask, QueryTriggerInteraction.Ignore) || hit.normal.y < 0.9f)
+                {
+                    continue;
+                }
+                var feet = hit.point + Vector3.up * 0.002f;
+                var r = settings.radius * 0.9f;
+                if (Physics.CheckCapsule(feet + Vector3.up * (settings.radius + 0.002f), feet + Vector3.up * (settings.height - settings.radius), r,
+                        Layers.TerrainMask, QueryTriggerInteraction.Ignore))
+                {
+                    continue;
+                }
+                motor.Teleport(feet, motor.transform.rotation);
+                return true;
+            }
+            return false;
+        }
+
+        // ---- 敵（紫） ----
+
+        void UpdateEnemies(CharacterMotor motor)
+        {
+            var dt = Time.deltaTime;
+            // 紫の箱ごとに、7 秒ごとに 1 体出す（全部で最大 5 体）
+            foreach (var v in visuals)
+            {
+                if (v.Kind != BoxData.GimmickEnemy || v.Box == null) continue;
+                spawnTimers.TryGetValue(v.Id, out var timer);
+                timer += dt;
+                if (timer >= GimmickRules.EnemySpawnSeconds)
+                {
+                    timer = 0f;
+                    if (enemies.Count < GimmickRules.MaxEnemies)
+                    {
+                        SpawnEnemy(v.Box.TransformPoint(new Vector3(0f, 0.5f, 0f)));
+                    }
+                }
+                spawnTimers[v.Id] = timer;
+            }
+
+            var feet = motor.transform.position;
+            foreach (var e in enemies)
+            {
+                Vector3 dir;
+                if (e.Mode == GimmickRules.EnemyMode.Chase)
+                {
+                    dir = GimmickRules.ChaseDirection(e.Position, feet);
+                }
+                else
+                {
+                    e.WanderTimer -= dt;
+                    if (e.WanderTimer <= 0f)
+                    {
+                        e.Direction = GimmickRules.WanderDirection(UnityEngine.Random.value);
+                        e.WanderTimer = GimmickRules.EnemyWanderSeconds;
+                    }
+                    dir = e.Direction;
+                }
+                if (!TryStepEnemy(e, dir * (GimmickRules.EnemySpeed * dt)) && e.Mode == GimmickRules.EnemyMode.Wander)
+                {
+                    // 進めなかったら、向きを変える
+                    e.WanderTimer = 0f;
+                }
+                if (GimmickRules.EnemyTouches(e.Position, feet, motor.settings.radius, motor.settings.height))
+                {
+                    TryDamage(true);
+                }
+            }
+        }
+
+        void SpawnEnemy(Vector3 feet)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            go.name = "GimmickEnemy";
+            var collider = go.GetComponent<Collider>();
+            if (collider != null) UiKit.Kill(collider);
+            go.transform.SetParent(transform, false);
+            go.transform.localScale = Vector3.one * (GimmickRules.EnemyRadius * 2.4f);
+            go.GetComponent<Renderer>().sharedMaterial = NewMaterial(GetTexture("enemyface", GimmickTextures.EnemyFace), Color.white);
+            go.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            enemies.Add(new Enemy
+            {
+                Transform = go.transform,
+                Position = feet,
+                Mode = GimmickRules.ChooseEnemyMode(UnityEngine.Random.value),
+                Direction = GimmickRules.WanderDirection(UnityEngine.Random.value),
+                WanderTimer = GimmickRules.EnemyWanderSeconds,
+            });
+        }
+
+        // 敵を少し動かす。進んだ先の足元を光線で調べ、段差は 0.9cm までしか登らない。机の外には出ない。下へは降りられる
+        static bool TryStepEnemy(Enemy e, Vector3 step)
+        {
+            if (step.sqrMagnitude < 1e-12f)
+            {
+                return true;
+            }
+            var next = e.Position + step;
+            if (!Physics.Raycast(next + Vector3.up * 0.02f, Vector3.down, out var hit, 0.5f, Layers.TerrainMask, QueryTriggerInteraction.Ignore)
+                || hit.normal.y < 0.9f || hit.point.y > e.Position.y + 0.009f)
+            {
+                return false;
+            }
+            e.Position = new Vector3(next.x, hit.point.y, next.z);
+            return true;
+        }
+
+        // 敵の見た目を、足元の少し上に置き、いつもカメラの方を向ける
+        void AnimateEnemies()
+        {
+            var cam = Camera.main;
+            var t = Time.unscaledTime;
+            foreach (var e in enemies)
+            {
+                if (e.Transform == null) continue;
+                var bob = 0.002f * Mathf.Abs(Mathf.Sin(t * 8f + e.Position.x * 50f));
+                e.Transform.position = e.Position + Vector3.up * (GimmickRules.EnemyRadius * 1.2f + bob);
+                if (cam != null)
+                {
+                    e.Transform.rotation = Quaternion.LookRotation(e.Transform.position - cam.transform.position, cam.transform.up);
+                }
+            }
+        }
+
+        void ClearEnemies()
+        {
+            foreach (var e in enemies)
+            {
+                if (e.Transform != null) UiKit.Kill(e.Transform.gameObject);
+            }
+            enemies.Clear();
         }
 
         // 水の箱が流す速さ（ステージの向きを、世界の向きに直したもの）

@@ -107,12 +107,16 @@ namespace DeskStage.Gameplay
 
         // 練習用の床に並べた箱（Terrain の BoxCollider。床は除く）を、ステージデータの箱にする。
         // コースの配置（Step 12）の「とどかないかも」を練習用の床でも試せるように
+        /// <summary>練習用の床で、しかけの箱にする名前の頭。「Gimmick_jumppad」なら、ジャンプ台の箱になる</summary>
+        public const string GimmickPrefix = "Gimmick_";
+
         static BoxData[] PracticeBoxes(Transform root)
         {
             var list = new System.Collections.Generic.List<BoxData>();
             foreach (Transform child in root)
             {
-                if (child.name == "Floor" || child.gameObject.layer != Layers.Terrain || child.GetComponent<BoxCollider>() == null)
+                if (child.name == "Floor" || child.name == "GimmickFloor"
+                    || child.gameObject.layer != Layers.Terrain || child.GetComponent<BoxCollider>() == null)
                 {
                     continue;
                 }
@@ -123,6 +127,8 @@ namespace DeskStage.Gameplay
                     size = Vec3.From(child.localScale),
                     yawDegrees = child.localEulerAngles.y,
                     source = BoxData.SourceManual,
+                    // 「Gimmick_しかけの名前」の箱は、そのしかけにする（練習用。本物は写真の色から決まる）
+                    gimmick = child.name.StartsWith(GimmickPrefix) ? child.name.Substring(GimmickPrefix.Length) : "",
                 });
             }
             return list.ToArray();
