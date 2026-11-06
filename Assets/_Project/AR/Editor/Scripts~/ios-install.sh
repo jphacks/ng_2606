@@ -34,10 +34,12 @@ DEVICES=$(/usr/bin/python3 - "$WORK/devices.json" <<'PY'
 import json, sys
 for d in json.load(open(sys.argv[1]))["result"]["devices"]:
     hw = d.get("hardwareProperties", {})
-    if hw.get("reality") != "physical" or hw.get("platform") != "iOS":
+    # まだペアリングしていない iPhone は、reality が空になる。シミュレータ（simulated）だけを除く
+    if hw.get("reality") == "simulated" or hw.get("platform") != "iOS":
         continue
     name = d.get("deviceProperties", {}).get("name", "?")
-    state = d.get("connectionProperties", {}).get("tunnelState", "?")
+    conn = d.get("connectionProperties", {})
+    state = "未ペアリング" if conn.get("pairingState") == "unpaired" else conn.get("tunnelState", "?")
     print(f"{hw.get('udid')}\t{name}\t{state}")
 PY
 )
@@ -66,7 +68,15 @@ if [ -z "${LINE:-}" ]; then
 fi
 UDID=$(echo "$LINE" | cut -f1)
 NAME=$(echo "$LINE" | cut -f2)
+STATE=$(echo "$LINE" | cut -f3)
 echo "→ 「$NAME」に入れます"
+
+# まだペアリングしていない iPhone は、ここでペアリングする（iPhone に「信頼しますか？」が出るので、「信頼」を押してパスコードを入れる）
+if [ "$STATE" = "未ペアリング" ]; then
+  echo "[0/4] ペアリングします。iPhone のロックを外し、「このコンピュータを信頼しますか？」で「信頼」を押してください"
+  xcrun devicectl manage pair --device "$UDID" > "$WORK/pair.log" 2>&1 \
+    || { echo "ペアリングできませんでした。iPhone で「信頼」を押してから、もう一度実行してください。ログの最後："; tail -5 "$WORK/pair.log"; exit 1; }
+fi
 
 # 1. Unity：Main シーンを、Xcode のプロジェクトに書き出す（Unity のエディタを閉じておく）
 if [ $SKIP_UNITY -eq 0 ]; then
@@ -83,8 +93,15 @@ echo "[2/4] Xcode でビルドしています（数分かかります）"
 xcodebuild -project "$XCODE_PROJECT" -scheme Unity-iPhone -configuration Release \
   -destination "id=$UDID" -derivedDataPath "$WORK/dd" \
   DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic PROVISIONING_PROFILE_SPECIFIER= PROVISIONING_PROFILE= \
-  -allowProvisioningUpdates -allowProvisioningDeviceRegistration build > "$WORK/xcode-build.log" 2>&1 \
-  || { echo "Xcode のビルドに失敗しました。ログの最後："; tail -20 "$WORK/xcode-build.log"; exit 1; }
+  -allowProvisioningUpdates -allowProvisioningDeviceRegistration build > "$WORK/xcode-build.log" 2>&1
+if [ $? -ne 0 ]; then
+  if grep -q "Developer Mode disabled" "$WORK/xcode-build.log"; then
+    echo "この iPhone は、デベロッパモードがオフです。設定 → プライバシーとセキュリティ → デベロッパモード をオンにして（再起動します）、もう一度実行してください"
+  else
+    echo "Xcode のビルドに失敗しました。ログの最後："; tail -20 "$WORK/xcode-build.log"
+  fi
+  exit 1
+fi
 APP=$(ls -d "$WORK"/dd/Build/Products/Release-iphoneos/*.app | head -1)
 
 # 3. 入れる
