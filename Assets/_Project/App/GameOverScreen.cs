@@ -20,11 +20,11 @@ namespace DeskStage.App
             var title = UiKit.Label(safe, AppText.GameOverTitle, Theme.Hero, Color.white, TextAlignmentOptions.Center, true, "Title");
             UiKit.Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -90f), new Vector2(1800f, 260f));
 
-            var hearts = HeartRow.Create(safe, "Hearts", 120f);
+            hearts = HeartRow.Create(safe, "Hearts", 120f);
             UiKit.Place(hearts.Rect, new Vector2(0.5f, 1f), new Vector2(0f, -400f), hearts.Rect.sizeDelta);
             hearts.Set(0);
 
-            var hint = UiKit.Label(safe, AppText.GameOverHint, Theme.H2, Theme.WithAlpha(Color.white, 0.85f), TextAlignmentOptions.Center, false, "Hint");
+            hint = UiKit.Label(safe, AppText.GameOverHint, Theme.H2, Theme.WithAlpha(Color.white, 0.85f), TextAlignmentOptions.Center, false, "Hint");
             UiKit.Place(hint.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -30f), new Vector2(1400f, 100f));
 
             // しょんぼりしたキャラ（目が下を向いている）
@@ -52,8 +52,14 @@ namespace DeskStage.App
             UiKit.Place(fix.Rect, new Vector2(0.5f, 0f), new Vector2(300f, 60f), fix.Rect.sizeDelta);
         }
 
+        HeartRow hearts;
+        TMP_Text hint;
+
         public override void OnEnter(object arg)
         {
+            // 理由：ハートが なくなった（ふつう）、しばりの時間切れ・いっぱつ アウト
+            hint.text = arg as string ?? AppText.GameOverHint;
+            hearts.Set(Context.Gimmicks.Health.Hearts);
             fix.gameObject.SetActive(Context.Flow.HasNewStage && !Context.Flow.PlayingSaved);
         }
 

@@ -144,7 +144,7 @@ namespace DeskStage.AR
 
         /// <summary>
         /// 送ってよい URL か。https はいつでもよい。http は、自分の PC（127.0.0.1、localhost）か、
-        /// allowLanHttp のとき（開発用ビルド）に家の Wi-Fi の中のアドレス（10.x、172.16〜31.x、192.168.x）だけ。
+        /// allowLanHttp のとき（開発用ビルド）に家の Wi-Fi の中のアドレス（10.x、172.16〜31.x、192.168.x、名前.local）だけ。
         /// </summary>
         public static bool IsAllowedUrl(string url, bool allowLanHttp, out string reason)
         {
@@ -173,6 +173,11 @@ namespace DeskStage.AR
 
         static bool IsPrivateLan(string host)
         {
+            // 「名前.local」（Bonjour）は、同じ Wi-Fi の中でしか解決されない。iPhone のテザリング（IPv6 だけで、IPv4 の私設アドレスが付かない）でも使える
+            if (host.EndsWith(".local", StringComparison.OrdinalIgnoreCase) && host.Length > ".local".Length && host.IndexOf('.') == host.Length - ".local".Length)
+            {
+                return true;
+            }
             var parts = host.Split('.');
             if (parts.Length != 4 || !int.TryParse(parts[0], out var a) || !int.TryParse(parts[1], out var b))
             {

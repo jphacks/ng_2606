@@ -169,5 +169,71 @@ namespace DeskStage.Stage.Tests
             Assert.That(result.DeskQuad, Is.Null);
             Assert.That(result.TopFaceQuads.Count, Is.EqualTo(0));
         }
+
+        static string RampBlock(float w, float d, float h, float yaw, float uphill)
+        {
+            return "{\"label\":\"板\",\"centerXCm\":30,\"centerZCm\":30,\"widthCm\":" + w + ",\"depthCm\":" + d
+                + ",\"heightCm\":" + h + ",\"yawDegrees\":" + yaw + ",\"isRamp\":true,\"uphillYawDegrees\":" + uphill + ",\"confidence\":0.8}";
+        }
+
+        const string Desk60 = "{\"widthCm\":60,\"depthCm\":60}";
+
+        [Test]
+        public void 坂は_のぼる向きが長い辺なら_そのままの大きさになる()
+        {
+            var result = new StageReaderCore().Read(OneBlock(RampBlock(20f, 10f, 8f, 0f, 0f), Desk60));
+
+            Assert.That(result.Ok, Is.True, result.Reason);
+            var box = result.Boxes[0];
+            Assert.That(box.ramp, Is.True);
+            AssertVector(new Vector3(0.20f, 0.08f, 0.10f), box.size);
+            Assert.That(box.yawDegrees, Is.EqualTo(0f).Within(Tolerance));
+        }
+
+        [Test]
+        public void 坂は_のぼる向きが反対なら_箱を半回転させる()
+        {
+            var result = new StageReaderCore().Read(OneBlock(RampBlock(20f, 10f, 8f, 0f, 180f), Desk60));
+
+            var box = result.Boxes[0];
+            AssertVector(new Vector3(0.20f, 0.08f, 0.10f), box.size);
+            Assert.That(box.yawDegrees, Is.EqualTo(180f).Within(Tolerance));
+        }
+
+        [Test]
+        public void 坂は_のぼる向きが短い辺の向きなら_幅と奥行きを入れかえる()
+        {
+            // 長い辺は +X の向き、のぼる向きは +Z（90 度）：のぼる向きの長さは、短い辺の 10cm
+            var result = new StageReaderCore().Read(OneBlock(RampBlock(20f, 10f, 8f, 0f, 90f), Desk60));
+
+            var box = result.Boxes[0];
+            AssertVector(new Vector3(0.10f, 0.08f, 0.20f), box.size);
+            Assert.That(box.yawDegrees, Is.EqualTo(270f).Within(Tolerance)); // 答えの 90 度（反時計回り）は、Unity では 270 度
+        }
+
+        [Test]
+        public void 坂は_答えの近い軸にそろう()
+        {
+            // のぼる向きが 80 度（ほぼ +Z）なら、+Z の向きの軸にそろう
+            var result = new StageReaderCore().Read(OneBlock(RampBlock(20f, 10f, 8f, 0f, 80f), Desk60));
+
+            Assert.That(result.Boxes[0].yawDegrees, Is.EqualTo(270f).Within(Tolerance));
+        }
+
+        [Test]
+        public void 坂の項目が無い答えは_ふつうの箱になる()
+        {
+            var result = new StageReaderCore().Read(OneBlock(Block(30f, 30f, 20f, 10f, 8f), Desk60));
+
+            Assert.That(result.Boxes[0].ramp, Is.False);
+        }
+
+        [Test]
+        public void 坂の項目は_保存して読み直しても残る()
+        {
+            var box = new BoxData { id = "box-01", ramp = true };
+            Assert.That(JsonUtility.FromJson<BoxData>(JsonUtility.ToJson(box)).ramp, Is.True);
+            Assert.That(JsonUtility.FromJson<BoxData>("{\"id\":\"box-02\"}").ramp, Is.False); // 古い保存データ
+        }
     }
 }

@@ -43,7 +43,7 @@ namespace DeskStage.App
             back.gameObject.AddComponent<CoverUv>().Apply();
 
             var start = UiKit.Button(Rect, AppText.Start, UiKit.ButtonStyle.Primary, new Vector2(540f, 170f),
-                () => Context.Router.Show(AppScreenId.Home), "Start", Theme.H1);
+                () => Context.Router.Show(AppScreenId.Mode), "Start", Theme.H1);
             UiKit.Place(start.Rect, new Vector2(0.445f, 0f), new Vector2(0f, 70f), start.Rect.sizeDelta);
             start.Rect.gameObject.AddComponent<Bobbing>().Amplitude = 8f;
         }
@@ -83,7 +83,7 @@ namespace DeskStage.App
 
             // はじめる
             var start = UiKit.Button(Rect, AppText.Start, UiKit.ButtonStyle.Primary, new Vector2(660f, 190f),
-                () => Context.Router.Show(AppScreenId.Home), "Start", Theme.H1);
+                () => Context.Router.Show(AppScreenId.Mode), "Start", Theme.H1);
             UiKit.Place(start.Rect, new Vector2(1f, 0f), new Vector2(-130f, 90f), start.Rect.sizeDelta);
             start.Rect.gameObject.AddComponent<Bobbing>().Amplitude = 8f;
         }

@@ -43,6 +43,34 @@ namespace DeskStage.Shared
 
         /// <summary>机の天面からどれだけ下で落下とするか（m）。</summary>
         public float fallDepth = 0.10f;
+
+        /// <summary>しばり（コースを作る人が付ける、遊び方の条件）。古い保存データには無いので、読み込むと しばり無し になる。</summary>
+        public CourseRules rules = new CourseRules();
+    }
+
+    /// <summary>しばり（Docs/specs/course-rules）。最初の値は、どれも しばり無し。</summary>
+    [Serializable]
+    public class CourseRules
+    {
+        /// <summary>ジャンプの回数の上限。-1 はむせいげん、0 はきんし、1 以上はその回数まで（2 段ジャンプも 1 回と数える）。</summary>
+        public int maxJumps = -1;
+
+        /// <summary>true なら、2 段ジャンプ（空中でのジャンプ）を使えない。</summary>
+        public bool noDoubleJump;
+
+        /// <summary>true なら、ダメージを 1 回受けたら、ハートが残っていてもゲームオーバー。</summary>
+        public bool oneHit;
+
+        /// <summary>制限時間（秒）。0 はなし。</summary>
+        public float timeLimitSeconds;
+
+        public CourseRules Clone() => new CourseRules
+        {
+            maxJumps = maxJumps,
+            noDoubleJump = noDoubleJump,
+            oneHit = oneHit,
+            timeLimitSeconds = timeLimitSeconds,
+        };
     }
 
     /// <summary>机の天面の長方形の大きさ（m）。</summary>
@@ -104,6 +132,20 @@ namespace DeskStage.Shared
         /// 古い保存データには無いので、読み込むと空（しかけ無し）になる。
         /// </summary>
         public string gimmick = "";
+
+        /// <summary>
+        /// 水の箱の、流れる向き。0 は「箱の id から決まる向き」（古い保存データ・まだ選んでいない箱）。
+        /// 1〜4 は、箱の座標の +x、+z、-x、-z（遊ぶ人が、たしかめの画面で選ぶ）。
+        /// </summary>
+        public int flow;
+
+        /// <summary>
+        /// 坂（斜めに立てかけた板など）。true のとき、箱ではなく、くさび形になる。
+        /// 上から見た形は size[0]（のぼる向きの長さ）× size[2]（横はば）で、箱の座標の +x の方へのぼる。
+        /// -x の端は机の高さ 0、+x の端は size[1]（高さ）。向きは yawDegrees で決める。
+        /// 古い保存データには無いので、読み込むと false（ふつうの箱）になる。
+        /// </summary>
+        public bool ramp;
     }
 
     /// <summary>スタート地点。</summary>

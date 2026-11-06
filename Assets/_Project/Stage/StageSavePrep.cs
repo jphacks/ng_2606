@@ -29,6 +29,8 @@ namespace DeskStage.Stage
                     source = b.source,
                     texture = b.texture ?? "",
                     gimmick = b.gimmick ?? "",
+                    flow = b.flow,
+                    ramp = b.ramp,
                 });
             }
 
@@ -58,6 +60,7 @@ namespace DeskStage.Stage
                 },
                 checkpoints = checkpoints.ToArray(),
                 fallDepth = src.fallDepth > 0f ? src.fallDepth : 0.10f,
+                rules = src.rules != null ? src.rules.Clone() : new CourseRules(),
             };
         }
 

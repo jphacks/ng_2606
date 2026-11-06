@@ -20,8 +20,17 @@ namespace DeskStage.Gameplay
         /// <summary>点がその面の上にあるとみなす高さの誤差（m）</summary>
         public const float OnFaceTolerance = 0.005f;
 
+        /// <summary>のぼれる坂の、いちばん急な傾き（度）。45 度までは歩いて、それより急ならジャンプで（キャラの airSlopeLimit と同じ）。これより急な坂は、箱の壁として扱う</summary>
+        public const float MaxRampDegrees = 80f;
+
         struct Face
         {
+            // 坂：のぼる向き（上から見た単位ベクトル）、のぼる向きの長さ、真ん中の位置
+            public bool ramp;
+            public bool water; // 水の坂で、下り向きに流れる物：下りることだけできる
+            public Vector2 uphill;
+            public float run;
+            public Vector2 centre;
             public float top;
             // 上から見た四隅（XZ）。机は null で、机の長方形を使う
             public Vector2[] corners;
@@ -59,6 +68,20 @@ namespace DeskStage.Gameplay
                         continue;
                     }
                     float rise = faces[b].top - faces[a].top;
+                    if (faces[b].ramp && faces[b].water)
+                    {
+                        // 下り向きの水の坂は、強く下へ流れるので、のぼれない。同じ高さか、高い所から下りるときだけ通れる
+                        if (faces[a].top < faces[b].top - OnFaceTolerance)
+                        {
+                            continue;
+                        }
+                        rise = 0f;
+                    }
+                    else if (faces[b].ramp && IsClimbableRamp(faces[b]))
+                    {
+                        // 坂は、どこからでものぼれる（45 度までは歩いて、それより急ならジャンプで）。段ではない
+                        rise = 0f;
+                    }
                     if (rise > 0f && rules.Classify(rise) == StepKind.Wall)
                     {
                         continue;
@@ -94,7 +117,18 @@ namespace DeskStage.Gameplay
                     var p = rot * new Vector3(signs[i].x * s.x / 2f, 0f, signs[i].y * s.z / 2f);
                     corners[i] = new Vector2(c.x + p.x, c.z + p.z);
                 }
-                faces.Add(new Face { top = s.y, corners = corners });
+                var axis = rot * Vector3.right;
+                faces.Add(new Face
+                {
+                    top = s.y,
+                    corners = corners,
+                    ramp = box.ramp,
+                    // 水の坂は、向きを選んでいない（flow 0）か、下り向き（flow 3 ＝ 箱の座標の -x）のときだけ、のぼれない
+                    water = box.ramp && box.gimmick == BoxData.GimmickWater && (box.flow == 0 || box.flow == 3),
+                    uphill = new Vector2(axis.x, axis.z),
+                    run = s.x,
+                    centre = new Vector2(c.x, c.z),
+                });
             }
             return faces;
         }
@@ -106,13 +140,29 @@ namespace DeskStage.Gameplay
             int best = -1;
             for (int i = 0; i < faces.Count; i++)
             {
-                if (Mathf.Abs(point.y - faces[i].top) <= OnFaceTolerance && Inside(faces[i].corners, xz)
+                if (Mathf.Abs(point.y - SurfaceHeight(faces[i], xz)) <= OnFaceTolerance && Inside(faces[i].corners, xz)
                     && (best < 0 || faces[i].top > faces[best].top))
                 {
                     best = i;
                 }
             }
             return best;
+        }
+
+        // その場所の面の高さ。坂は、低い端が 0、高い端が top
+        static float SurfaceHeight(Face face, Vector2 xz)
+        {
+            if (!face.ramp || face.run <= 0f)
+            {
+                return face.top;
+            }
+            var along = Vector2.Dot(xz - face.centre, face.uphill) / face.run; // -0.5（低い端）〜 0.5（高い端）
+            return Mathf.Clamp01(along + 0.5f) * face.top;
+        }
+
+        static bool IsClimbableRamp(Face face)
+        {
+            return face.run > 0f && Mathf.Atan2(face.top, face.run) * Mathf.Rad2Deg <= MaxRampDegrees;
         }
 
         static bool Connected(List<Face> faces, int a, int b)

@@ -291,6 +291,13 @@ namespace DeskStage.Merge
             var lift = Lift / Mathf.Max(scale.y, 1e-3f);
             var topY = 0.5f;
 
+            // 坂（くさび形）は、斜めの面に貼る。横の面を塗る立方体は、坂の形を隠してしまうので作らない
+            var ramp = target.GetComponent<MeshCollider>() != null;
+            if (ramp)
+            {
+                paintSides = false;
+            }
+
             if (paintSides)
             {
                 var average = (Color)PhotoTextureMath.Average(pixels) * SideDarken;
@@ -308,13 +315,29 @@ namespace DeskStage.Merge
                 topY = 0.5f * 1.002f;
             }
 
-            var top = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            top.name = TopName;
-            RemoveCollider(top);
-            top.transform.SetParent(target, false);
-            top.transform.localPosition = new Vector3(0f, topY + lift, 0f);
-            top.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            top.transform.localScale = Vector3.one;
+            GameObject top;
+            if (ramp)
+            {
+                var surface = RampMesh.SurfaceLifted(lift);
+                created.Add(surface);
+                top = new GameObject(TopName);
+                top.AddComponent<MeshFilter>().sharedMesh = surface;
+                top.AddComponent<MeshRenderer>();
+                top.transform.SetParent(target, false);
+                top.transform.localPosition = Vector3.zero;
+                top.transform.localRotation = Quaternion.identity;
+                top.transform.localScale = Vector3.one;
+            }
+            else
+            {
+                top = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                top.name = TopName;
+                RemoveCollider(top);
+                top.transform.SetParent(target, false);
+                top.transform.localPosition = new Vector3(0f, topY + lift, 0f);
+                top.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                top.transform.localScale = Vector3.one;
+            }
             top.layer = target.gameObject.layer;
             top.GetComponent<Renderer>().sharedMaterial = NewMaterial(texture, Color.white);
             overlay.Top = top;

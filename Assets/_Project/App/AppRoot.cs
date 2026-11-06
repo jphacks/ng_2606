@@ -97,12 +97,18 @@ namespace DeskStage.App
             Context.Flow = gameObject.AddComponent<AppFlow>();
             Context.Gimmicks = gameObject.AddComponent<GimmickSystem>();
             Context.Gimmicks.SetMaterial(gimmickMaterial);
+            Context.Rules = gameObject.AddComponent<CourseRuleSystem>();
+            Context.Rules.Set(Context.Gimmicks);
+            Context.Share = gameObject.AddComponent<StageShareClient>();
             Context.Overlays = gameObject.AddComponent<AppOverlays>();
 
             Context.Flow.Init(Context);
 
             AddScreen<TitleScreen>(AppScreenId.Title);
             AddScreen<HomeScreen>(AppScreenId.Home);
+            AddScreen<ModeScreen>(AppScreenId.Mode);
+            AddScreen<MissionScreen>(AppScreenId.Mission);
+            AddScreen<CommunityScreen>(AppScreenId.Community);
             AddScreen<HowToScreen>(AppScreenId.HowTo);
             AddScreen<ReachScreen>(AppScreenId.Reach);
             AddScreen<CaptureScreen>(AppScreenId.Capture);
