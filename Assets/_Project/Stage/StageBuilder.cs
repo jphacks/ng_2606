@@ -92,9 +92,16 @@ namespace DeskStage.Stage
         public void UpsertBox(BoxData box)
         {
             var root = CurrentRoot();
-            if (!boxes.TryGetValue(box.id, out var go) || go == null)
+            boxes.TryGetValue(box.id, out var go);
+            // 箱から坂へ（またはその反対）に変わったときは、作り直す
+            if (go != null && (go.GetComponent<MeshCollider>() != null) != box.ramp)
             {
-                go = CreateCube(box.id, root, boxMaterial, FallbackBoxColor);
+                Destroy(go);
+                go = null;
+            }
+            if (go == null)
+            {
+                go = box.ramp ? CreateRamp(box.id, root, boxMaterial, FallbackBoxColor) : CreateCube(box.id, root, boxMaterial, FallbackBoxColor);
                 boxes[box.id] = go;
             }
             Apply(go.transform, StageLayout.Box(box));
@@ -180,6 +187,25 @@ namespace DeskStage.Stage
             if (useMaterial != null)
             {
                 go.GetComponent<Renderer>().sharedMaterial = useMaterial;
+            }
+            return go;
+        }
+
+        /// <summary>坂：くさび形（RampMesh）。当たり判定も、同じ形（MeshCollider）。</summary>
+        static GameObject CreateRamp(string name, Transform parent, Material material, Color fallbackColor)
+        {
+            var go = new GameObject(name);
+            go.layer = Layers.Terrain;
+            go.transform.SetParent(parent, false);
+            var mesh = RampMesh.Wedge();
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var renderer = go.AddComponent<MeshRenderer>();
+            var collider = go.AddComponent<MeshCollider>();
+            collider.sharedMesh = mesh;
+            var useMaterial = material != null ? material : FallbackMaterial(fallbackColor);
+            if (useMaterial != null)
+            {
+                renderer.sharedMaterial = useMaterial;
             }
             return go;
         }

@@ -35,8 +35,12 @@ namespace DeskStage.App
             var safe = UiKit.Fill(UiKit.NewRect("Safe", Rect));
 
             // 上の帯：タイトルと、キャラ・はいけい
+            // 左上：もどる（モードを選ぶ画面へ）
+            var back = UiKit.Button(safe, AppText.Back, UiKit.ButtonStyle.Soft, new Vector2(330f, Theme.SmallButtonHeight),
+                OnBack, "Back", Theme.Body);
+            UiKit.Place(back.Rect, new Vector2(0f, 1f), new Vector2(Theme.Margin, -45f), back.Rect.sizeDelta);
             var title = UiKit.Label(safe, AppText.HomeTitle, Theme.H1, Theme.Ink, TextAlignmentOptions.Left, true, "Title");
-            UiKit.Place(title.rectTransform, new Vector2(0f, 1f), new Vector2(Theme.Margin, -50f), new Vector2(1300f, 120f));
+            UiKit.Place(title.rectTransform, new Vector2(0f, 1f), new Vector2(Theme.Margin + 380f, -50f), new Vector2(1000f, 120f));
 
             var backdrop = UiKit.Button(safe, AppText.HomeBackdrop, UiKit.ButtonStyle.Soft, new Vector2(380f, Theme.SmallButtonHeight),
                 () => Context.Flow.OpenBackdrop(), "Backdrop", Theme.Body);
@@ -87,6 +91,37 @@ namespace DeskStage.App
                 OnDelete, "Delete", Theme.H2);
             UiKit.Place(deleteButton.Rect, new Vector2(0.5f, 0.5f), new Vector2(430f, 0f), deleteButton.Rect.sizeDelta);
             deleteButton.Label.color = Theme.Red;
+            postButton = UiKit.Button(actionBar, AppText.HomePost, UiKit.ButtonStyle.Secondary, new Vector2(440f, Theme.ButtonHeight),
+                OnPost, "Post", Theme.H2);
+            UiKit.Place(postButton.Rect, new Vector2(0.5f, 0.5f), new Vector2(-800f, 0f), postButton.Rect.sizeDelta);
+        }
+
+        AppButton postButton;
+
+        // 選んだステージを、みんなの ステージに投稿する（形・コース・しばりと名前だけ。写真は送らない）
+        void OnPost()
+        {
+            if (string.IsNullOrEmpty(selectedId))
+            {
+                return;
+            }
+            var storage = new DeskStage.Stage.StageStorage(
+                Path.Combine(Application.streamingAssetsPath, "Stages"),
+                Path.Combine(Application.persistentDataPath, "Stages"));
+            if (!storage.TryLoad(selectedId, out var stage, out _))
+            {
+                Context.Overlays.Toast(AppText.HomePostFailed, AppOverlays.ToastKind.Bad);
+                return;
+            }
+            Context.Overlays.Confirm(AppText.HomePostConfirm, () =>
+            {
+                Context.Overlays.Busy(AppText.CommunityLoading);
+                Context.Share.Post(stage, (ok, reason) =>
+                {
+                    Context.Overlays.HideBusy();
+                    Context.Overlays.Toast(ok ? AppText.HomePostOk : AppText.HomePostFailed, ok ? AppOverlays.ToastKind.Good : AppOverlays.ToastKind.Bad, 2.6f);
+                });
+            }, AppText.HomePost, AppText.No);
         }
 
         public override void OnEnter(object arg)
@@ -102,7 +137,7 @@ namespace DeskStage.App
             ReleaseThumbnails();
         }
 
-        public override void OnBack() => Context.Router.Show(AppScreenId.Title, remember: false);
+        public override void OnBack() => Context.Router.Show(AppScreenId.Mode, remember: false);
 
         /// <summary>選んでいるステージ（無ければ空）。</summary>
         public string SelectedId => selectedId;
@@ -274,6 +309,7 @@ namespace DeskStage.App
             actionHint.gameObject.SetActive(!has);
             playButton.gameObject.SetActive(has);
             deleteButton.gameObject.SetActive(has);
+            postButton.gameObject.SetActive(has);
         }
 
         // ---- 絵の読み込み ----

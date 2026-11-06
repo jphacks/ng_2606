@@ -153,6 +153,17 @@ namespace DeskStage.Stage
                     result.Skipped++;
                     continue;
                 }
+                // 坂：のぼる向きに近い、板の軸（長い辺・短い辺、どちら向きでも）にそろえ、箱の座標の +x の方へのぼるようにする
+                var ramp = b.isRamp && IsFinite(b.uphillYawDegrees);
+                float sizeX = b.widthCm, sizeZ = b.depthCm, yawAnswer = b.yawDegrees;
+                if (ramp)
+                {
+                    var quarter = Mathf.RoundToInt(Mathf.DeltaAngle(b.yawDegrees, b.uphillYawDegrees) / 90f);
+                    var alongLong = (quarter & 1) == 0;
+                    sizeX = alongLong ? b.widthCm : b.depthCm;
+                    sizeZ = alongLong ? b.depthCm : b.widthCm;
+                    yawAnswer = b.yawDegrees + quarter * 90f;
+                }
                 var boxId = $"box-{raw.Count + 1:00}";
                 var topFace = PhotoTextureMath.ValidQuad(b.topFaceInPhoto1);
                 if (topFace != null)
@@ -163,10 +174,11 @@ namespace DeskStage.Stage
                 {
                     id = boxId,
                     center = new[] { x, height / 2f, z },
-                    size = new[] { b.widthCm / 100f, height, b.depthCm / 100f },
+                    size = new[] { sizeX / 100f, height, sizeZ / 100f },
                     // 答えは上から見て反時計回り。Unity の Y 軸まわりは上から見て時計回り
-                    yawDegrees = Mathf.Repeat(360f - b.yawDegrees, 360f),
+                    yawDegrees = Mathf.Repeat(360f - yawAnswer, 360f),
                     source = BoxData.SourceAuto,
+                    ramp = ramp,
                 });
             }
             if (raw.Count == 0)

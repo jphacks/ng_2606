@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using DeskStage.Gameplay;
 using DeskStage.Merge;
 using DeskStage.Shared;
 using DeskStage.UI;
@@ -33,9 +35,24 @@ namespace DeskStage.App
         RectTransform courseGroup;
         AppButton startButton;
         AppButton goalButton;
+        AppButton rulesButton;
+        GameObject rulesPanel;
+        readonly List<TMP_Text> ruleValues = new List<TMP_Text>();
         RectTransform assistTools;
         TMP_Text assistHint;
+        RectTransform flowLayer;
+        GameObject missionPanel;
+        TMP_Text missionTitle;
+        readonly List<TMP_Text> missionLines = new List<TMP_Text>();
+        readonly List<AppButton> flowButtons = new List<AppButton>();
+        readonly List<string> flowIds = new List<string>();
         TapCatcher catcher;
+        GameObject topBar;
+        GameObject topSafe;
+        GameObject bottomBar;
+        GameObject bottomSafe;
+        GameObject placeGroup;
+        TMP_Text placeHint;
 
         Mode mode;
         CourseItem? armed;
@@ -52,14 +69,18 @@ namespace DeskStage.App
             marks.Set(Context.Wording, Theme.Font, UiKit.CircleSprite);
             markHolder.gameObject.SetActive(true);
 
+            // 水の箱の上に出る「ながれの むき」のボタン（ふだんの状態で。押すたびに 90 度まわる）。帯より奥に置く
+            flowLayer = UiKit.Fill(UiKit.NewRect("FlowButtons", Rect));
+
             var catcherImage = UiParts.Clear(Rect, "CourseCatcher", true);
             catcher = catcherImage.gameObject.AddComponent<TapCatcher>();
             catcher.Tapped = OnCourseTap;
             catcherImage.gameObject.SetActive(false);
 
             // 上の帯
-            UiParts.Bar(Rect, "TopBar", true, 240f);
+            topBar = UiParts.Bar(Rect, "TopBar", true, 240f).gameObject;
             var safe = UiKit.Fill(UiKit.NewRect("Safe", Rect));
+            topSafe = safe.gameObject;
             var back = UiKit.Button(safe, AppText.Back, UiKit.ButtonStyle.Overlay, new Vector2(330f, Theme.SmallButtonHeight),
                 () => OnBack(), "Back", Theme.Body);
             UiKit.Place(back.Rect, new Vector2(0f, 1f), new Vector2(Theme.Margin, -40f), back.Rect.sizeDelta);
@@ -79,12 +100,15 @@ namespace DeskStage.App
             UiKit.Place(hintBack.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -190f), new Vector2(1500f, 100f));
             hint.transform.SetParent(hintBack.rectTransform, false);
             UiKit.Fill(hint.rectTransform);
+            hintBack.raycastTarget = false; // ひとことの板は、タップをじゃましない
+            hint.raycastTarget = false;
             hintBack.gameObject.SetActive(false);
             hintBackRect = hintBack.gameObject;
 
             // 下の帯
-            UiParts.Bar(Rect, "BottomBar", false, 300f);
+            bottomBar = UiParts.Bar(Rect, "BottomBar", false, 300f).gameObject;
             var barSafe = UiKit.Fill(UiKit.NewRect("BarSafe", Rect));
+            bottomSafe = barSafe.gameObject;
             var rescan = UiKit.Button(barSafe, AppText.CheckRescanButton, UiKit.ButtonStyle.Secondary, new Vector2(620f, Theme.ButtonHeight),
                 AskRescan, "Rescan", Theme.H2);
             UiKit.Place(rescan.Rect, new Vector2(0f, 0f), new Vector2(Theme.Margin, 50f), rescan.Rect.sizeDelta);
@@ -101,13 +125,16 @@ namespace DeskStage.App
             needCourse = UiKit.Label(barSafe, AppText.CheckNeedCourse, Theme.Small, Theme.Orange, TextAlignmentOptions.Right, true, "NeedCourse");
             UiKit.Place(needCourse.rectTransform, new Vector2(1f, 0f), new Vector2(-Theme.Margin, 235f), new Vector2(1100f, 56f));
 
-            // コースの操作（「コース」を押したときだけ）
+            // コースの操作（「コース」を押したときだけ）：スタート・しばり・ゴール
             courseGroup = UiKit.NewRect("CourseGroup", barSafe);
-            UiKit.Place(courseGroup, new Vector2(0.5f, 0f), new Vector2(0f, 330f), new Vector2(1100f, Theme.SmallButtonHeight));
-            startButton = UiKit.Button(courseGroup, AppText.CheckSetStart, UiKit.ButtonStyle.Soft, new Vector2(520f, Theme.SmallButtonHeight),
+            UiKit.Place(courseGroup, new Vector2(0.5f, 0f), new Vector2(0f, 330f), new Vector2(1500f, Theme.SmallButtonHeight));
+            startButton = UiKit.Button(courseGroup, AppText.CheckSetStart, UiKit.ButtonStyle.Soft, new Vector2(480f, Theme.SmallButtonHeight),
                 () => Arm(CourseItem.Start), "SetStart", Theme.Body);
             UiKit.Place(startButton.Rect, new Vector2(0f, 0.5f), Vector2.zero, startButton.Rect.sizeDelta);
-            goalButton = UiKit.Button(courseGroup, AppText.CheckSetGoal, UiKit.ButtonStyle.Soft, new Vector2(520f, Theme.SmallButtonHeight),
+            rulesButton = UiKit.Button(courseGroup, AppText.Rules, UiKit.ButtonStyle.Soft, new Vector2(420f, Theme.SmallButtonHeight),
+                OpenRules, "Rules", Theme.Body);
+            UiKit.Place(rulesButton.Rect, new Vector2(0.5f, 0.5f), Vector2.zero, rulesButton.Rect.sizeDelta);
+            goalButton = UiKit.Button(courseGroup, AppText.CheckSetGoal, UiKit.ButtonStyle.Soft, new Vector2(480f, Theme.SmallButtonHeight),
                 () => Arm(CourseItem.Goal), "SetGoal", Theme.Body);
             UiKit.Place(goalButton.Rect, new Vector2(1f, 0.5f), Vector2.zero, goalButton.Rect.sizeDelta);
             courseGroup.gameObject.SetActive(false);
@@ -160,6 +187,24 @@ namespace DeskStage.App
 
             // 「なおす」の押し分け（AssistController と同じ押しで、文字と、コースの操作を切り替える）
             fixButton.OnClick(OnFixClicked);
+
+            BuildRulesPanel();
+            BuildMissionPanel();
+
+            // 置く場所をタップしている間は、ほかの帯とボタンを隠して、画面ぜんぶをタップできるようにする。出るのは、ひとことと「やめる」だけ
+            var group = UiKit.Fill(UiKit.NewRect("PlaceGroup", Rect));
+            placeGroup = group.gameObject;
+            var placeBack = UiKit.Panel(group, "PlaceHintBack", Theme.WithAlpha(Theme.Navy, 0.82f), 60f);
+            // 画面の上は、置く場所として空けておく。ひとことは、下の「やめる」の上に出す
+            UiKit.Place(placeBack.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 60f + Theme.SmallButtonHeight + 24f), new Vector2(1500f, 100f));
+            placeBack.raycastTarget = false;
+            placeHint = UiKit.Label(placeBack.rectTransform, "", Theme.Body, Color.white, TextAlignmentOptions.Center, true, "Hint");
+            UiKit.Fill(placeHint.rectTransform);
+            placeHint.raycastTarget = false; // 文字の上も、タップして置ける
+            var cancel = UiKit.Button(group, AppText.No, UiKit.ButtonStyle.Secondary, new Vector2(420f, Theme.SmallButtonHeight),
+                CancelPlacing, "CancelPlace", Theme.Body);
+            UiKit.Place(cancel.Rect, new Vector2(0.5f, 0f), new Vector2(0f, 60f), cancel.Rect.sizeDelta);
+            placeGroup.SetActive(false);
         }
 
         GameObject hintBackRect;
@@ -168,8 +213,9 @@ namespace DeskStage.App
         {
             mode = Mode.None;
             armed = null;
-            catcher.gameObject.SetActive(false);
+            SetPlacing(false, null);
             courseGroup.gameObject.SetActive(false);
+            rulesPanel.SetActive(false);
             fixButton.SetText(AppText.CheckFix);
             hintBackRect.SetActive(false);
             GameEvents.CoursePlaced += OnCoursePlaced;
@@ -199,6 +245,7 @@ namespace DeskStage.App
             GameEvents.CoursePlaced -= OnCoursePlaced;
             StagePhotoTexturer.GimmicksChanged -= OnGimmicksChanged;
             armed = null;
+            SetPlacing(false, null);
         }
 
         // 保存していないときは、確認してから出る
@@ -245,9 +292,10 @@ namespace DeskStage.App
             }
             mode = Mode.Course;
             courseGroup.gameObject.SetActive(true);
+            ShowRuleValues(); // 「しばり」のボタンの文字を、いまのしばりに合わせる
             courseButton.SetStyle(UiKit.ButtonStyle.Primary);
             courseButton.SetText(AppText.CheckCourseClose);
-            ShowHint(AppText.CheckCourse == null ? "" : AppText.CheckModeCourseHint);
+            ShowHint(AppText.CheckCourseChoose);
         }
 
         void CloseCourse()
@@ -257,8 +305,9 @@ namespace DeskStage.App
                 mode = Mode.None;
             }
             armed = null;
-            catcher.gameObject.SetActive(false);
+            SetPlacing(false, null);
             courseGroup.gameObject.SetActive(false);
+            rulesPanel.SetActive(false);
             courseButton.SetStyle(UiKit.ButtonStyle.Soft);
             courseButton.SetText(AppText.CheckCourse);
             ShowHint("");
@@ -273,10 +322,33 @@ namespace DeskStage.App
         void Arm(CourseItem item)
         {
             armed = item;
-            catcher.gameObject.SetActive(true);
-            // 押せるボタンが、置く場所のタップより手前に出るよう、板をボタンの後ろへ
-            catcher.transform.SetSiblingIndex(2);
-            ShowHint(item == CourseItem.Start ? AppText.CheckPlaceStartHint : AppText.CheckPlaceGoalHint);
+            SetPlacing(true, item);
+        }
+
+        // 置く場所をタップしている間（on）は、帯とボタンを隠す。やめる・置き終わったら、もどす
+        void SetPlacing(bool on, CourseItem? item)
+        {
+            topBar.SetActive(!on);
+            topSafe.SetActive(!on);
+            bottomBar.SetActive(!on);
+            bottomSafe.SetActive(!on);
+            catcher.gameObject.SetActive(on);
+            placeGroup.SetActive(on);
+            if (on)
+            {
+                Context.Overlays.HideToast(); // 「スタートを おいたよ」などが、上に残って じゃまをしないように
+                placeHint.text = item == CourseItem.Start ? AppText.CheckPlaceStartHint : AppText.CheckPlaceGoalHint;
+                // タップを受ける板が、ほかのどれよりも手前。ただし「やめる」だけは、その上
+                catcher.transform.SetAsLastSibling();
+                placeGroup.transform.SetAsLastSibling();
+            }
+        }
+
+        void CancelPlacing()
+        {
+            armed = null;
+            SetPlacing(false, null);
+            ShowHint(AppText.CheckCourseChoose);
         }
 
         void OnCourseTap(Vector2 position)
@@ -287,7 +359,7 @@ namespace DeskStage.App
             }
             var item = armed.Value;
             armed = null;
-            catcher.gameObject.SetActive(false);
+            SetPlacing(false, null);
             UiRequests.RequestPlaceCourseItem(item, position);
         }
 
@@ -299,9 +371,8 @@ namespace DeskStage.App
                 case PlacementResult.Rejected:
                     UiSound.Play(UiSound.Cue.Error);
                     Context.Overlays.Toast(AppText.CheckPlaceFailed, AppOverlays.ToastKind.Bad);
-                    ShowHint(item == CourseItem.Start ? AppText.CheckPlaceStartHint : AppText.CheckPlaceGoalHint);
                     armed = item;
-                    catcher.gameObject.SetActive(true);
+                    SetPlacing(true, item);
                     return;
                 case PlacementResult.MayBeUnreachable:
                     UiSound.Play(UiSound.Cue.Success);
@@ -312,12 +383,14 @@ namespace DeskStage.App
                     Context.Overlays.Toast(string.Format(AppText.CheckPlaced, name), AppOverlays.ToastKind.Good);
                     break;
             }
-            ShowHint(AppText.CheckModeCourseHint);
+            ShowHint(AppText.CheckCourseChoose);
         }
 
         void Update()
         {
             Refresh();
+            PlaceFlowButtons();
+            RefreshMission();
         }
 
         void Refresh()
@@ -332,6 +405,188 @@ namespace DeskStage.App
 
             var canPlay = flow.StartPlaced && flow.GoalPlaced;
             needCourse.gameObject.SetActive(!canPlay);
+        }
+
+        // ---- お題（Docs/specs/home-modes の REQ-6・7） ----
+
+        // 左の、お題の板：お題の名前と、条件ごとの「できた」「まだ」（4 行まで）
+        void BuildMissionPanel()
+        {
+            var panel = UiKit.Panel(Rect, "Mission", Theme.WithAlpha(Theme.Navy, 0.82f), 40f);
+            panel.raycastTarget = false;
+            UiKit.Place(panel.rectTransform, new Vector2(0f, 0.5f), new Vector2(Theme.Margin, 40f), new Vector2(720f, 330f));
+            panel.rectTransform.pivot = new Vector2(0f, 0.5f);
+            missionPanel = panel.gameObject;
+            missionTitle = UiKit.FitLabel(panel.rectTransform, "", Theme.H2, Theme.Orange, TextAlignmentOptions.Left, true, "Title");
+            UiKit.Area(missionTitle.rectTransform, new Vector2(0f, 0.7f), new Vector2(1f, 1f), 28f);
+            missionLines.Clear();
+            for (var i = 0; i < 2; i++)
+            {
+                var line = UiKit.FitLabel(panel.rectTransform, "", Theme.Body, Color.white, TextAlignmentOptions.Left, false, "Line" + i);
+                UiKit.Area(line.rectTransform, new Vector2(0f, 0.38f - i * 0.32f), new Vector2(1f, 0.68f - i * 0.32f), 28f);
+                missionLines.Add(line);
+            }
+            missionPanel.SetActive(false);
+        }
+
+        void RefreshMission()
+        {
+            var mission = Context.Flow.CurrentMission;
+            var show = mission != null && mode == Mode.None && armed == null;
+            missionPanel.SetActive(show);
+            if (!show) return;
+            missionTitle.text = string.Format(AppText.MissionCurrent, mission.Name);
+            for (var i = 0; i < missionLines.Count; i++)
+            {
+                var has = i < mission.Conditions.Length;
+                missionLines[i].gameObject.SetActive(has);
+                if (!has) continue;
+                var c = mission.Conditions[i];
+                var met = MissionRules.IsMet(c, ScanContext.WorkingBoxes, StageContext.CurrentStage);
+                missionLines[i].text = (met ? "◯ " : "× ") + c.Text + "　" + (met ? AppText.MissionOk : AppText.MissionNotYet);
+                missionLines[i].color = met ? Theme.Hex("8EF0BE") : Color.white;
+            }
+        }
+
+        // ---- しばり（Docs/specs/course-rules） ----
+
+        static readonly int[] JumpChoices = { -1, 0, 1, 3, 5, 10 };
+        static readonly int[] TimeChoices = { 0, 30, 60, 90, 120 };
+
+        // しばりを選ぶ板：4 行（名前・値・左右のボタン）と「きめた」。後ろは押せない
+        void BuildRulesPanel()
+        {
+            var dim = UiParts.Clear(Rect, "RulesPanel", true);
+            dim.color = Theme.WithAlpha(Theme.Navy, 0.55f);
+            rulesPanel = dim.gameObject;
+            var card = UiKit.Panel(dim.rectTransform, "Card", Theme.Card, Theme.CardRadius, shadow: true);
+            UiKit.Place(card.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1500f, 900f));
+            var title = UiKit.Label(card.rectTransform, AppText.RulesTitle, Theme.H1, Theme.Ink, TextAlignmentOptions.Center, true, "Title");
+            UiKit.Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -60f), new Vector2(1200f, 110f));
+
+            var names = new[] { AppText.RulesJump, AppText.RulesDouble, AppText.RulesOneHit, AppText.RulesTime };
+            ruleValues.Clear();
+            for (var i = 0; i < names.Length; i++)
+            {
+                var row = i;
+                var y = -200f - i * 140f;
+                var name = UiKit.Label(card.rectTransform, names[i], Theme.H2, Theme.Ink, TextAlignmentOptions.Left, true, "Name" + i);
+                UiKit.Place(name.rectTransform, new Vector2(0f, 1f), new Vector2(90f, y), new Vector2(520f, 110f));
+                var prev = UiKit.Button(card.rectTransform, "＜", UiKit.ButtonStyle.Soft, new Vector2(140f, Theme.SmallButtonHeight),
+                    () => StepRule(row, -1), "Prev" + i, Theme.H2);
+                UiKit.Place(prev.Rect, new Vector2(0f, 1f), new Vector2(640f, y), prev.Rect.sizeDelta);
+                var value = UiKit.Label(card.rectTransform, "", Theme.H2, Theme.Orange, TextAlignmentOptions.Center, true, "Value" + i);
+                UiKit.Place(value.rectTransform, new Vector2(0f, 1f), new Vector2(800f, y), new Vector2(460f, 110f));
+                ruleValues.Add(value);
+                var next = UiKit.Button(card.rectTransform, "＞", UiKit.ButtonStyle.Soft, new Vector2(140f, Theme.SmallButtonHeight),
+                    () => StepRule(row, +1), "Next" + i, Theme.H2);
+                UiKit.Place(next.Rect, new Vector2(0f, 1f), new Vector2(1280f, y), next.Rect.sizeDelta);
+            }
+
+            var done = UiKit.Button(card.rectTransform, AppText.RulesDone, UiKit.ButtonStyle.Primary, new Vector2(560f, Theme.ButtonHeight),
+                () => rulesPanel.SetActive(false), "Done", Theme.H1);
+            UiKit.Place(done.Rect, new Vector2(0.5f, 0f), new Vector2(0f, 50f), done.Rect.sizeDelta);
+            rulesPanel.SetActive(false);
+        }
+
+        static CourseRules CurrentRules()
+        {
+            var stage = StageContext.CurrentStage;
+            if (stage == null) return null;
+            if (stage.rules == null) stage.rules = new CourseRules();
+            return stage.rules;
+        }
+
+        void OpenRules()
+        {
+            if (CurrentRules() == null) return;
+            ShowHint("");
+            rulesPanel.transform.SetAsLastSibling();
+            rulesPanel.SetActive(true);
+            ShowRuleValues();
+        }
+
+        // 行の値を、左右へ 1 つ動かす（端まで行ったら、反対の端へ）
+        void StepRule(int row, int delta)
+        {
+            var r = CurrentRules();
+            if (r == null) return;
+            switch (row)
+            {
+                case 0: r.maxJumps = Step(JumpChoices, r.maxJumps, delta); break;
+                case 1: r.noDoubleJump = !r.noDoubleJump; break;
+                case 2: r.oneHit = !r.oneHit; break;
+                default: r.timeLimitSeconds = Step(TimeChoices, Mathf.RoundToInt(r.timeLimitSeconds), delta); break;
+            }
+            UiSound.Play(UiSound.Cue.Click);
+            ShowRuleValues();
+        }
+
+        static int Step(int[] choices, int current, int delta)
+        {
+            var i = System.Array.IndexOf(choices, current);
+            if (i < 0) i = 0;
+            return choices[(i + delta + choices.Length) % choices.Length];
+        }
+
+        void ShowRuleValues()
+        {
+            var r = CurrentRules() ?? new CourseRules();
+            ruleValues[0].text = r.maxJumps < 0 ? AppText.RulesJumpFree : r.maxJumps == 0 ? AppText.RulesJumpNone : string.Format(AppText.RulesJumpCount, r.maxJumps);
+            ruleValues[1].text = r.noDoubleJump ? AppText.RulesDoubleOff : AppText.RulesDoubleOn;
+            ruleValues[2].text = r.oneHit ? AppText.RulesOn : AppText.RulesOff;
+            ruleValues[3].text = r.timeLimitSeconds > 0f ? string.Format(AppText.RulesSeconds, Mathf.RoundToInt(r.timeLimitSeconds)) : AppText.RulesOff;
+            rulesButton.SetText(CourseRuleState.HasAny(r) ? AppText.RulesSet : AppText.Rules);
+        }
+
+        // 水の箱それぞれの上面の上に、「ながれの むき」のボタンを合わせる（ふだんの状態だけ。なおす・コースの間と、置く場所を選ぶ間は隠す）
+        void PlaceFlowButtons()
+        {
+            var show = mode == Mode.None && armed == null;
+            if (show)
+            {
+                Context.Gimmicks.WaterBoxIds(flowIds);
+            }
+            else
+            {
+                flowIds.Clear();
+            }
+            var cam = Camera.main;
+            var root = StageContext.StageRoot;
+            var used = 0;
+            foreach (var id in flowIds)
+            {
+                var box = root != null ? root.Find(id) : null;
+                if (box == null || cam == null)
+                {
+                    continue;
+                }
+                // 坂は、斜めの面の真ん中（箱の座標で y = 0）、箱は上面の真ん中
+                var ramp = box.GetComponent<MeshCollider>() != null;
+                var screen = cam.WorldToScreenPoint(box.TransformPoint(new Vector3(0f, ramp ? 0f : 0.5f, 0f)));
+                if (screen.z <= 0f)
+                {
+                    continue;
+                }
+                if (used == flowButtons.Count)
+                {
+                    var created = UiKit.Button(flowLayer, AppText.CheckFlow, UiKit.ButtonStyle.Soft, new Vector2(360f, Theme.SmallButtonHeight),
+                        null, "Flow", Theme.Body);
+                    flowButtons.Add(created);
+                }
+                var button = flowButtons[used++];
+                var target = id;
+                button.Button.onClick.RemoveAllListeners();
+                button.Button.onClick.AddListener(() => Context.Gimmicks.CycleFlow(target));
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(flowLayer, screen, null, out var local);
+                button.Rect.anchorMin = button.Rect.anchorMax = new Vector2(0.5f, 0.5f);
+                button.Rect.anchoredPosition = local + new Vector2(0f, 90f);
+                button.gameObject.SetActive(true);
+            }
+            for (var i = used; i < flowButtons.Count; i++)
+            {
+                flowButtons[i].gameObject.SetActive(false);
+            }
         }
 
         static void SetDone(AppButton button, bool done, string normal, string doneText)

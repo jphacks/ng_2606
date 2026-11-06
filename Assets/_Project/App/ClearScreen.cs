@@ -1,3 +1,4 @@
+using DeskStage.Shared;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -43,6 +44,10 @@ namespace DeskStage.App
             time = UiKit.Label(card.rectTransform, "", Theme.Hero * 0.8f, Theme.Ink, TextAlignmentOptions.Center, true, "Time");
             UiKit.Fill(time.rectTransform);
 
+            // そのときのしばり（Docs/specs/course-rules。記録は、しばりで分けない）
+            rulesLine = UiKit.Label(safe, "", Theme.H2, Theme.Ink, TextAlignmentOptions.Center, true, "Rules");
+            UiKit.Place(rulesLine.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -150f), new Vector2(1600f, 90f));
+
             var badge = UiKit.Panel(safe, "Record", Theme.Red, 60f);
             record = badge.rectTransform;
             UiKit.Place(record, new Vector2(0.5f, 0.5f), new Vector2(420f, 170f), new Vector2(420f, 110f));
@@ -66,11 +71,17 @@ namespace DeskStage.App
             UiKit.Place(fix.Rect, new Vector2(1f, 0f), new Vector2(-Theme.Margin, 60f), fix.Rect.sizeDelta);
         }
 
+        TMP_Text rulesLine;
+
         public override void OnEnter(object arg)
         {
             var info = arg as ClearInfo ?? new ClearInfo();
             time.text = string.Format(AppText.ClearTime, FlowRules.FormatTime(info.Seconds));
             record.gameObject.SetActive(info.IsBest);
+            var summary = CourseRuleSystem.Summary(StageContext.CurrentStage != null ? StageContext.CurrentStage.rules : null);
+            rulesLine.text = info.MissionDone ? AppText.MissionClear
+                : summary.Length > 0 ? string.Format(AppText.RulesClear, summary) : "";
+            rulesLine.color = info.MissionDone ? Theme.Red : Theme.Ink;
             UiSound.Play(UiSound.Cue.Success);
             Refresh();
         }

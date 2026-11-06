@@ -116,8 +116,33 @@ namespace DeskStage.App
             failure.gameObject.SetActive(false);
         }
 
+        // お題の札（Docs/specs/home-modes の REQ-5）。お題のときだけ、左に出す
+        GameObject missionPill;
+        TMP_Text missionText;
+
+        void ShowMission()
+        {
+            if (missionPill == null)
+            {
+                var pill = UiKit.Panel(Rect, "Mission", Theme.WithAlpha(Theme.Navy, 0.82f), 40f);
+                pill.raycastTarget = false;
+                UiKit.Place(pill.rectTransform, new Vector2(0f, 0.5f), new Vector2(Theme.Margin, 60f), new Vector2(640f, 280f));
+                pill.rectTransform.pivot = new Vector2(0f, 0.5f);
+                missionText = UiKit.Label(pill.rectTransform, "", Theme.Body, Color.white, TextAlignmentOptions.Left, false, "Text");
+                UiKit.Area(missionText.rectTransform, Vector2.zero, Vector2.one, 28f);
+                missionPill = pill.gameObject;
+            }
+            var mission = Context.Flow.CurrentMission;
+            missionPill.SetActive(mission != null);
+            if (mission == null) return;
+            var lines = string.Format(AppText.MissionCurrent, mission.Name);
+            foreach (var c in mission.Conditions) lines += "\n・" + c.Text;
+            missionText.text = lines;
+        }
+
         public override void OnEnter(object arg)
         {
+            ShowMission();
             hadTop = false;
             lastStatus = StageContext.ScanStatus;
             flashTime = 1f;

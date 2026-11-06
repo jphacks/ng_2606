@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DeskStage.Gameplay;
 using DeskStage.Merge;
 using DeskStage.Shared;
+using DeskStage.Stage;
 using UnityEngine;
 
 namespace DeskStage.App
@@ -45,6 +46,8 @@ namespace DeskStage.App
             public Transform Box;
             public Material Material;
             public Vector2 Direction;
+            public int Flow;
+            public bool Ramp;
             public List<Billboard> Billboards = new List<Billboard>();
         }
 
@@ -82,6 +85,61 @@ namespace DeskStage.App
             if (fire > 0) parts.Add($"{AppText.GimmickFire} {fire}");
             if (heal > 0) parts.Add($"{AppText.GimmickHeal} {heal}");
             return string.Join("　", parts);
+        }
+
+        /// <summary>水の箱（水の坂も含む）の id。たしかめの画面で、それぞれの上に「ながれの むき」のボタンを出すのに使う。</summary>
+        public void WaterBoxIds(List<string> ids)
+        {
+            ids.Clear();
+            foreach (var b in CurrentBoxes())
+            {
+                if (b.gimmick == BoxData.GimmickWater) ids.Add(b.id);
+            }
+        }
+
+        /// <summary>この箱が水の箱（水の坂も含む）か。水の箱なら、いまの流れの向き（flow）も返す。</summary>
+        public bool IsWater(string boxId, out int flow)
+        {
+            flow = 0;
+            if (string.IsNullOrEmpty(boxId))
+            {
+                return false;
+            }
+            foreach (var b in CurrentBoxes())
+            {
+                if (b.id == boxId && b.gimmick == BoxData.GimmickWater)
+                {
+                    flow = EffectiveFlow(b);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // 向きを選んでいない坂は、下り（-x の向き。flow = 3）に流れる。選んだら、その向き（上り向きなら、流れに乗ってのぼれる）
+        static int EffectiveFlow(BoxData b) => b.ramp && b.flow == 0 ? 3 : b.flow;
+
+        /// <summary>水の箱の流れを、次の向きにする（90 度まわる）。保存するデータ（作業中と読み込んだ物の両方）に入れ、見た目を作り直す。</summary>
+        public void CycleFlow(string boxId)
+        {
+            if (!IsWater(boxId, out var current))
+            {
+                return;
+            }
+            var next = GimmickRules.NextFlow(boxId, current);
+            foreach (var data in ScanContext.WorkingBoxes)
+            {
+                if (data.id == boxId) data.flow = next;
+            }
+            var stage = StageContext.CurrentStage;
+            if (stage != null && stage.boxes != null)
+            {
+                foreach (var data in stage.boxes)
+                {
+                    if (data.id == boxId) data.flow = next;
+                }
+            }
+            MarkDirty();
         }
 
         void OnEnable()
@@ -143,7 +201,7 @@ namespace DeskStage.App
                 {
                     continue;
                 }
-                var visual = new Visual { Id = b.id, Kind = b.gimmick, Box = box };
+                var visual = new Visual { Id = b.id, Kind = b.gimmick, Box = box, Flow = EffectiveFlow(b), Ramp = b.ramp };
                 BuildPad(visual);
                 BuildBillboards(visual);
                 visuals.Add(visual);
@@ -192,7 +250,7 @@ namespace DeskStage.App
         void BuildPad(Visual v)
         {
             var scale = v.Box.localScale;
-            var dir = GimmickRules.WaterDirection(v.Id);
+            var dir = GimmickRules.WaterDirection(v.Id, v.Flow);
             v.Direction = dir;
             Texture2D texture;
             Color tint = Color.white;
@@ -208,14 +266,31 @@ namespace DeskStage.App
                     texture = GetTexture("heal", GimmickTextures.Heal);
                     break;
             }
-            var pad = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            pad.name = "Gimmick_" + v.Kind;
-            var collider = pad.GetComponent<Collider>();
-            if (collider != null) UiKit.Kill(collider);
-            pad.transform.SetParent(v.Box, false);
-            pad.transform.localPosition = new Vector3(0f, 0.5f * 1.002f + 0.0025f / Mathf.Max(scale.y, 1e-3f), 0f);
-            pad.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            pad.transform.localScale = Vector3.one;
+            GameObject pad;
+            if (v.Ramp)
+            {
+                // 坂は、斜めの面に沿った板（箱の座標で、面から少し浮かせる）
+                var surface = RampMesh.SurfaceLifted(0.0025f / Mathf.Max(scale.y, 1e-3f));
+                created.Add(surface);
+                pad = new GameObject("Gimmick_" + v.Kind);
+                pad.AddComponent<MeshFilter>().sharedMesh = surface;
+                pad.AddComponent<MeshRenderer>();
+                pad.transform.SetParent(v.Box, false);
+                pad.transform.localPosition = Vector3.zero;
+                pad.transform.localRotation = Quaternion.identity;
+                pad.transform.localScale = Vector3.one;
+            }
+            else
+            {
+                pad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                pad.name = "Gimmick_" + v.Kind;
+                var collider = pad.GetComponent<Collider>();
+                if (collider != null) UiKit.Kill(collider);
+                pad.transform.SetParent(v.Box, false);
+                pad.transform.localPosition = new Vector3(0f, 0.5f * 1.002f + 0.0025f / Mathf.Max(scale.y, 1e-3f), 0f);
+                pad.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                pad.transform.localScale = Vector3.one;
+            }
             pad.layer = v.Box.gameObject.layer;
             v.Material = NewMaterial(texture, tint);
             // 模様の 1 つ分を、約 4cm にして、箱の大きさだけ並べる
@@ -321,7 +396,8 @@ namespace DeskStage.App
                 foreach (var b in v.Billboards)
                 {
                     if (b.Transform == null) continue;
-                    var local = new Vector3(b.Local.x, 0.5f * 1.002f, b.Local.y);
+                    var surfaceY = v.Ramp ? RampMesh.SurfaceLocalY(b.Local.x) * 1.002f : 0.5f * 1.002f;
+                    var local = new Vector3(b.Local.x, surfaceY, b.Local.y);
                     var basePoint = v.Box.TransformPoint(local);
                     float size;
                     float lift;
@@ -378,11 +454,20 @@ namespace DeskStage.App
             {
                 if (v.Box == null) continue;
                 var local = v.Box.InverseTransformPoint(feet);
-                if (!GimmickRules.IsOnTop(local, v.Box.lossyScale.y)) continue;
+                // 水の坂は、ジャンプで浮いている間も、選んだ向きへ強く流す（下り向きなら、のぼれず下りることだけできる。上り向きなら、流れに乗ってのぼれる）
+                if (v.Ramp && v.Kind == BoxData.GimmickWater)
+                {
+                    if (GimmickRules.IsOverRamp(local, v.Box.lossyScale.y))
+                    {
+                        push += PushOf(v, GimmickRules.WaterRampSpeed);
+                    }
+                    continue;
+                }
+                if (!GimmickRules.IsOnTop(local, v.Box.lossyScale.y, v.Ramp)) continue;
                 switch (v.Kind)
                 {
                     case BoxData.GimmickWater:
-                        push += PushOf(v);
+                        push += PushOf(v, GimmickRules.WaterSpeed);
                         break;
                     case BoxData.GimmickFire:
                         if (Health.TryDamage(Time.time))
@@ -416,10 +501,11 @@ namespace DeskStage.App
         }
 
         // 水の箱が流す速さ（ステージの向きを、世界の向きに直したもの）
-        static Vector3 PushOf(Visual v)
+        static Vector3 PushOf(Visual v, float speed)
         {
-            var world = v.Box.TransformDirection(new Vector3(v.Direction.x, 0f, v.Direction.y)).normalized;
-            return world * GimmickRules.WaterSpeed;
+            var world = v.Box.TransformDirection(new Vector3(v.Direction.x, 0f, v.Direction.y));
+            world.y = 0f;
+            return world.normalized * speed;
         }
     }
 }

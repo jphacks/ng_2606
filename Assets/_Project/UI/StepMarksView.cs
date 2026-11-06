@@ -68,6 +68,10 @@ namespace DeskStage.UI
             }
             foreach (var b in source)
             {
+                if (b.ramp)
+                {
+                    continue; // 坂は段ではない（ゆるやかなら歩いてのぼれる）ので、印を出さない
+                }
                 var c = new Vector2(b.center[0], b.center[2]);
                 var half = new Vector2(b.size[0], b.size[2]) * 0.5f;
                 // 回っている箱は、回した四隅を囲む範囲で隣を調べる

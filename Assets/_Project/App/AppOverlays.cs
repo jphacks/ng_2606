@@ -28,7 +28,7 @@ namespace DeskStage.App
         RectTransform toastRoot;
         Image toastBackground;
         TMP_Text toastText;
-        Coroutine toastRoutine;
+        float toastHideAt = -1f; // この時刻（実時間）を過ぎたら、ひとことを消す。消し忘れがないよう、毎フレーム見る
 
         RectTransform busyRoot;
         TMP_Text busyText;
@@ -103,6 +103,7 @@ namespace DeskStage.App
             UiKit.Fill(toastBackground.rectTransform);
             toastBackground.raycastTarget = false;
             toastText = UiKit.FitLabel(toastRoot, "", Theme.Body, Color.white, TextAlignmentOptions.Center, true);
+            toastText.raycastTarget = false; // ひとことは、後ろのタップをじゃましない（スタート・ゴールを上の方に置くときなど）
             UiKit.Area(toastText.rectTransform, Vector2.zero, Vector2.one, 24f);
             toastRoot.gameObject.SetActive(false);
         }
@@ -131,14 +132,23 @@ namespace DeskStage.App
             toastText.text = message;
             toastRoot.SetAsLastSibling();
             toastRoot.gameObject.SetActive(true);
-            if (toastRoutine != null) StopCoroutine(toastRoutine);
-            if (isActiveAndEnabled) toastRoutine = StartCoroutine(HideToastLater(seconds));
+            toastHideAt = Time.realtimeSinceStartup + seconds;
         }
 
-        IEnumerator HideToastLater(float seconds)
+        /// <summary>ひとことを、すぐ消す（スタート・ゴールを置く場所を選ぶときなど、画面の上を空けたいとき）。</summary>
+        public void HideToast()
         {
-            yield return new WaitForSecondsRealtime(seconds);
-            toastRoot.gameObject.SetActive(false);
+            toastHideAt = -1f;
+            if (toastRoot != null) toastRoot.gameObject.SetActive(false);
+        }
+
+        void Update()
+        {
+            if (toastHideAt >= 0f && Time.realtimeSinceStartup >= toastHideAt)
+            {
+                toastHideAt = -1f;
+                if (toastRoot != null) toastRoot.gameObject.SetActive(false);
+            }
         }
 
         // ---- 読み込み中 ----
