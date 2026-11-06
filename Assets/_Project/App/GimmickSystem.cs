@@ -559,6 +559,7 @@ namespace DeskStage.App
             }
 
             var feet = motor.transform.position;
+            var hit = false;
             foreach (var e in enemies)
             {
                 Vector3 dir;
@@ -581,10 +582,12 @@ namespace DeskStage.App
                     // 進めなかったら、向きを変える
                     e.WanderTimer = 0f;
                 }
-                if (GimmickRules.EnemyTouches(e.Position, feet, motor.settings.radius, motor.settings.height))
-                {
-                    TryDamage(true);
-                }
+                hit |= GimmickRules.EnemyTouches(e.Position, feet, motor.settings.radius, motor.settings.height);
+            }
+            // ハートを減らすのは、敵の一覧を見終わってから（0 になってゲームオーバーの画面に変わると、敵の一覧が消されることがあるため）
+            if (hit)
+            {
+                TryDamage(true);
             }
         }
 
