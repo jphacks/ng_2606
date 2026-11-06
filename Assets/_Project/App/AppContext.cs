@@ -36,5 +36,11 @@ namespace DeskStage.App
 
         /// <summary>箱のしかけ（水・炎・回復）と、ハート。</summary>
         public GimmickSystem Gimmicks;
+
+        /// <summary>しばりの係（Docs/specs/course-rules）。</summary>
+        public CourseRuleSystem Rules;
+
+        /// <summary>みんなの ステージ（投稿・一覧・読み込み）の通信（Docs/specs/home-modes）。</summary>
+        public StageShareClient Share;
     }
 }

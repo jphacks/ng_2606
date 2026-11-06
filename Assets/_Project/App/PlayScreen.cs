@@ -18,6 +18,8 @@ namespace DeskStage.App
         const float JumpDiameter = 250f;
 
         TMP_Text timer;
+        TMP_Text rulesText;
+        GameObject rulesBack;
         HeartRow hearts;
         Image damageFlash;
         float flashTime = 1f;
@@ -42,6 +44,16 @@ namespace DeskStage.App
             UiKit.Place(timerBack.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -40f), new Vector2(480f, 130f));
             timer = UiKit.Label(timerBack.rectTransform, FlowRules.FormatTime(0f), Theme.H1, Color.white, TextAlignmentOptions.Center, true, "Timer");
             UiKit.Fill(timer.rectTransform);
+
+            // タイムの下：しばりと残り（Docs/specs/course-rules。しばりが無ければ隠す）
+            var rulesPanel = UiKit.Panel(safe, "RulesBack", Theme.WithAlpha(Theme.Orange, 0.92f), 50f);
+            UiKit.Place(rulesPanel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -185f), new Vector2(1100f, 90f));
+            rulesPanel.raycastTarget = false;
+            rulesText = UiKit.Label(rulesPanel.rectTransform, "", Theme.Body, Theme.Ink, TextAlignmentOptions.Center, true, "Rules");
+            rulesText.raycastTarget = false;
+            UiKit.Fill(rulesText.rectTransform);
+            rulesBack = rulesPanel.gameObject;
+            rulesBack.SetActive(false);
 
             // 右上：ハート（体力）
             var heartBack = UiKit.Panel(safe, "HeartBack", Theme.WithAlpha(Theme.Navy, 0.78f), 70f);
@@ -135,6 +147,9 @@ namespace DeskStage.App
         void Update()
         {
             hearts.Set(Context.Gimmicks.Health.Hearts);
+            var rules = Context.Rules.PlayText();
+            rulesBack.SetActive(rules.Length > 0);
+            if (rules.Length > 0) rulesText.text = rules;
             if (flashTime < 1f)
             {
                 flashTime += Time.unscaledDeltaTime / 0.5f;

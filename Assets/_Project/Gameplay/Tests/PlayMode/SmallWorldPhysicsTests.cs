@@ -406,5 +406,78 @@ namespace DeskStage.Gameplay.PlayTests
             Debug.Log($"[ramp] 60 度の坂で、ジャンプしながら着いた高さ：{motor.transform.position.y * 100f:0.0}cm");
             Assert.Greater(motor.transform.position.y, 0.15f, "60 度の坂を、ジャンプを使ってものぼれなかった");
         }
+
+        // ---- しばり（course-rules の REQ-3・4） ----
+
+        // 地面で、ジャンプを 1 回押して、上がった高さ
+        IEnumerator JumpOnceAndMeasure(System.Action<float> result)
+        {
+            float start = motor.transform.position.y;
+            motor.PressJumpForTest();
+            float maxY = start;
+            for (float t = 0f; t < 0.6f; t += Time.deltaTime)
+            {
+                yield return null;
+                maxY = Mathf.Max(maxY, motor.transform.position.y);
+            }
+            result(maxY - start);
+        }
+
+        [UnityTest]
+        public IEnumerator 跳んではいけないときは_ジャンプを押しても跳ばない()
+        {
+            yield return Spawn(new Vector3(0f, 0f, -0.2f));
+            motor.JumpAllowed = air => false;
+            float rise = 0f;
+            yield return JumpOnceAndMeasure(r => rise = r);
+            Assert.Less(rise, 0.005f, "止めたのに跳んだ");
+            // 止めていた間の入力で、あとから勝手に跳ばない
+            motor.JumpAllowed = null;
+            float maxY = motor.transform.position.y;
+            for (float t = 0f; t < 0.5f; t += Time.deltaTime)
+            {
+                yield return null;
+                maxY = Mathf.Max(maxY, motor.transform.position.y);
+            }
+            Assert.Less(maxY, 0.005f, "止めていた間の入力で、あとから跳んだ");
+        }
+
+        [UnityTest]
+        public IEnumerator 回数を数えて_使い切ったら跳ばない()
+        {
+            yield return Spawn(new Vector3(0f, 0f, -0.2f));
+            int used = 0;
+            motor.JumpAllowed = air => used < 2;
+            motor.Jumped += air => used++;
+            float rise = 0f;
+            yield return JumpOnceAndMeasure(r => rise = r);
+            Assert.Greater(rise, 0.05f, "1 回目を跳ばなかった");
+            yield return new WaitForSeconds(0.3f);
+            yield return JumpOnceAndMeasure(r => rise = r);
+            Assert.Greater(rise, 0.05f, "2 回目を跳ばなかった");
+            yield return new WaitForSeconds(0.3f);
+            yield return JumpOnceAndMeasure(r => rise = r);
+            Assert.Less(rise, 0.005f, "回数を使い切ったのに跳んだ");
+            Assert.AreEqual(2, used);
+        }
+
+        [UnityTest]
+        public IEnumerator 空中のジャンプだけ止めると_2段ジャンプにならない()
+        {
+            yield return Spawn(new Vector3(0f, 0f, -0.2f));
+            motor.JumpAllowed = air => !air;
+            float start = motor.transform.position.y;
+            motor.PressJumpForTest();
+            yield return new WaitForSeconds(0.2f);
+            motor.PressJumpForTest(); // 空中でもう一度
+            float maxY = start;
+            for (float t = 0f; t < 0.8f; t += Time.deltaTime)
+            {
+                yield return null;
+                maxY = Mathf.Max(maxY, motor.transform.position.y);
+            }
+            Assert.Less(maxY - start, 0.14f, "2 段ジャンプを止めたのに、1 回のジャンプ（約 12.5cm）より高く上がった");
+            Assert.Greater(maxY - start, 0.08f, "1 回目のジャンプまで止まった");
+        }
     }
 }

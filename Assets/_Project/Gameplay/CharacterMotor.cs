@@ -31,6 +31,15 @@ namespace DeskStage.Gameplay
         /// </summary>
         public Vector3 ExternalVelocity { get; set; }
 
+        /// <summary>
+        /// 跳んでよいかを、外（App のしばりの係）に聞く口。引数は空中（2 段ジャンプ）か。未設定なら、いつでも跳べる。
+        /// キャラは しばりの決まりを持たない（Docs/specs/course-rules）。
+        /// </summary>
+        public Func<bool, bool> JumpAllowed { get; set; }
+
+        /// <summary>跳んだ（引数は空中か）。しばりの係が、ジャンプを数える。</summary>
+        public event Action<bool> Jumped;
+
         /// <summary>このフレームのスティックの値（Step 15 のはさまりの判定で使う）</summary>
         public Vector2 Stick { get; private set; }
 
@@ -141,16 +150,21 @@ namespace DeskStage.Gameplay
                 jumpTimer.RecordJumpPressed(now);
             }
 
-            // 5：ジャンプ
+            // 5：ジャンプ。しばりで止められているときは、押した入力を使い切って、跳ばない（あとで勝手に跳ばないように）
             if (jumpTimer.TryConsume(now, settings.jumpBufferTime, settings.coyoteTime))
             {
-                verticalSpeed = settings.JumpVelocity;
+                if (JumpAllowed == null || JumpAllowed(false))
+                {
+                    verticalSpeed = settings.JumpVelocity;
+                    Jumped?.Invoke(false);
+                }
             }
-            else if (jumpPressed && !grounded && airJumpsUsed < settings.maxAirJumps)
+            else if (jumpPressed && !grounded && airJumpsUsed < settings.maxAirJumps && (JumpAllowed == null || JumpAllowed(true)))
             {
                 // 空中でもう一度押したら、その場から、もう一度同じ高さまで跳ぶ（2 段ジャンプ）
                 verticalSpeed = settings.JumpVelocity;
                 airJumpsUsed++;
+                Jumped?.Invoke(true);
             }
 
             // 6：重力

@@ -4,6 +4,8 @@
     "references": [
         "DeskStage.App",
         "DeskStage.Shared",
+        "DeskStage.Gameplay",
+        "DeskStage.Stage",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

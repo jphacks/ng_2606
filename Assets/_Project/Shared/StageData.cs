@@ -43,6 +43,34 @@ namespace DeskStage.Shared
 
         /// <summary>机の天面からどれだけ下で落下とするか（m）。</summary>
         public float fallDepth = 0.10f;
+
+        /// <summary>しばり（コースを作る人が付ける、遊び方の条件）。古い保存データには無いので、読み込むと しばり無し になる。</summary>
+        public CourseRules rules = new CourseRules();
+    }
+
+    /// <summary>しばり（Docs/specs/course-rules）。最初の値は、どれも しばり無し。</summary>
+    [Serializable]
+    public class CourseRules
+    {
+        /// <summary>ジャンプの回数の上限。-1 はむせいげん、0 はきんし、1 以上はその回数まで（2 段ジャンプも 1 回と数える）。</summary>
+        public int maxJumps = -1;
+
+        /// <summary>true なら、2 段ジャンプ（空中でのジャンプ）を使えない。</summary>
+        public bool noDoubleJump;
+
+        /// <summary>true なら、ダメージを 1 回受けたら、ハートが残っていてもゲームオーバー。</summary>
+        public bool oneHit;
+
+        /// <summary>制限時間（秒）。0 はなし。</summary>
+        public float timeLimitSeconds;
+
+        public CourseRules Clone() => new CourseRules
+        {
+            maxJumps = maxJumps,
+            noDoubleJump = noDoubleJump,
+            oneHit = oneHit,
+            timeLimitSeconds = timeLimitSeconds,
+        };
     }
 
     /// <summary>机の天面の長方形の大きさ（m）。</summary>

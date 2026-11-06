@@ -46,6 +46,18 @@ namespace DeskStage.App
         /// <summary>いま遊んでいるのが、保存したステージ（いちらんから選んだ物）か。</summary>
         public bool PlayingSaved { get; private set; }
 
+        /// <summary>いま遊んでいるステージの出どころ（自分・公式・みんな）。いちらんへ戻る先が変わる。</summary>
+        public StageSource Source { get; private set; } = StageSource.Own;
+
+        /// <summary>いま取り組んでいるお題（Docs/specs/home-modes の REQ-3〜8）。「ステージを つくる」のときは null。</summary>
+        public Mission CurrentMission { get; private set; }
+
+        /// <summary>お題を決める（null で、お題なし）。「おだいで つくる」の一覧と、「ステージを つくる」が呼ぶ。</summary>
+        public void SetMission(Mission mission) => CurrentMission = mission;
+
+        /// <summary>いまのお題を、たしかめの画面の箱と、置いたスタート・ゴールが、全部満たしているか（お題が無ければ true）。</summary>
+        public bool MissionReady => MissionRules.AllMet(CurrentMission, ScanContext.WorkingBoxes, StageContext.CurrentStage);
+
         public void Init(AppContext ctx)
         {
             context = ctx;
@@ -57,6 +69,7 @@ namespace DeskStage.App
             GameEvents.Goal += OnGoal;
             GameEvents.CoursePlaced += OnCoursePlaced;
             context.Gimmicks.GameOver += OnGameOver;
+            context.Rules.GameOver += ShowGameOver;
         }
 
         void OnDestroy()
@@ -70,6 +83,7 @@ namespace DeskStage.App
             GameEvents.Goal -= OnGoal;
             GameEvents.CoursePlaced -= OnCoursePlaced;
             if (context.Gimmicks != null) context.Gimmicks.GameOver -= OnGameOver;
+            if (context.Rules != null) context.Rules.GameOver -= ShowGameOver;
         }
 
         PhotoCapture Photo
@@ -106,11 +120,38 @@ namespace DeskStage.App
                 return;
             }
             pendingPlayId = id;
+            Source = StageSource.Own;
             stageBuilt = false;
             context.Gimmicks.UseWorkingBoxes = false; // 保存したステージは、保存されたしかけを使う
             loadDeadline = Time.realtimeSinceStartup + LoadWaitSeconds;
             context.Overlays.Busy(AppText.HomeLoading);
             UiRequests.RequestSelectStage(id);
+        }
+
+        /// <summary>
+        /// 公式・みんなのステージを、読み込んだデータのまま組み立てて、あそぶ（保存はしない）。
+        /// 組み立ては、保存したステージを開くときと同じ道（StageLoaded → StageBuilder → StageBuilt）。
+        /// </summary>
+        public void PlayStageData(StageData stage, StageSource source)
+        {
+            if (stage == null || context.Overlays.IsBusy)
+            {
+                return;
+            }
+            var builder = FindFirstObjectByType<DeskStage.Stage.StageBuilder>();
+            if (builder == null)
+            {
+                context.Overlays.Toast(AppText.PlayLoadFailed, AppOverlays.ToastKind.Bad);
+                return;
+            }
+            pendingPlayId = stage.id;
+            Source = source;
+            stageBuilt = false;
+            context.Gimmicks.UseWorkingBoxes = false; // 読み込んだステージの、しかけを使う
+            loadDeadline = Time.realtimeSinceStartup + LoadWaitSeconds;
+            context.Overlays.Busy(AppText.HomeLoading);
+            StageContext.RaiseStageLoaded(stage);
+            builder.Build(stage);
         }
 
         public void DeleteStage(string id)
@@ -130,6 +171,7 @@ namespace DeskStage.App
             waitingBuilt = false;
             startPlacedByUser = false;
             HasNewStage = false;
+            Source = CurrentMission != null ? StageSource.Mission : StageSource.Own;
             NewStageSaved = false;
             PlayingSaved = false;
             if (!scanStartedOnce)
@@ -163,7 +205,7 @@ namespace DeskStage.App
         public void LeaveToHome()
         {
             waitingBuilt = false;
-            context.Router.Show(AppScreenId.Home);
+            context.Router.Show(CurrentMission != null ? AppScreenId.Mission : AppScreenId.Home);
         }
 
         // ---- たしかめ ----
@@ -209,6 +251,10 @@ namespace DeskStage.App
         public void PlayFromCheck()
         {
             var reason = FlowRules.CannotPlayReason(StartPlaced, GoalPlaced, BoxCount, stageBuilt);
+            if (reason == null && !MissionReady)
+            {
+                reason = AppText.MissionNeed; // お題を全部満たすまで、遊べない
+            }
             if (reason != null)
             {
                 UiSound.Play(UiSound.Cue.Error);
@@ -226,7 +272,8 @@ namespace DeskStage.App
         public void RetryPlay() => UiRequests.RequestRetry();
 
         /// <summary>あそんだあと、いちらんへ。</summary>
-        public void BackToList() => context.Router.Show(AppScreenId.Home);
+        public void BackToList() => context.Router.Show(Source == StageSource.Mission ? AppScreenId.Mission
+            : Source == StageSource.Community ? AppScreenId.Community : AppScreenId.Home);
 
         /// <summary>クリアのあとの「もういちど」。ゲームを片付けず、同じステージでやり直す。</summary>
         public void PlayAgain()
@@ -347,12 +394,21 @@ namespace DeskStage.App
         {
             if (context.Router.Current == AppScreenId.Play)
             {
-                context.Router.Show(AppScreenId.Clear, new ClearInfo { Seconds = seconds, IsBest = isBest }, false);
+                // お題を満たしたステージでクリアしたら、スタンプ（遊べるのは満たしたときだけだが、念のため確かめる）
+                var mission = Source == StageSource.Mission && !PlayingSaved && MissionReady ? CurrentMission : null;
+                if (mission != null)
+                {
+                    MissionStamps.Mark(mission.Id);
+                }
+                context.Router.Show(AppScreenId.Clear, new ClearInfo { Seconds = seconds, IsBest = isBest, MissionDone = mission != null }, false);
             }
         }
 
         // ハートが 0 になった：ゲームを止めて、ゲームオーバーの画面へ
-        void OnGameOver()
+        void OnGameOver() => ShowGameOver(AppText.GameOverHint);
+
+        // ゲームを止めて、ゲームオーバーの画面へ（理由の文を渡す。しばりの時間切れ・いっぱつ アウトも、ここに来る）
+        void ShowGameOver(string reason)
         {
             if (context.Router.Current != AppScreenId.Play)
             {
@@ -360,7 +416,7 @@ namespace DeskStage.App
             }
             UiRequests.RequestSetPaused(true);
             UiSound.Play(UiSound.Cue.Error);
-            context.Router.Show(AppScreenId.GameOver, null, false);
+            context.Router.Show(AppScreenId.GameOver, reason, false);
         }
 
         void OnThermal(ThermalState state)
@@ -401,5 +457,7 @@ namespace DeskStage.App
     {
         public float Seconds;
         public bool IsBest;
+        /// <summary>お題を達成した（スタンプが付いた）。</summary>
+        public bool MissionDone;
     }
 }
