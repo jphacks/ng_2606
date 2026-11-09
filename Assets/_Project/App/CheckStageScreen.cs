@@ -15,7 +15,7 @@ namespace DeskStage.App
     ///  ・コース：「スタートを おく」「ゴールを おく」を押して、机の上をタップ（C の CoursePlacer に依頼）
     ///  ・ほぞん：保存して、いちらんに出す
     ///  ・あそぶ：スタートとゴールが無いときは、理由を出して進まない
-    ///  ・のぼれない箱の上の札は、D の StepMarksView（「とぶ」「ばつ」の印は出さない）
+    ///  ・箱の上の段の印（D の StepMarksView）は出さない。「とぶ」は箱を隠し、「のぼれない」の判定は外れることが多いため（2026-11-09）
     /// </summary>
     public class CheckStageScreen : AppScreen
     {
@@ -66,14 +66,6 @@ namespace DeskStage.App
             // 3D が見えるよう、背景は無い。指を受ける板（AssistController）を、いちばん奥に置く
             var area = UiKit.Fill(UiKit.NewRect("AssistArea", Rect));
             area.gameObject.SetActive(false); // Set するまで、Awake を走らせない
-
-            var markHolder = UiKit.Fill(UiKit.NewRect("Marks", Rect));
-            markHolder.gameObject.SetActive(false);
-            var marks = markHolder.gameObject.AddComponent<StepMarksView>();
-            marks.Set(Context.Wording, Theme.Font, UiKit.CircleSprite);
-            marks.ShowJump = false; // 「とぶ」は箱や他のボタンを隠すので出さない
-            marks.SetWallNotice(AppText.CheckWallTitle, AppText.CheckWallDetail); // のぼれない箱は「ばつ」でなく、大きな札で知らせる
-            markHolder.gameObject.SetActive(true);
 
             // 水の箱の上に出る「ながれの むき」のボタン（ふだんの状態で。押すたびに 90 度まわる）。帯より奥に置く
             flowLayer = UiKit.Fill(UiKit.NewRect("FlowButtons", Rect));
