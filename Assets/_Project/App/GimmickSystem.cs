@@ -973,7 +973,7 @@ namespace DeskStage.App
 
         // 進む先へ動けるか。箱や壁を通り抜けないよう、進む先に敵の体の大きさの球を置いてみて、
         // 登れる段差（0.9cm）より上で箱に重なるなら進まない。ほかの敵とも重ならない（すでに重なっているときは、離れる向きなら進める）。
-        // そのうえで足元を光線で調べ、机の外には出ず、下へは降りられる。landed は、動いたあとの足元
+        // そのうえで足元を光線で調べ、紫の箱の上面から出ない（2026-11-09：紫の箱から落ちて、下でぐるぐる回っていたため）。landed は、動いたあとの足元
         bool CanMoveEnemyTo(Enemy e, Vector3 next, out Vector3 landed)
         {
             landed = next;
@@ -986,7 +986,7 @@ namespace DeskStage.App
             }
             // 光線は、登れる段差のすぐ上から落とす（それより高い箱は、上の球で止めてあるので、箱の中から落とすことはない）
             if (!Physics.Raycast(next + Vector3.up * (step + 0.002f), Vector3.down, out var hit, 0.5f, Layers.TerrainMask, QueryTriggerInteraction.Ignore)
-                || hit.normal.y < 0.9f || hit.point.y > e.Position.y + step)
+                || hit.normal.y < 0.9f || hit.point.y > e.Position.y + step || !IsEnemyBox(hit.collider.transform))
             {
                 return false;
             }
@@ -1000,6 +1000,16 @@ namespace DeskStage.App
                 if (after <= before) return false;
             }
             return true;
+        }
+
+        // 紫の箱（敵の出る箱）か
+        bool IsEnemyBox(Transform t)
+        {
+            foreach (var v in visuals)
+            {
+                if (v.Kind == BoxData.GimmickEnemy && v.Box == t) return true;
+            }
+            return false;
         }
 
         // ほかの敵と重なるか（self は除く。null なら全部の敵と比べる）
