@@ -150,7 +150,23 @@ namespace DeskStage.App.EditorTools
             yield return new Scenario { Name = "11-generating", Screen = AppScreenId.Generating, Setup = c => SetSeconds(c, 8) };
             yield return new Scenario { Name = "11b-generating-long", Screen = AppScreenId.Generating, Setup = c => SetSeconds(c, 128) };
             yield return new Scenario { Name = "12-check", Screen = AppScreenId.Check, Setup = c => FakeBackground(c) };
+            yield return new Scenario { Name = "12c-check-course", Screen = AppScreenId.Check, Setup = c => OpenCourse(c, false) };
+            yield return new Scenario { Name = "12d-check-rules", Screen = AppScreenId.Check, Setup = c => OpenCourse(c, true) };
             yield return new Scenario { Name = "13-play", Screen = AppScreenId.Play, Setup = c => { FakeBackground(c); c.Gimmicks.Health.Reset(); } };
+            yield return new Scenario
+            {
+                // しばり：ジャンプ 5 かい まで（2 回使った）・制限時間 60 秒
+                Name = "13c-play-jumps",
+                Screen = AppScreenId.Play,
+                Setup = c =>
+                {
+                    FakeBackground(c);
+                    c.Gimmicks.Health.Reset();
+                    c.Rules.State.Reset(new CourseRules { maxJumps = 5, oneHit = true });
+                    c.Rules.State.OnJumped();
+                    c.Rules.State.OnJumped();
+                },
+            };
             yield return new Scenario
             {
                 Name = "13b-play-hit",
@@ -238,6 +254,21 @@ namespace DeskStage.App.EditorTools
             {
                 raw.color = new Color(0.85f, 0.93f, 1f);
             }
+        }
+
+        // たしかめの画面で「コース」を開く（rules なら、しばりの板も開く）。Setup は 2 回呼ばれるので、画面を出したあとの 2 回目だけ動かす
+        static void OpenCourse(AppContext c, bool rules)
+        {
+            FakeBackground(c);
+            if (StageContext.CurrentStage == null) StageContext.RaiseStageLoaded(new StageData());
+            var check = c.Router.Get(AppScreenId.Check);
+            if (!check.gameObject.activeInHierarchy) return;
+            var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            if (check.GetType().GetField("mode", flags).GetValue(check).ToString() != "Course")
+            {
+                Invoke(check, "ToggleCourse");
+            }
+            if (rules) Invoke(check, "OpenRules");
         }
 
         static StageSummary[] SampleStages() => new[]

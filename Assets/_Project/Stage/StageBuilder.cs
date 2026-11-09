@@ -202,6 +202,8 @@ namespace DeskStage.Stage
             var renderer = go.AddComponent<MeshRenderer>();
             var collider = go.AddComponent<MeshCollider>();
             collider.sharedMesh = mesh;
+            // くさび形は凸なので、凸の当たり判定にする。凸でないままだと、キャラが横からめり込んだときに、強く押し出されて吹っ飛ぶ（2026-11-07）
+            collider.convex = true;
             var useMaterial = material != null ? material : FallbackMaterial(fallbackColor);
             if (useMaterial != null)
             {

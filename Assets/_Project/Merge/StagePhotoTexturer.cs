@@ -81,12 +81,14 @@ namespace DeskStage.Merge
         void OnEnable()
         {
             StageContext.StageBuilt += Apply;
+            StageContext.StageLoaded += OnStageLoaded;
             UiRequests.Rescan += OnRescan;
         }
 
         void OnDisable()
         {
             StageContext.StageBuilt -= Apply;
+            StageContext.StageLoaded -= OnStageLoaded;
             UiRequests.Rescan -= OnRescan;
             if (capture != null)
             {
@@ -116,8 +118,19 @@ namespace DeskStage.Merge
             }
         }
 
+        // 保存したステージ（や、みんなのステージ）を読み込んだ：そのステージに保存した、箱の上面の写真を貼る（Docs/specs/saved-photos）
+        StageData loadedStage;
+        bool useSaved;
+
+        void OnStageLoaded(StageData stage)
+        {
+            loadedStage = stage;
+            useSaved = true;
+        }
+
         void OnPhotos(byte[] top, byte[] side)
         {
+            useSaved = false; // 撮り直した：撮った写真から貼る
             StagePhotoRegions.TopJpeg = top;
             var tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
             if (tex.LoadImage(top))
@@ -181,8 +194,12 @@ namespace DeskStage.Merge
 
             var changed = false;
 
-            // 箱：撮影の 1 枚目の写真があるときだけ（保存したステージを読み込んだときは、写真が無い）
-            if (photoPixels != null)
+            // 箱：保存したステージなら、保存した上面の写真。撮ったばかりなら、撮影の 1 枚目の写真から切り出す
+            if (useSaved)
+            {
+                ApplySaved(root);
+            }
+            else if (photoPixels != null)
             {
                 foreach (var pair in StagePhotoRegions.TopFaces)
                 {
@@ -241,6 +258,7 @@ namespace DeskStage.Merge
             var scale = box.localScale;
             var ordered = PhotoTextureMath.OrderForFace(quad, scale.x, scale.z, box.localEulerAngles.y);
             var pixels = PhotoTextureMath.CropRange(photoPixels, photoWidth, photoHeight, ordered, Side, Side, Inner0, Inner1, Inner0, Inner1);
+            pixels = VisiblePixels(id, pixels, PhotoTextureMath.CropPoints(ordered, Side, Side, Inner0, Inner1, Inner0, Inner1));
             var gimmick = GimmickDetector.Detect(pixels);
             var changed = false;
             foreach (var data in ScanContext.WorkingBoxes)
@@ -270,6 +288,53 @@ namespace DeskStage.Merge
             return changed;
         }
 
+        /// <summary>見えている所が、これより少ないときは、隠れた所も数える（隠れすぎて、見える所だけでは決められない）。</summary>
+        const float MinVisibleRatio = 0.3f;
+
+        // 上に乗った（より高い）箱の上面で隠れている所の画素を、しかけの判定から外す（2026-11-07。紫の箱にピンクの箱が乗ると、
+        // 紫の上面の 85% に届かなかったため）。見えている所が少なすぎるときは、外さない
+        static Color32[] VisiblePixels(string id, Color32[] pixels, Vector2[] points)
+        {
+            var myHeight = HeightOf(id);
+            var covers = new List<Vector2[]>();
+            foreach (var pair in StagePhotoRegions.TopFaces)
+            {
+                if (pair.Key != id && HeightOf(pair.Key) > myHeight + 0.005f)
+                {
+                    covers.Add(pair.Value);
+                }
+            }
+            if (covers.Count == 0)
+            {
+                return pixels;
+            }
+            var visible = new List<Color32>(pixels.Length);
+            for (var i = 0; i < pixels.Length; i++)
+            {
+                var hidden = false;
+                foreach (var q in covers)
+                {
+                    if (PhotoTextureMath.InsideQuad(q, points[i]))
+                    {
+                        hidden = true;
+                        break;
+                    }
+                }
+                if (!hidden) visible.Add(pixels[i]);
+            }
+            return visible.Count >= pixels.Length * MinVisibleRatio ? visible.ToArray() : pixels;
+        }
+
+        // 箱の高さ（作業中の箱。無ければ 0）
+        static float HeightOf(string id)
+        {
+            foreach (var b in ScanContext.WorkingBoxes)
+            {
+                if (b.id == id && b.size != null && b.size.Length > 1) return b.size[1];
+            }
+            return 0f;
+        }
+
         void AddPhoto(Transform target, string boxId, Vector2[] quad, bool paintSides, Color32[] source)
         {
             var scale = target.localScale;
@@ -286,7 +351,50 @@ namespace DeskStage.Merge
             texture.SetPixels32(pixels);
             texture.Apply();
             created.Add(texture);
+            AddOverlay(target, boxId, texture, paintSides, PhotoTextureMath.Average(pixels));
+        }
 
+        // 保存した、箱の上面の写真を読んで貼る。名前が決まった形でない・ファイルが無い・読めない箱は、写真なし
+        void ApplySaved(Transform root)
+        {
+            if (loadedStage == null || loadedStage.boxes == null)
+            {
+                return;
+            }
+            foreach (var b in loadedStage.boxes)
+            {
+                var path = StageStorage.SavedFacePath(loadedStage.id, b.texture);
+                var target = path != null ? root.Find(b.id) : null;
+                if (target == null || !System.IO.File.Exists(path))
+                {
+                    continue;
+                }
+                var texture = new Texture2D(2, 2, TextureFormat.RGB24, true) { wrapMode = TextureWrapMode.Clamp };
+                byte[] bytes;
+                try
+                {
+                    bytes = System.IO.File.ReadAllBytes(path);
+                }
+                catch (System.IO.IOException)
+                {
+                    Destroy(texture);
+                    continue;
+                }
+                if (!texture.LoadImage(bytes))
+                {
+                    Destroy(texture);
+                    continue;
+                }
+                texture.wrapMode = TextureWrapMode.Clamp;
+                created.Add(texture);
+                AddOverlay(target, b.id, texture, true, PhotoTextureMath.Average(texture.GetPixels32()));
+            }
+        }
+
+        // 箱の上面に写真を貼り、横を写真の平均の色（少し暗く）で塗る
+        void AddOverlay(Transform target, string boxId, Texture2D texture, bool paintSides, Color32 averagePixel)
+        {
+            var scale = target.localScale;
             var overlay = new Overlay { BoxId = boxId };
             var lift = Lift / Mathf.Max(scale.y, 1e-3f);
             var topY = 0.5f;
@@ -300,7 +408,7 @@ namespace DeskStage.Merge
 
             if (paintSides)
             {
-                var average = (Color)PhotoTextureMath.Average(pixels) * SideDarken;
+                var average = (Color)averagePixel * SideDarken;
                 average.a = 1f;
                 var sides = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 sides.name = SidesName;

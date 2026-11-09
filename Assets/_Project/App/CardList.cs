@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace DeskStage.App
 {
-    /// <summary>横にスクロールするカードの列（ホームと同じ作り）。公式・みんなの ステージの一覧で使う。</summary>
+    /// <summary>横にスクロールするカードの列（ホームと同じ作り）。おだいの一覧で使う。</summary>
     public static class CardList
     {
         /// <summary>area の中に、横スクロールの列を作り、カードを入れる先（content）を返す。</summary>
@@ -33,13 +33,6 @@ namespace DeskStage.App
             content.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             scroll.content = content;
             return content;
-        }
-
-        /// <summary>RecordStore の自己ベスト（無ければ null）。</summary>
-        public static float? Best(string stageId)
-        {
-            var store = Object.FindFirstObjectByType<DeskStage.Gameplay.RecordStore>();
-            return store != null ? store.GetBest(stageId) : null;
         }
     }
 }

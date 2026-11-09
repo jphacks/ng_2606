@@ -251,5 +251,27 @@ namespace DeskStage.Stage.Tests
             Assert.AreEqual(150, avg.g);
             Assert.AreEqual(150, avg.b);
         }
+
+        [Test]
+        public void 四角形の中かどうか()
+        {
+            var quad = new[] { new Vector2(0.2f, 0.2f), new Vector2(0.6f, 0.2f), new Vector2(0.6f, 0.5f), new Vector2(0.2f, 0.5f) };
+            Assert.IsTrue(PhotoTextureMath.InsideQuad(quad, new Vector2(0.4f, 0.3f)));
+            Assert.IsTrue(PhotoTextureMath.InsideQuad(quad, new Vector2(0.2f, 0.3f)), "ふちも中");
+            Assert.IsFalse(PhotoTextureMath.InsideQuad(quad, new Vector2(0.7f, 0.3f)));
+            Assert.IsFalse(PhotoTextureMath.InsideQuad(null, new Vector2(0.4f, 0.3f)));
+        }
+
+        [Test]
+        public void 読む点の位置は_四隅の中に並ぶ()
+        {
+            var corners = new[] { new Vector2(0.1f, 0.9f), new Vector2(0.5f, 0.9f), new Vector2(0.5f, 0.5f), new Vector2(0.1f, 0.5f) };
+            var points = PhotoTextureMath.CropPoints(corners, 4, 4, 0f, 1f, 0f, 1f);
+            Assert.AreEqual(16, points.Length);
+            foreach (var p in points)
+            {
+                Assert.IsTrue(PhotoTextureMath.InsideQuad(corners, p), $"{p} が四隅の外");
+            }
+        }
     }
 }

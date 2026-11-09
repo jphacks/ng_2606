@@ -183,9 +183,11 @@ namespace DeskStage.App
                     var eyeL = (p - new Vector2(-0.15f, 0.08f)).magnitude;
                     var eyeR = (p - new Vector2(0.15f, 0.08f)).magnitude;
                     Color color;
-                    if (eyeL < 0.05f || eyeR < 0.05f) color = new Color(0.1f, 0.05f, 0.15f);
+                    // 体は赤（2026-11-07：紫だと見えにくかったので）。目は白と黒、ふちは濃い赤で、机の上で目立たせる
+                    if (eyeL < 0.05f || eyeR < 0.05f) color = new Color(0.1f, 0.05f, 0.05f);
                     else if (eyeL < 0.11f || eyeR < 0.11f) color = Color.white;
-                    else color = Color.Lerp(new Color(0.55f, 0.25f, 0.85f), new Color(0.35f, 0.12f, 0.6f), Mathf.Clamp01(p.magnitude * 2f));
+                    else if (p.magnitude > 0.42f) color = new Color(0.45f, 0.02f, 0.05f);
+                    else color = Color.Lerp(new Color(1f, 0.25f, 0.2f), new Color(0.8f, 0.05f, 0.08f), Mathf.Clamp01(p.magnitude * 2f));
                     pixels[y * Size + x] = C(color.r, color.g, color.b, body ? 1f : 0f);
                 }
             }

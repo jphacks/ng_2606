@@ -67,6 +67,7 @@ namespace DeskStage.Gameplay
         {
             UiRequests.OrbitView += OnOrbitView;
             UiRequests.ZoomView += OnZoomView;
+            GameEvents.GameStarted += OnGameStarted;
             WatchTarget();
         }
 
@@ -74,6 +75,7 @@ namespace DeskStage.Gameplay
         {
             UiRequests.OrbitView -= OnOrbitView;
             UiRequests.ZoomView -= OnZoomView;
+            GameEvents.GameStarted -= OnGameStarted;
             UnwatchTarget();
         }
 
@@ -133,6 +135,15 @@ namespace DeskStage.Gameplay
         void Start()
         {
             BeginIntro();
+        }
+
+        // 遊び始め・「もういちど」のたびに、机全体から、はじめの距離（キャラの近く）へ寄り直す（2026-11-07。もういちどでは、前の距離のままだった）
+        void OnGameStarted()
+        {
+            if (target != null)
+            {
+                BeginIntro();
+            }
         }
 
         /// <summary>

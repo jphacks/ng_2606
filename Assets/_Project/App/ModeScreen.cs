@@ -6,7 +6,7 @@ namespace DeskStage.App
 {
     /// <summary>
     /// モードを選ぶ（Docs/specs/home-modes の REQ-1）。タイトルの次に出る。
-    /// 「ステージを つくる」（いままでのホーム）、「おだいで つくる」（お題）、「みんなの ステージ」（投稿）。
+    /// 「ステージを つくる」（いままでのホーム）、「おだいで つくる」（お題）。（「みんなの ステージ」は 2026-11-07 に消した）
     /// </summary>
     public class ModeScreen : AppScreen
     {
@@ -21,13 +21,12 @@ namespace DeskStage.App
             var title = UiKit.Label(safe, AppText.ModeTitle, Theme.H1, Theme.Ink, TextAlignmentOptions.Center, true, "Title");
             UiKit.Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -50f), new Vector2(1400f, 120f));
 
-            Card(safe, 0.2f, Theme.Orange, AppText.ModeCreate, AppText.ModeCreateSub, () =>
+            Card(safe, 0.33f, Theme.Orange, AppText.ModeCreate, AppText.ModeCreateSub, () =>
             {
                 Context.Flow.SetMission(null);
                 Context.Router.Show(AppScreenId.Home);
             });
-            Card(safe, 0.5f, Theme.Blue, AppText.ModeMission, AppText.ModeMissionSub, () => Context.Router.Show(AppScreenId.Mission));
-            Card(safe, 0.8f, Theme.Green, AppText.ModeCommunity, AppText.ModeCommunitySub, () => Context.Router.Show(AppScreenId.Community));
+            Card(safe, 0.67f, Theme.Blue, AppText.ModeMission, AppText.ModeMissionSub, () => Context.Router.Show(AppScreenId.Mission));
         }
 
         void Card(RectTransform parent, float x, Color color, string name, string sub, UnityEngine.Events.UnityAction onClick)

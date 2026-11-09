@@ -173,6 +173,42 @@ namespace DeskStage.Stage
             return result;
         }
 
+        /// <summary>CropRange が読む点の、写真の中の位置（同じ並び）。上に乗った箱で隠れた所を、しかけの判定から外すのに使う。</summary>
+        public static Vector2[] CropPoints(Vector2[] corners, int outWidth, int outHeight, float uMin, float uMax, float vMin, float vMax)
+        {
+            var result = new Vector2[outWidth * outHeight];
+            for (var iy = 0; iy < outHeight; iy++)
+            {
+                var v = Mathf.Lerp(vMin, vMax, (iy + 0.5f) / outHeight);
+                for (var ix = 0; ix < outWidth; ix++)
+                {
+                    var u = Mathf.Lerp(uMin, uMax, (ix + 0.5f) / outWidth);
+                    var near = Vector2.LerpUnclamped(corners[NearLeft], corners[NearRight], u);
+                    var far = Vector2.LerpUnclamped(corners[FarLeft], corners[FarRight], u);
+                    result[iy * outWidth + ix] = Vector2.LerpUnclamped(near, far, v);
+                }
+            }
+            return result;
+        }
+
+        /// <summary>点が、四角形（ぐるっと一周する順の 4 点。凸）の中（ふちを含む）にあるか。</summary>
+        public static bool InsideQuad(Vector2[] quad, Vector2 p)
+        {
+            if (quad == null || quad.Length != 4) return false;
+            var sign = 0;
+            for (var i = 0; i < 4; i++)
+            {
+                var a = quad[i];
+                var b = quad[(i + 1) % 4];
+                var cross = (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+                if (Mathf.Abs(cross) < 1e-9f) continue;
+                var s = cross > 0f ? 1 : -1;
+                if (sign == 0) sign = s;
+                else if (sign != s) return false;
+            }
+            return true;
+        }
+
         /// <summary>写真の (x, y)（左上が 0、下向きが +y の割合）を、双一次補間で読む。</summary>
         static Color32 Sample(Color32[] src, int width, int height, Vector2 p)
         {

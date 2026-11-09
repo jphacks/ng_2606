@@ -19,7 +19,6 @@ namespace DeskStage.App
         Backdrop,
         Mode,
         Mission,
-        Community,
     }
 
     /// <summary>いま遊んでいるステージの出どころ（Docs/specs/home-modes）。いちらんへ戻る先と、「なおす」「ほぞん」を出すかが変わる。</summary>
@@ -27,7 +26,6 @@ namespace DeskStage.App
     {
         Own,
         Mission,
-        Community,
     }
 
     /// <summary>撮影の画面が、いま何を待っているか。</summary>

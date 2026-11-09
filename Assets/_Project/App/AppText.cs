@@ -92,11 +92,12 @@ namespace DeskStage.App
         public const string CheckAddBoxHint = "はこを おきたい ところを タップしてね";
         public const string CheckUndo = "もどす";
         public const string CheckCourse = "コース";
-        public const string CheckCourseClose = "コースを とじる";
+        public const string CheckCourseClose = "とじる";
         public const string CheckSetStart = "スタートを おく";
         public const string CheckSetGoal = "ゴールを おく";
-        public const string CheckStartDone = "スタート おいた";
-        public const string CheckGoalDone = "ゴール おいた";
+        // 置いたあとも「おく」のまま（置き直せることが分かるように。置いたことは、ボタンの緑の色で見せる。2026-11-07）
+        public const string CheckStartDone = "スタートを おく";
+        public const string CheckGoalDone = "ゴールを おく";
         public const string CheckPlaceStartHint = "つくえの うえを タップして、スタートを おいてね";
         public const string CheckPlaceGoalHint = "つくえの うえを タップして、ゴールを おいてね";
         public const string CheckPlaced = "{0}を おいたよ";
@@ -113,6 +114,8 @@ namespace DeskStage.App
         public const string CheckLeaveConfirm = "ほぞん していないよ。\nもどると なくなるよ。もどる？";
         public const string CheckMarkJump = "とぶ";
         public const string CheckMarkWall = "ばつ";
+        public const string CheckWallTitle = "！ とどかないよ";
+        public const string CheckWallDetail = "ひくい ものを となりに おいて、もういちど とってね";
         public const string CheckWallHint = "赤い ばつは のぼれないよ。ひくい ものを となりに おくと のぼれるよ";
         public const string Start_ = "スタート";
         public const string Goal_ = "ゴール";
@@ -208,6 +211,9 @@ namespace DeskStage.App
         public const string GimmickEnemy = "てき";
         public const string GimmickWarp = "ワープ";
         public const string GimmickFound = "しかけを みつけたよ：{0}";
+        public const string WarpNeedTwo = "ワープは ピンクが 2こ いるよ";
+        public const string WarpLink = "{0} ⇔ {1}";
+        public const string WarpAlone = "{0} ⇔ ？";
         public const string GimmickHit = "あちち！ ハートが へったよ";
         public const string GimmickEnemyHit = "いたっ！ ハートが へったよ";
         public const string GimmickHealed = "かいふく！";
@@ -216,7 +222,7 @@ namespace DeskStage.App
         public const string ReachGimmickBadge = "しかけ";
         public const string GameOverTitle = "ゲームオーバー";
         public const string GameOverHint = "ハートが なくなっちゃった";
-        // モードを選ぶ・公式・みんなの ステージ（Docs/specs/home-modes）
+        // モードを選ぶ・おだい（Docs/specs/home-modes）
         public const string ModeTitle = "どれで あそぶ？";
         public const string ModeCreate = "ステージを つくる";
         public const string ModeCreateSub = "つくえの うえの ものを とって、じぶんの ステージを つくる";
@@ -237,21 +243,6 @@ namespace DeskStage.App
         public const string MissionGoalHeight = "ゴールを {0}cm いじょうに";
         public const string MissionSteps = "たかさの ちがう だんを {0}だん";
         public const string MissionDistance = "スタートと ゴールを {0}cm はなす";
-        public const string ModeCommunity = "みんなの ステージ";
-        public const string ModeCommunitySub = "みんなが とうこうした ステージで あそぶ";
-        public const string CommunityBest = "ベスト {0}";
-        public const string CommunityNoBest = "まだ クリア していない";
-        public const string CommunityTitle = "みんなの ステージ";
-        public const string CommunityLoading = "よみこんでいるよ…";
-        public const string CommunityEmpty = "まだ とうこうが ないよ。「ステージを つくる」で つくって、とうこう してね";
-        public const string CommunityFailed = "サーバーに つながらないよ。Mac と おなじ Wi-Fi に つないでね";
-        public const string CommunityReload = "よみなおす";
-        public const string CommunityRules = "しばり あり";
-        public const string CommunityBoxes = "はこ {0}こ";
-        public const string HomePost = "とうこう する";
-        public const string HomePostConfirm = "この ステージを、みんなの ステージに とうこう する？\n（しゃしんは おくらないよ）";
-        public const string HomePostOk = "とうこう したよ";
-        public const string HomePostFailed = "とうこう できなかったよ。Mac と おなじ Wi-Fi に つないでね";
 
         public const string GameOverTimeUp = "じかん ぎれ！";
         public const string GameOverOneHit = "いっぱつ アウト！";

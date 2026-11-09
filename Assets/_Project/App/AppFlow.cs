@@ -128,32 +128,6 @@ namespace DeskStage.App
             UiRequests.RequestSelectStage(id);
         }
 
-        /// <summary>
-        /// 公式・みんなのステージを、読み込んだデータのまま組み立てて、あそぶ（保存はしない）。
-        /// 組み立ては、保存したステージを開くときと同じ道（StageLoaded → StageBuilder → StageBuilt）。
-        /// </summary>
-        public void PlayStageData(StageData stage, StageSource source)
-        {
-            if (stage == null || context.Overlays.IsBusy)
-            {
-                return;
-            }
-            var builder = FindFirstObjectByType<DeskStage.Stage.StageBuilder>();
-            if (builder == null)
-            {
-                context.Overlays.Toast(AppText.PlayLoadFailed, AppOverlays.ToastKind.Bad);
-                return;
-            }
-            pendingPlayId = stage.id;
-            Source = source;
-            stageBuilt = false;
-            context.Gimmicks.UseWorkingBoxes = false; // 読み込んだステージの、しかけを使う
-            loadDeadline = Time.realtimeSinceStartup + LoadWaitSeconds;
-            context.Overlays.Busy(AppText.HomeLoading);
-            StageContext.RaiseStageLoaded(stage);
-            builder.Build(stage);
-        }
-
         public void DeleteStage(string id)
         {
             if (string.IsNullOrEmpty(id)) return;
@@ -262,6 +236,13 @@ namespace DeskStage.App
                 return;
             }
             PlayingSaved = false;
+            // 一度遊んでから、たしかめの画面に戻ったとき：ゲームは「ステージを片付けた」扱い（StageReady が false）だが、
+            // ステージは残っている。組み上がった知らせをもう一度出して、キャラを出せるようにする（Docs/specs/saved-photos の REQ-1）
+            var game = FindFirstObjectByType<DeskStage.Gameplay.GameFlow>();
+            if (game != null && !game.StageReady && StageContext.StageRoot != null)
+            {
+                StageContext.RaiseStageBuilt();
+            }
             context.Router.Show(AppScreenId.Play);
         }
 
@@ -272,8 +253,7 @@ namespace DeskStage.App
         public void RetryPlay() => UiRequests.RequestRetry();
 
         /// <summary>あそんだあと、いちらんへ。</summary>
-        public void BackToList() => context.Router.Show(Source == StageSource.Mission ? AppScreenId.Mission
-            : Source == StageSource.Community ? AppScreenId.Community : AppScreenId.Home);
+        public void BackToList() => context.Router.Show(Source == StageSource.Mission ? AppScreenId.Mission : AppScreenId.Home);
 
         /// <summary>クリアのあとの「もういちど」。ゲームを片付けず、同じステージでやり直す。</summary>
         public void PlayAgain()

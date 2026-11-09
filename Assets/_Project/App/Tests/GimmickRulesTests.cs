@@ -315,5 +315,15 @@ namespace DeskStage.App.Tests
             Assert.IsFalse(GimmickRules.IsOverRamp(new Vector3(0f, 0.40f / 0.10f, 0f), 0.10f), "40cm 上は、もう坂の上ではない");
             Assert.IsFalse(GimmickRules.IsOverRamp(new Vector3(0.6f, 0.3f, 0f), 0.10f), "坂の外");
         }
+
+        [Test]
+        public void 水の坂は_立っているときは面のすぐ上だけ流し_跳んでいる間は高くても流す()
+        {
+            // 高さ 10cm の坂の真ん中（面の高さ y = 0）から 20cm 上：ほかの箱の上に立っているなら流さない。跳んでいるなら流す
+            var high = new Vector3(0f, 0.20f / 0.10f, 0f);
+            Assert.IsFalse(GimmickRules.IsOverRamp(high, 0.10f, true));
+            Assert.IsTrue(GimmickRules.IsOverRamp(high, 0.10f, false));
+            Assert.IsTrue(GimmickRules.IsOverRamp(new Vector3(0.3f, 0.3f, 0f), 0.10f, true), "面の上に立っている");
+        }
     }
 }

@@ -146,6 +146,12 @@ namespace DeskStage.Shared
         /// 古い保存データには無いので、読み込むと false（ふつうの箱）になる。
         /// </summary>
         public bool ramp;
+
+        /// <summary>
+        /// ワープ（ピンク）の箱が、つながる相手のピンクの箱の id。無ければ空（Docs/specs/warp-pairs）。
+        /// つながりは行き来できる（相手の warpTo も、この箱を指す）。古い保存データには無いので、読み込むと近い順に自動でつなぐ。
+        /// </summary>
+        public string warpTo = "";
     }
 
     /// <summary>スタート地点。</summary>

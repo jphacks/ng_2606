@@ -71,11 +71,11 @@ namespace DeskStage.Gameplay
 
         [Header("カメラ")]
 
-        [Tooltip("カメラの距離の初期値（m）")]
-        [Min(0f)] public float cameraDistance = 0.35f;
+        [Tooltip("カメラの距離の初期値（m）。2026-11-07 に 0.35 → 0.22（遊び始めの視点が遠く、キャラが小さかったため）")]
+        [Min(0f)] public float cameraDistance = 0.22f;
 
-        [Tooltip("カメラの距離の下限（m）")]
-        [Min(0f)] public float cameraDistanceMin = 0.20f;
+        [Tooltip("カメラの距離の下限（m）。初期値に合わせて 0.20 → 0.12（指で、もっと寄れるように）")]
+        [Min(0f)] public float cameraDistanceMin = 0.12f;
 
         [Tooltip("カメラの距離の上限（m）")]
         [Min(0f)] public float cameraDistanceMax = 0.80f;

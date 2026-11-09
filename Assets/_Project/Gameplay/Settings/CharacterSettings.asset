@@ -29,8 +29,8 @@ MonoBehaviour:
   turnSpeed: 720
   jumpableStepMax: 0.22
   walkableStepMax: 0.008
-  cameraDistance: 0.35
-  cameraDistanceMin: 0.2
+  cameraDistance: 0.22
+  cameraDistanceMin: 0.12
   cameraDistanceMax: 0.8
   cameraPitch: 40
   cameraPitchMin: 20

@@ -20,6 +20,8 @@ namespace DeskStage.App
         TMP_Text timer;
         TMP_Text rulesText;
         GameObject rulesBack;
+        Image jumpBack;
+        JumpRow jumpRow;
         HeartRow hearts;
         Image damageFlash;
         float flashTime = 1f;
@@ -61,6 +63,12 @@ namespace DeskStage.App
             hearts = HeartRow.Create(heartBack.rectTransform, "Hearts", 84f);
             UiKit.Place(hearts.Rect, new Vector2(0.5f, 0.5f), Vector2.zero, hearts.Rect.sizeDelta);
             hearts.Set(PlayerHealth.Max);
+
+            // ハートの下：ジャンプの残りの印（しばりで回数を決めたときだけ）
+            jumpBack = UiKit.Panel(safe, "JumpBack", Theme.WithAlpha(Theme.Navy, 0.78f), 50f);
+            UiKit.Place(jumpBack.rectTransform, new Vector2(1f, 1f), new Vector2(-Theme.Margin, -185f), new Vector2(480f, 100f));
+            jumpBack.raycastTarget = false;
+            jumpBack.gameObject.SetActive(false);
 
             // 左下：スティック（外周の中で取っ手を動かすと、仮想ゲームパッドの左スティックになる）
             var stickBase = UiKit.Disc(safe, "Stick", Theme.WithAlpha(Color.white, 0.55f), StickDiameter);
@@ -149,6 +157,7 @@ namespace DeskStage.App
         void Update()
         {
             hearts.Set(Context.Gimmicks.Health.Hearts);
+            RefreshJumpMarks();
             var rules = Context.Rules.PlayText();
             rulesBack.SetActive(rules.Length > 0);
             if (rules.Length > 0) rulesText.text = rules;
@@ -157,6 +166,26 @@ namespace DeskStage.App
                 flashTime += Time.unscaledDeltaTime / 0.5f;
                 damageFlash.color = new Color(1f, 0.15f, 0.15f, Mathf.Clamp01(1f - flashTime) * 0.45f);
             }
+        }
+
+        // しばりの「ジャンプ N かい まで」なら、ハートの下に N 個の印を出し、使った分を灰色にする（回数が変わったら作り直す）
+        void RefreshJumpMarks()
+        {
+            var max = Context.Rules.State.Rules.maxJumps;
+            var show = max > 0;
+            jumpBack.gameObject.SetActive(show);
+            if (!show) return;
+            if (jumpRow == null || jumpRow.Count != max)
+            {
+                if (jumpRow != null) UiKit.Kill(jumpRow.Rect.gameObject);
+                const float size = 68f;
+                jumpRow = JumpRow.Create(jumpBack.rectTransform, "Jumps", size, max);
+                UiKit.Place(jumpRow.Rect, new Vector2(0.5f, 0.5f), Vector2.zero, jumpRow.Rect.sizeDelta);
+                jumpRow.Rect.pivot = new Vector2(0.5f, 0.5f);
+                // 印の数に合わせて、板の幅を広げる（10 個でも収まるように）
+                jumpBack.rectTransform.sizeDelta = new Vector2(Mathf.Max(480f, jumpRow.Rect.sizeDelta.x + 60f), 100f);
+            }
+            jumpRow.Set(Context.Rules.State.JumpsLeft);
         }
 
         void OnDamaged(int remaining)

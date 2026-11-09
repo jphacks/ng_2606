@@ -76,10 +76,17 @@ namespace DeskStage.Stage
         void OnSaveStage(string displayName)
         {
             var stage = StageSavePrep.Prepare(StageContext.CurrentStage, ScanContext.WorkingBoxes, displayName, DateTimeOffset.Now);
+            var faces = MakeFaces(stage); // 箱の texture に、上面の写真のファイルの名前を入れる（保存の前）
             var ok = storage.Save(stage, out var reason);
             if (ok)
             {
                 Debug.Log($"[Stage] {stage.id}（{stage.name}）を保存しました：箱 {stage.boxes.Length} 個");
+                var written = 0;
+                foreach (var face in faces)
+                {
+                    if (storage.WriteFace(stage.id, face.Key, face.Value)) written++;
+                }
+                if (faces.Count > 0) Debug.Log($"[Stage] 箱の上面の写真を {written} 枚 保存しました");
                 SaveThumbnail(stage.id);
                 Refresh();
             }
@@ -88,6 +95,55 @@ namespace DeskStage.Stage
                 Debug.LogWarning($"[Stage] 保存できませんでした：{reason}");
             }
             StageContext.RaiseSaveCompleted(ok, ok ? "" : reason);
+        }
+
+        /// <summary>箱の上面の写真の、長い辺の大きさ（画素）。</summary>
+        const int FaceMaxSide = 256;
+        const int FaceQuality = 85;
+
+        /// <summary>
+        /// 撮った 1 枚目（真上）の写真から、箱ごとに上面を切り出して JPEG にする（Docs/specs/saved-photos）。
+        /// 切り出した箱の texture に、ファイルの名前を入れる。写真や上面の位置が無ければ、何もしない（texture は空のまま）。
+        /// </summary>
+        static System.Collections.Generic.Dictionary<string, byte[]> MakeFaces(StageData stage)
+        {
+            var faces = new System.Collections.Generic.Dictionary<string, byte[]>();
+            var jpeg = StagePhotoRegions.TopJpeg;
+            if (jpeg == null || stage.boxes == null || StagePhotoRegions.TopFaces.Count == 0)
+            {
+                return faces;
+            }
+            var photo = new Texture2D(2, 2, TextureFormat.RGB24, false);
+            try
+            {
+                if (!photo.LoadImage(jpeg))
+                {
+                    return faces;
+                }
+                var source = photo.GetPixels32();
+                foreach (var b in stage.boxes)
+                {
+                    var file = StageStorage.FaceFile(b.id);
+                    if (file.Length == 0 || !StagePhotoRegions.TopFaces.TryGetValue(b.id, out var quad))
+                    {
+                        continue;
+                    }
+                    var ordered = PhotoTextureMath.OrderForFace(quad, b.size[0], b.size[2], b.yawDegrees);
+                    var size = FitLongSide(Mathf.RoundToInt(b.size[0] * 10000f), Mathf.RoundToInt(b.size[2] * 10000f), FaceMaxSide);
+                    var pixels = PhotoTextureMath.Crop(source, photo.width, photo.height, ordered, size.x, size.y);
+                    var face = new Texture2D(size.x, size.y, TextureFormat.RGB24, false);
+                    face.SetPixels32(pixels);
+                    face.Apply();
+                    faces[file] = face.EncodeToJPG(FaceQuality);
+                    Destroy(face);
+                    b.texture = file;
+                }
+            }
+            finally
+            {
+                Destroy(photo);
+            }
+            return faces;
         }
 
         /// <summary>撮った 1 枚目（真上）の写真を小さくして、一覧に出す絵（thumbnail.jpg）として保存する。写真が無ければ何もしない。</summary>

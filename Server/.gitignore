@@ -2,5 +2,3 @@
 .env
 .venv/
 __pycache__/
-# みんなの ステージの投稿（この Mac の中だけに置く）
-shared_stages/
