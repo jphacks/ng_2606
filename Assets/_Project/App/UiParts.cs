@@ -85,6 +85,48 @@ namespace DeskStage.App
     }
 
     /// <summary>ハートの列（体力）。Set で、いくつ満ちているかを決める。ハートは、2 つの丸と、ひし形で描く。</summary>
+    /// <summary>
+    /// ジャンプの残りの印（しばりの「ジャンプ N かい まで」のとき。Docs/specs/course-rules の REQ-7）。ハートと同じく、左から使える数だけ色が付く。
+    /// 印は、オレンジの丸に白い ▲（跳ぶ）。使った分は灰色。
+    /// </summary>
+    public class JumpRow
+    {
+        static readonly Color Full = Theme.Hex("FFB000");
+        static readonly Color Empty = Theme.Hex("6B7596");
+
+        public RectTransform Rect;
+        readonly System.Collections.Generic.List<Image> marks = new System.Collections.Generic.List<Image>();
+
+        public int Count => marks.Count;
+
+        public static JumpRow Create(Transform parent, string name, float size, int count)
+        {
+            var row = new JumpRow();
+            row.Rect = UiKit.NewRect(name, parent);
+            row.Rect.sizeDelta = new Vector2(count * size * 1.15f, size);
+            for (var i = 0; i < count; i++)
+            {
+                var disc = UiKit.Disc(row.Rect, "Jump" + i, Full, size);
+                UiKit.Place(disc.rectTransform, new Vector2(0f, 0.5f), new Vector2(i * size * 1.15f, 0f), new Vector2(size, size));
+                disc.rectTransform.pivot = new Vector2(0f, 0.5f);
+                disc.raycastTarget = false;
+                var arrow = UiKit.Label(disc.rectTransform, "▲", size * 0.55f, Color.white, TextAlignmentOptions.Center, true, "A");
+                UiKit.Fill(arrow.rectTransform);
+                row.marks.Add(disc);
+            }
+            return row;
+        }
+
+        /// <summary>使える印の数を決める（左から）。</summary>
+        public void Set(int left)
+        {
+            for (var i = 0; i < marks.Count; i++)
+            {
+                marks[i].color = i < left ? Full : Empty;
+            }
+        }
+    }
+
     public class HeartRow
     {
         static readonly Color Full = Theme.Hex("EF4B6C");

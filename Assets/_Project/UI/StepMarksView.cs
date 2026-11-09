@@ -19,6 +19,11 @@ namespace DeskStage.UI
         [SerializeField] Wording wording;
         [SerializeField] TMP_FontAsset font;
         [SerializeField] Sprite circle;
+        [SerializeField] bool showJump = true;
+
+        // 札にするとき（SetWallNotice）の文字。空なら、ふだんの「ばつ」の印
+        string noticeTitle = "";
+        string noticeDetail = "";
 
         class MarkUi
         {
@@ -40,6 +45,25 @@ namespace DeskStage.UI
             font = fontAsset;
             circle = circleSprite;
         }
+
+        /// <summary>「とぶ」の印を出すか。出さないときも「ばつ」は出す。</summary>
+        public bool ShowJump
+        {
+            get => showJump;
+            set => showJump = value;
+        }
+
+        /// <summary>
+        /// 「ばつ」の印をやめ、のぼれない箱の上に、白い札で大きく知らせる（title は赤く大きく、detail はその下）。
+        /// 印を最初に作る前（OnEnable の前）に呼ぶ。
+        /// </summary>
+        public void SetWallNotice(string title, string detail)
+        {
+            noticeTitle = title ?? "";
+            noticeDetail = detail ?? "";
+        }
+
+        bool Notice => noticeTitle.Length > 0;
 
         void OnEnable()
         {
@@ -101,7 +125,7 @@ namespace DeskStage.UI
             var used = 0;
             for (int i = 0; i < marks.Length; i++)
             {
-                if (marks[i] == StepMarkLogic.Mark.Walk || cam == null)
+                if (marks[i] == StepMarkLogic.Mark.Walk || (marks[i] == StepMarkLogic.Mark.Jump && (!showJump || Notice)) || cam == null)
                 {
                     continue;
                 }
@@ -113,8 +137,13 @@ namespace DeskStage.UI
                 }
                 var ui = Get(used++);
                 RectTransformUtility.ScreenPointToLocalPointInRectangle(container, screen, null, out var local);
-                ui.Root.anchoredPosition = local + new Vector2(0f, MarkSize * 0.6f);
                 var wall = marks[i] == StepMarkLogic.Mark.Wall;
+                if (wall && Notice)
+                {
+                    ui.Root.anchoredPosition = local + new Vector2(0f, NoticeSize.y * 0.5f + 20f);
+                    continue;
+                }
+                ui.Root.anchoredPosition = local + new Vector2(0f, MarkSize * 0.6f);
                 ui.Back.color = wall ? new Color(0.92f, 0.3f, 0.28f) : new Color(0.3f, 0.75f, 0.35f);
                 ui.Back.sprite = wall ? null : circle;
                 ui.Label.text = wording != null ? wording.Get(wall ? "check.mark.wall" : "check.mark.jump") : "";
@@ -137,8 +166,14 @@ namespace DeskStage.UI
             return ui;
         }
 
+        static readonly Vector2 NoticeSize = new Vector2(720f, 190f);
+
         MarkUi Create()
         {
+            if (Notice)
+            {
+                return CreateNotice();
+            }
             var go = new GameObject("Mark", typeof(RectTransform));
             go.transform.SetParent(transform, false);
             var rect = (RectTransform)go.transform;
@@ -159,6 +194,45 @@ namespace DeskStage.UI
             hint.color = new Color(0.6f, 0.1f, 0.1f);
             hint.text = wording != null ? wording.Get("check.wallHint") : "";
             return new MarkUi { Root = rect, Back = back, Label = label, Hint = hint };
+        }
+
+        // のぼれない箱の札：白い板に、赤い太い枠。上に大きな赤い題、下に説明
+        MarkUi CreateNotice()
+        {
+            var go = new GameObject("Notice", typeof(RectTransform));
+            go.transform.SetParent(transform, false);
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = NoticeSize;
+            var back = go.AddComponent<Image>();
+            back.raycastTarget = false;
+            back.color = new Color(1f, 1f, 1f, 0.95f);
+            var frame = go.AddComponent<Outline>();
+            frame.effectColor = new Color(0.9f, 0.2f, 0.18f);
+            frame.effectDistance = new Vector2(8f, -8f);
+
+            var title = Text("Title", go.transform, 64f);
+            var tr = (RectTransform)title.transform;
+            tr.anchorMin = new Vector2(0f, 0.48f);
+            tr.anchorMax = Vector2.one;
+            tr.offsetMin = new Vector2(20f, 0f);
+            tr.offsetMax = new Vector2(-20f, -8f);
+            title.color = new Color(0.85f, 0.15f, 0.12f);
+            title.fontStyle = FontStyles.Bold;
+            title.text = noticeTitle;
+
+            var detail = Text("Detail", go.transform, 34f);
+            var dr = (RectTransform)detail.transform;
+            dr.anchorMin = Vector2.zero;
+            dr.anchorMax = new Vector2(1f, 0.48f);
+            dr.offsetMin = new Vector2(20f, 10f);
+            dr.offsetMax = new Vector2(-20f, 0f);
+            detail.color = new Color(0.15f, 0.15f, 0.2f);
+            detail.enableAutoSizing = true;
+            detail.fontSizeMin = 22f;
+            detail.fontSizeMax = 34f;
+            detail.text = noticeDetail;
+            return new MarkUi { Root = rect, Back = back, Label = title, Hint = detail };
         }
 
         TMP_Text Text(string name, Transform parent, float size)

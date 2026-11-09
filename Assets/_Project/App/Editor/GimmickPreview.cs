@@ -55,10 +55,11 @@ namespace DeskStage.App.EditorTools
                 Box(root, unlit, "box-04", 0f, 0.06f, BoxData.GimmickJumpPad, new Color(0.85f, 0.7f, 0.5f)),
                 Box(root, unlit, "box-05", 0.12f, 0.10f, BoxData.GimmickEnemy, new Color(0.85f, 0.7f, 0.5f)),
                 Box(root, unlit, "box-06", 0.24f, 0.08f, BoxData.GimmickWarp, new Color(0.85f, 0.7f, 0.5f)),
-                Box(root, unlit, "box-07", 0.36f, 0.10f, "", new Color(0.85f, 0.7f, 0.5f)),
+                Box(root, unlit, "box-07", 0.36f, 0.10f, BoxData.GimmickWarp, new Color(0.85f, 0.7f, 0.5f)),
             };
             StageContext.CurrentStage = new StageData { boxes = boxes };
 
+            Theme.Font = AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>("Assets/_Project/UI/Fonts/NotoSansJP-Regular SDF.asset");
             var systemGo = new GameObject("Gimmicks");
             var system = systemGo.AddComponent<GimmickSystem>();
             system.SetMaterial(AssetDatabase.LoadAssetAtPath<Material>(MaterialPath));

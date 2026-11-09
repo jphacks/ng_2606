@@ -39,8 +39,5 @@ namespace DeskStage.App
 
         /// <summary>しばりの係（Docs/specs/course-rules）。</summary>
         public CourseRuleSystem Rules;
-
-        /// <summary>みんなの ステージ（投稿・一覧・読み込み）の通信（Docs/specs/home-modes）。</summary>
-        public StageShareClient Share;
     }
 }

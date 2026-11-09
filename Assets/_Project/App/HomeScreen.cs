@@ -91,38 +91,8 @@ namespace DeskStage.App
                 OnDelete, "Delete", Theme.H2);
             UiKit.Place(deleteButton.Rect, new Vector2(0.5f, 0.5f), new Vector2(430f, 0f), deleteButton.Rect.sizeDelta);
             deleteButton.Label.color = Theme.Red;
-            postButton = UiKit.Button(actionBar, AppText.HomePost, UiKit.ButtonStyle.Secondary, new Vector2(440f, Theme.ButtonHeight),
-                OnPost, "Post", Theme.H2);
-            UiKit.Place(postButton.Rect, new Vector2(0.5f, 0.5f), new Vector2(-800f, 0f), postButton.Rect.sizeDelta);
         }
 
-        AppButton postButton;
-
-        // 選んだステージを、みんなの ステージに投稿する（形・コース・しばりと名前だけ。写真は送らない）
-        void OnPost()
-        {
-            if (string.IsNullOrEmpty(selectedId))
-            {
-                return;
-            }
-            var storage = new DeskStage.Stage.StageStorage(
-                Path.Combine(Application.streamingAssetsPath, "Stages"),
-                Path.Combine(Application.persistentDataPath, "Stages"));
-            if (!storage.TryLoad(selectedId, out var stage, out _))
-            {
-                Context.Overlays.Toast(AppText.HomePostFailed, AppOverlays.ToastKind.Bad);
-                return;
-            }
-            Context.Overlays.Confirm(AppText.HomePostConfirm, () =>
-            {
-                Context.Overlays.Busy(AppText.CommunityLoading);
-                Context.Share.Post(stage, (ok, reason) =>
-                {
-                    Context.Overlays.HideBusy();
-                    Context.Overlays.Toast(ok ? AppText.HomePostOk : AppText.HomePostFailed, ok ? AppOverlays.ToastKind.Good : AppOverlays.ToastKind.Bad, 2.6f);
-                });
-            }, AppText.HomePost, AppText.No);
-        }
 
         public override void OnEnter(object arg)
         {
@@ -309,7 +279,6 @@ namespace DeskStage.App
             actionHint.gameObject.SetActive(!has);
             playButton.gameObject.SetActive(has);
             deleteButton.gameObject.SetActive(has);
-            postButton.gameObject.SetActive(has);
         }
 
         // ---- 絵の読み込み ----

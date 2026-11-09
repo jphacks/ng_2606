@@ -4,6 +4,7 @@ using DeskStage.Gameplay;
 using DeskStage.Merge;
 using DeskStage.Shared;
 using DeskStage.Stage;
+using TMPro;
 using UnityEngine;
 
 namespace DeskStage.App
@@ -81,9 +82,28 @@ namespace DeskStage.App
             public Vector3 LastProgress;
             public float StuckTimer;   // ほとんど動けていない時間
             public float DetourTimer;  // 追いかける敵が、回り道をしている残りの時間
+            public Vector3 Facing = Vector3.forward; // 顔を向ける向き（進んでいる向き）
         }
 
         readonly List<Visual> visuals = new List<Visual>();
+
+        // ワープの箱の上に浮かべる番号（1, 2, 3…。たしかめの画面の「1 ⇔ 2」と同じ番号。2026-11-07）
+        class WarpNumber
+        {
+            public Transform Label;
+            public Transform Box;
+            public bool Ramp;
+        }
+
+        readonly List<WarpNumber> warpLabels = new List<WarpNumber>();
+
+        // 最後に立っていた水の坂（跳んでいる間に流すのは、その坂から跳んだときだけ。2026-11-07：
+        // 下り向きの水の坂に、下の端から跳んで近づくと、乗る前から強く押し戻されて「吹っ飛ぶ」ようだったため）
+        string lastWaterRampId;
+
+        /// <summary>番号の文字の大きさ（TextMeshPro の fontSize）と、上面からの高さ（m）。</summary>
+        const float WarpLabelSize = 0.8f;
+        const float WarpLabelLift = 0.045f;
         readonly List<Enemy> enemies = new List<Enemy>();
         // 紫の箱ごとの、次の敵が出るまでの時間
         readonly Dictionary<string, float> spawnTimers = new Dictionary<string, float>();
@@ -114,6 +134,65 @@ namespace DeskStage.App
         }
 
         /// <summary>水の箱（水の坂も含む）の id。たしかめの画面で、それぞれの上に「ながれの むき」のボタンを出すのに使う。</summary>
+        /// <summary>ワープ（ピンク）の箱の id（Docs/specs/warp-pairs）。たしかめの画面で、それぞれの上に「1 ⇔ 2」のボタンを出すのに使う。</summary>
+        public void WarpBoxIds(List<string> ids)
+        {
+            ids.Clear();
+            foreach (var b in CurrentBoxes())
+            {
+                if (b.gimmick == BoxData.GimmickWarp) ids.Add(b.id);
+            }
+        }
+
+        /// <summary>ワープの箱の数。1 つだけならワープしない。</summary>
+        public int WarpCount => WarpPairs.Count(CurrentList());
+
+        /// <summary>ワープの箱のボタンの文字（「1 ⇔ 2」。相手がいなければ「1 ⇔ ？」）。</summary>
+        public string WarpLabel(string boxId)
+        {
+            var list = CurrentList();
+            var numbers = WarpPairs.Numbers(list);
+            if (!numbers.TryGetValue(boxId, out var mine)) return "";
+            var partner = WarpPairs.Partner(list, boxId);
+            return numbers.TryGetValue(partner, out var theirs)
+                ? string.Format(AppText.WarpLink, mine, theirs)
+                : string.Format(AppText.WarpAlone, mine);
+        }
+
+        /// <summary>ワープの箱の相手を、次のピンクに変える（作業中と読み込んだ物の両方に入れる）。</summary>
+        public void CycleWarp(string boxId)
+        {
+            WarpPairs.Cycle(CurrentList(), boxId);
+            SyncWarps();
+        }
+
+        IList<BoxData> CurrentList()
+        {
+            if (UseWorkingBoxes && ScanContext.WorkingBoxes.Count > 0) return ScanContext.WorkingBoxes;
+            var stage = StageContext.CurrentStage;
+            return stage != null && stage.boxes != null ? stage.boxes : new BoxData[0];
+        }
+
+        // ワープのつながりを整え（壊れた物を直し、相手のいない物を近い順につなぐ）、作業中の箱と読み込んだ箱の両方に、同じつながりを入れる
+        void SyncWarps()
+        {
+            var list = CurrentList();
+            WarpPairs.AutoPair(list);
+            var links = new Dictionary<string, string>();
+            foreach (var b in list) links[b.id] = b.warpTo ?? "";
+            var others = new List<IList<BoxData>> { ScanContext.WorkingBoxes };
+            var stage = StageContext.CurrentStage;
+            if (stage != null && stage.boxes != null) others.Add(stage.boxes);
+            foreach (var other in others)
+            {
+                if (ReferenceEquals(other, list)) continue;
+                foreach (var b in other)
+                {
+                    if (links.TryGetValue(b.id, out var to)) b.warpTo = to;
+                }
+            }
+        }
+
         public void WaterBoxIds(List<string> ids)
         {
             ids.Clear();
@@ -222,6 +301,7 @@ namespace DeskStage.App
             {
                 return;
             }
+            SyncWarps();
             foreach (var b in CurrentBoxes())
             {
                 if (string.IsNullOrEmpty(b.gimmick))
@@ -238,10 +318,45 @@ namespace DeskStage.App
                 BuildBillboards(visual);
                 visuals.Add(visual);
             }
+            BuildWarpLabels();
+        }
+
+        // ワープの箱が 2 つ以上あるときだけ、番号を浮かべる（1 つだけならワープしないので、出さない）
+        void BuildWarpLabels()
+        {
+            var list = CurrentList();
+            if (WarpPairs.Count(list) < 2)
+            {
+                return;
+            }
+            var numbers = WarpPairs.Numbers(list);
+            foreach (var v in visuals)
+            {
+                if (v.Kind != BoxData.GimmickWarp || !numbers.TryGetValue(v.Id, out var n) || v.Box == null) continue;
+                var go = new GameObject("WarpNumber");
+                go.transform.SetParent(transform, false);
+                go.layer = v.Box.gameObject.layer;
+                var text = go.AddComponent<TextMeshPro>();
+                if (Theme.Font != null) text.font = Theme.Font;
+                text.text = n.ToString();
+                text.fontSize = WarpLabelSize;
+                text.fontStyle = FontStyles.Bold;
+                text.alignment = TextAlignmentOptions.Center;
+                text.color = new Color(0.55f, 0.02f, 0.38f); // ピンクの模様の上でも読めるよう、濃い赤紫
+                text.outlineWidth = 0.25f;
+                text.outlineColor = Color.white;
+                text.rectTransform.sizeDelta = new Vector2(0.12f, 0.1f);
+                warpLabels.Add(new WarpNumber { Label = go.transform, Box = v.Box, Ramp = v.Ramp });
+            }
         }
 
         void Clear()
         {
+            foreach (var w in warpLabels)
+            {
+                if (w.Label != null) UiKit.Kill(w.Label.gameObject);
+            }
+            warpLabels.Clear();
             ClearEnemies();
             spawnTimers.Clear();
             foreach (var v in visuals)
@@ -448,6 +563,16 @@ namespace DeskStage.App
         {
             var cam = Camera.main;
             var t = Time.unscaledTime;
+            // ワープの番号：箱の上面の真ん中の、少し上。いつもカメラの方を向く
+            foreach (var w in warpLabels)
+            {
+                if (w.Label == null || w.Box == null) continue;
+                w.Label.position = w.Box.TransformPoint(new Vector3(0f, w.Ramp ? 0f : 0.5f, 0f)) + Vector3.up * WarpLabelLift;
+                if (cam != null)
+                {
+                    w.Label.rotation = Quaternion.LookRotation(w.Label.position - cam.transform.position, cam.transform.up);
+                }
+            }
             foreach (var v in visuals)
             {
                 if (v.Box == null) continue;
@@ -516,18 +641,29 @@ namespace DeskStage.App
             var motor = flow.Motor;
             var feet = motor.transform.position;
             var healing = false;
-            var warp = false;
+            string warpFrom = null;
+            string groundedWaterRamp = null;
             UpdateEnemies(motor);
             foreach (var v in visuals)
             {
                 if (v.Box == null) continue;
                 var local = v.Box.InverseTransformPoint(feet);
-                // 水の坂は、ジャンプで浮いている間も、選んだ向きへ強く流す（下り向きなら、のぼれず下りることだけできる。上り向きなら、流れに乗ってのぼれる）
+                // 水の坂は、選んだ向きへ強く流す（下り向きなら、のぼれず下りることだけできる。上り向きなら、流れに乗ってのぼれる）。
+                // 立っているときは面の上にいるときだけ。跳んでいる間は、その坂から跳んだときだけ流す（外から跳んで近づいたときは、乗るまで流さない）
                 if (v.Ramp && v.Kind == BoxData.GimmickWater)
                 {
-                    if (GimmickRules.IsOverRamp(local, v.Box.lossyScale.y))
+                    var onRamp = GimmickRules.IsOverRamp(local, v.Box.lossyScale.y, true);
+                    if (motor.IsGrounded && onRamp)
+                    {
+                        groundedWaterRamp = v.Id;
+                    }
+                    if (motor.IsGrounded && onRamp)
                     {
                         push += PushOf(v, GimmickRules.WaterRampSpeed);
+                    }
+                    else if (!motor.IsGrounded && lastWaterRampId == v.Id && GimmickRules.IsOverRamp(local, v.Box.lossyScale.y, false))
+                    {
+                        push += PushOf(v, GimmickRules.WaterRampAirSpeed); // 浮いている間は、歩く速さと同じだけ（強く運ばない）
                     }
                     continue;
                 }
@@ -551,12 +687,17 @@ namespace DeskStage.App
                         }
                         break;
                     case BoxData.GimmickWarp:
-                        warp = true;
+                        warpFrom = v.Id;
                         break;
                 }
             }
-            flow.Motor.ExternalVelocity = push;
-            if (warp && Time.time >= warpReadyAt && TryWarp(motor))
+            if (motor.IsGrounded)
+            {
+                lastWaterRampId = groundedWaterRamp; // 立っている所が水の坂でなければ、空にする
+            }
+            // 水の箱が重なっていると、流れが足し合わさって速くなりすぎる。上限で抑える
+            flow.Motor.ExternalVelocity = Vector3.ClampMagnitude(push, GimmickRules.MaxWaterPush);
+            if (warpFrom != null && Time.time >= warpReadyAt && TryWarp(motor, warpFrom))
             {
                 warpReadyAt = Time.time + GimmickRules.WarpCooldownSeconds;
                 Warped?.Invoke();
@@ -593,26 +734,26 @@ namespace DeskStage.App
 
         // ---- ワープ（ピンク） ----
 
-        // 机の上か箱の上の、どこかランダムな所へ飛ぶ。机の長方形の中から点をくじで選び、真上から光線を落として、
-        // 一番上の平らな面に置く（机から落ちる所には飛ばない）。キャラが入れない所（壁の中など）なら、選び直す
-        bool TryWarp(CharacterMotor motor)
+        // つながった相手のピンクの箱の上へ飛ぶ（Docs/specs/warp-pairs。行き来できる）。相手がいなければ飛ばない（ピンクが 1 つだけのときなど）。
+        // 上面の真ん中から、少しずつ外へずらして、キャラが入れる所を探す。見つからなければ飛ばない
+        bool TryWarp(CharacterMotor motor, string fromBoxId)
         {
             var root = StageContext.StageRoot;
-            var stage = StageContext.CurrentStage;
-            if (root == null || stage == null)
+            var partnerId = WarpPairs.Partner(CurrentList(), fromBoxId);
+            var target = root != null && partnerId.Length > 0 ? root.Find(partnerId) : null;
+            if (target == null)
             {
                 return false;
             }
+            var ramp = target.GetComponent<MeshCollider>() != null;
             var settings = motor.settings;
-            for (var i = 0; i < 30; i++)
+            var offsets = new[] { Vector2.zero, new Vector2(0.2f, 0f), new Vector2(-0.2f, 0f), new Vector2(0f, 0.2f), new Vector2(0f, -0.2f),
+                new Vector2(0.35f, 0.35f), new Vector2(-0.35f, 0.35f), new Vector2(0.35f, -0.35f), new Vector2(-0.35f, -0.35f) };
+            foreach (var o in offsets)
             {
-                var c = GimmickRules.WarpCandidate(UnityEngine.Random.value, UnityEngine.Random.value, stage.desk.width, stage.desk.depth, GimmickRules.WarpEdgeInset);
-                var from = root.TransformPoint(new Vector3(c.x, 1f, c.y));
-                if (!Physics.Raycast(from, Vector3.down, out var hit, 3f, Layers.TerrainMask, QueryTriggerInteraction.Ignore) || hit.normal.y < 0.9f)
-                {
-                    continue;
-                }
-                var feet = hit.point + Vector3.up * 0.002f;
+                // 坂は、斜めの面（箱の座標で y = x）の上
+                var top = target.TransformPoint(new Vector3(o.x, ramp ? o.x : 0.5f, o.y));
+                var feet = top + Vector3.up * 0.002f;
                 var r = settings.radius * 0.9f;
                 if (Physics.CheckCapsule(feet + Vector3.up * (settings.radius + 0.002f), feet + Vector3.up * (settings.height - settings.radius), r,
                         Layers.TerrainMask, QueryTriggerInteraction.Ignore))
@@ -672,6 +813,11 @@ namespace DeskStage.App
                 }
             }
             var dir = chasing ? GimmickRules.ChaseDirection(e.Position, target) : e.Direction;
+            var flat = new Vector3(dir.x, 0f, dir.z);
+            if (flat.sqrMagnitude > 1e-6f)
+            {
+                e.Facing = flat.normalized; // 進む向きに顔を向ける
+            }
             if (!TryStepEnemy(e, dir * (GimmickRules.EnemySpeed * dt)))
             {
                 // 進めなかった：進める向きを探して、そちらへ向きを変える。追いかける敵は、しばらく回り道をする
@@ -741,16 +887,49 @@ namespace DeskStage.App
             return false;
         }
 
+        // 立体の敵（2026-11-07）：赤い玉の体に、白い目と黒いひとみ。進む向き（+z）に顔を向ける。当たりの大きさは EnemyRadius のまま
+        GameObject BuildEnemyBody()
+        {
+            var size = GimmickRules.EnemyVisualSize;
+            var root = new GameObject("GimmickEnemy");
+            root.transform.SetParent(transform, false);
+            Part(root.transform, "Body", new Vector3(0f, 0f, 0f), Vector3.one * size, new Color(0.9f, 0.1f, 0.1f));
+            foreach (var side in new[] { -1f, 1f })
+            {
+                Part(root.transform, "Eye", new Vector3(side * 0.2f, 0.14f, 0.36f) * size, Vector3.one * (0.3f * size), Color.white);
+                Part(root.transform, "Pupil", new Vector3(side * 0.2f, 0.14f, 0.5f) * size, Vector3.one * (0.14f * size), new Color(0.08f, 0.05f, 0.05f));
+            }
+            return root;
+        }
+
+        void Part(Transform parent, string name, Vector3 position, Vector3 scale, Color color)
+        {
+            var part = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            part.name = name;
+            var collider = part.GetComponent<Collider>();
+            if (collider != null) UiKit.Kill(collider);
+            part.transform.SetParent(parent, false);
+            part.transform.localPosition = position;
+            part.transform.localScale = scale;
+            part.GetComponent<Renderer>().sharedMaterial = LitMaterial(color);
+        }
+
+        // 陰影の付く素材（立体に見せるため）。ビルドで見つからなければ、しかけの板と同じ素材
+        Material LitMaterial(Color color)
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            if (shader == null)
+            {
+                return NewMaterial(null, color);
+            }
+            var material = new Material(shader) { color = color };
+            created.Add(material);
+            return material;
+        }
+
         void SpawnEnemy(Vector3 feet)
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            go.name = "GimmickEnemy";
-            var collider = go.GetComponent<Collider>();
-            if (collider != null) UiKit.Kill(collider);
-            go.transform.SetParent(transform, false);
-            go.transform.localScale = Vector3.one * (GimmickRules.EnemyRadius * 2.4f);
-            go.GetComponent<Renderer>().sharedMaterial = NewMaterial(GetTexture("enemyface", GimmickTextures.EnemyFace), Color.white);
-            go.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            var go = BuildEnemyBody();
             // 追いかける敵と歩き回る敵が、どちらも出るように決める
             var chase = 0;
             var wander = 0;
@@ -835,20 +1014,16 @@ namespace DeskStage.App
 
         static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
 
-        // 敵の見た目を、足元の少し上に置き、いつもカメラの方を向ける
+        // 敵の見た目を、足元の少し上に置き、進む向きに顔を向ける（立体なので、カメラの方へは向けない）
         void AnimateEnemies()
         {
-            var cam = Camera.main;
             var t = Time.unscaledTime;
             foreach (var e in enemies)
             {
                 if (e.Transform == null) continue;
                 var bob = 0.002f * Mathf.Abs(Mathf.Sin(t * 8f + e.Position.x * 50f));
-                e.Transform.position = e.Position + Vector3.up * (GimmickRules.EnemyRadius * 1.2f + bob);
-                if (cam != null)
-                {
-                    e.Transform.rotation = Quaternion.LookRotation(e.Transform.position - cam.transform.position, cam.transform.up);
-                }
+                e.Transform.position = e.Position + Vector3.up * (GimmickRules.EnemyVisualSize * 0.5f + bob); // 足もとが面に付くよう、見た目の半分だけ上げる
+                e.Transform.rotation = Quaternion.LookRotation(e.Facing, Vector3.up);
             }
         }
 

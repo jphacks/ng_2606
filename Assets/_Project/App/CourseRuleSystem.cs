@@ -97,8 +97,8 @@ namespace DeskStage.App
             var r = State.Rules;
             if (!CourseRuleState.HasAny(r)) return "";
             var parts = new List<string>();
+            // ジャンプの残りの回数は、ハートの下の印で見せる（PlayScreen）。ここでは、きんしだけ文字で出す
             if (r.maxJumps == 0) parts.Add(AppText.RulesJump + " " + AppText.RulesJumpNone);
-            else if (r.maxJumps > 0) parts.Add(string.Format(AppText.RulesPlayJumpsLeft, State.JumpsLeft));
             if (r.noDoubleJump && r.maxJumps != 0) parts.Add(AppText.RulesPlayNoDouble);
             if (r.oneHit) parts.Add(AppText.RulesOneHit);
             if (State.HasTimeLimit && flow != null) parts.Add(string.Format(AppText.RulesPlayTimeLeft, Mathf.CeilToInt(State.SecondsLeft(flow.ElapsedSeconds))));

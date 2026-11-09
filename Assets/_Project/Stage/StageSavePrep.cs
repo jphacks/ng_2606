@@ -31,6 +31,7 @@ namespace DeskStage.Stage
                     gimmick = b.gimmick ?? "",
                     flow = b.flow,
                     ramp = b.ramp,
+                    warpTo = b.warpTo ?? "",
                 });
             }
 

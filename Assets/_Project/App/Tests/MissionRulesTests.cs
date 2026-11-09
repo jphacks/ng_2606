@@ -4,7 +4,7 @@ using NUnit.Framework;
 
 namespace DeskStage.App.Tests
 {
-    /// <summary>お題の判定（Docs/specs/home-modes の REQ-4・15）と、投稿の中身（REQ-9）。</summary>
+    /// <summary>お題の判定（Docs/specs/home-modes の REQ-4・15）。</summary>
     public class MissionRulesTests
     {
         static BoxData Box(float height, string gimmick = "", bool ramp = false)
@@ -93,15 +93,6 @@ namespace DeskStage.App.Tests
             var both = MissionCatalog.All[2]; // 炎と回復
             Assert.IsFalse(MissionRules.AllMet(both, new List<BoxData> { Box(0.02f, BoxData.GimmickFire) }, null));
             Assert.IsTrue(MissionRules.AllMet(both, new List<BoxData> { Box(0.02f, BoxData.GimmickFire), Box(0.02f, BoxData.GimmickHeal) }, null));
-        }
-
-        [Test]
-        public void 投稿の中身には_写真のファイル名を入れない()
-        {
-            var stage = new StageData { boxes = new[] { new BoxData { id = "box-01", texture = "top.jpg" } } };
-            var json = StageShareClient.ToPostJson(stage);
-            Assert.IsFalse(json.Contains("top.jpg"));
-            Assert.AreEqual("top.jpg", stage.boxes[0].texture, "元のステージは変えない");
         }
     }
 }

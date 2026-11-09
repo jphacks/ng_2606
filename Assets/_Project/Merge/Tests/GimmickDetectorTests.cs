@@ -161,5 +161,24 @@ namespace DeskStage.Merge.Tests
             Assert.AreEqual("", GimmickDetector.Detect(Fill(400, new Color32(150, 125, 95, 255))));
             Assert.AreEqual("", GimmickDetector.Detect(Fill(400, new Color32(240, 130, 30, 255))));
         }
+
+        [Test]
+        public void 実機で撮った黄と紫の折り紙が判定され_木の床は何にもならない()
+        {
+            // 2026-11-07 に実機で測った色（黄：色相 62 度・彩度 0.46、紫：色相 248 度・彩度 0.55、床：色相 45〜51 度・彩度 0.37）
+            Assert.AreEqual(GimmickDetector.Hue.Yellow, GimmickDetector.Classify(new Color32(216, 219, 118, 255)));
+            Assert.AreEqual(GimmickDetector.Hue.Purple, GimmickDetector.Classify(new Color32(84, 72, 161, 255)));
+            Assert.AreEqual(GimmickDetector.Hue.None, GimmickDetector.Classify(new Color32(214, 194, 135, 255)));
+            Assert.AreEqual(GimmickDetector.Hue.None, GimmickDetector.Classify(new Color32(204, 193, 131, 255)));
+            Assert.AreEqual(GimmickDetector.Hue.Blue, GimmickDetector.Classify(new Color32(30, 90, 220, 255)), "実機の青（213〜215 度）は青のまま");
+        }
+
+        [Test]
+        public void 実機のピンクの折り紙の端の色も_紫ではなくピンク()
+        {
+            // 2026-11-07 に実機で測った色（ピンク：色相 299 度・彩度 0.43、紫：色相 248 度・彩度 0.54）
+            Assert.AreEqual(GimmickDetector.Hue.Pink, GimmickDetector.Classify(new Color32(235, 135, 237, 255)));
+            Assert.AreEqual(GimmickDetector.Hue.Purple, GimmickDetector.Classify(new Color32(91, 79, 171, 255)));
+        }
     }
 }

@@ -21,6 +21,9 @@ namespace DeskStage.Gameplay
 
         public GameState State => flow.State;
 
+        /// <summary>ステージが組み上がっていて、遊び始められるか（いちらんへ戻ると false になる）。</summary>
+        public bool StageReady => flow.StageReady;
+
         /// <summary>今出ているキャラ（いなければ null）</summary>
         public CharacterMotor Motor { get; private set; }
 

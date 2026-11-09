@@ -118,10 +118,13 @@ namespace DeskStage.Gameplay
         // ゴール：高さ3cmの旗と、触れる範囲の円盤
         void CreateGoalFlag(Vector3 position, float radius)
         {
-            var goal = CreateDisk("Goal", position, radius, new Color(1f, 0.4f, 0.4f));
+            // ゴールは金色（2026-11-07。見つけやすいように。前は赤）
+            var gold = new Color(1f, 0.78f, 0.12f);
+            var goal = CreateDisk("Goal", position, radius, gold);
             // 棒（高さ3cm）と、てっぺんの旗
-            CreatePart(PrimitiveType.Cylinder, goal, new Vector3(0f, 0.015f, 0f), new Vector3(0.003f, 0.015f, 0.003f), Quaternion.identity, Color.white);
-            CreatePart(PrimitiveType.Cube, goal, new Vector3(0.0075f, 0.025f, 0f), new Vector3(0.015f, 0.01f, 0.001f), Quaternion.identity, new Color(1f, 0.3f, 0.3f));
+            // 旗：棒も旗も金色で、光る質感にする。旗は大きめ（2.4cm × 1.6cm）にして、遠くからでも見えるように
+            CreatePart(PrimitiveType.Cylinder, goal, new Vector3(0f, 0.02f, 0f), new Vector3(0.003f, 0.02f, 0.003f), Quaternion.identity, gold, true);
+            CreatePart(PrimitiveType.Cube, goal, new Vector3(0.012f, 0.032f, 0f), new Vector3(0.024f, 0.016f, 0.0015f), Quaternion.identity, gold, true);
         }
 
         // 触れる範囲を示す平らな円盤
@@ -135,7 +138,21 @@ namespace DeskStage.Gameplay
         }
 
         // 当たり判定を外した形を作る
-        static void CreatePart(PrimitiveType type, Transform parent, Vector3 localPosition, Vector3 scale, Quaternion rotation, Color color)
+        static Shader markerShader;
+
+        // 目印の素材のシェーダー：URP の Lit（箱の素材が使っているので、ビルドに入っている）。無ければ Unlit、それも無ければ Sprites/Default
+        static Shader MarkerShader()
+        {
+            if (markerShader == null)
+            {
+                markerShader = Shader.Find("Universal Render Pipeline/Lit")
+                    ?? Shader.Find("Universal Render Pipeline/Unlit")
+                    ?? Shader.Find("Sprites/Default");
+            }
+            return markerShader;
+        }
+
+        static void CreatePart(PrimitiveType type, Transform parent, Vector3 localPosition, Vector3 scale, Quaternion rotation, Color color, bool shiny = false)
         {
             var go = GameObject.CreatePrimitive(type);
             Destroy(go.GetComponent<Collider>());
@@ -143,7 +160,16 @@ namespace DeskStage.Gameplay
             go.transform.localPosition = localPosition;
             go.transform.localRotation = rotation;
             go.transform.localScale = scale;
-            go.GetComponent<Renderer>().material.color = color;
+            // Unity の標準の素材（CreatePrimitive が付ける物）は、このアプリ（URP）のビルドでは描けず、濃いピンクになる。
+            // ビルドに入っている URP の素材で作り直す（2026-11-07：ゴールがピンクのままだった）
+            var material = new Material(MarkerShader()) { color = color };
+            go.GetComponent<Renderer>().sharedMaterial = material;
+            if (shiny)
+            {
+                // 金属の光沢（URP の Lit の項目。無い素材では何も起きない）
+                material.SetFloat("_Metallic", 0.75f);
+                material.SetFloat("_Smoothness", 0.8f);
+            }
         }
     }
 

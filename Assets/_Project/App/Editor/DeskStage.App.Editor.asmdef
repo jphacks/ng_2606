@@ -9,7 +9,8 @@
         "DeskStage.Stage",
         "DeskStage.Merge",
         "Unity.TextMeshPro",
-        "UnityEngine.UI"
+        "UnityEngine.UI",
+        "DeskStage.Gameplay"
     ],
     "includePlatforms": [
         "Editor"

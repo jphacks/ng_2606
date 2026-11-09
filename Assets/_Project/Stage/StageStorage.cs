@@ -223,6 +223,54 @@ namespace DeskStage.Stage
             }
         }
 
+        // 箱の上面の写真（Docs/specs/saved-photos）。名前は決まった形だけ（ステージのフォルダの外を指せないように）
+        static readonly System.Text.RegularExpressions.Regex FaceName =
+            new System.Text.RegularExpressions.Regex(@"^face-[A-Za-z0-9_-]{1,40}\.jpg$");
+
+        /// <summary>箱の上面の写真のファイルの名前（箱の id が決まった形でなければ空）。</summary>
+        public static string FaceFile(string boxId)
+        {
+            var name = "face-" + boxId + ".jpg";
+            return IsFaceFile(name) ? name : "";
+        }
+
+        /// <summary>箱の上面の写真のファイルの名前として、正しい形か。</summary>
+        public static bool IsFaceFile(string name) => !string.IsNullOrEmpty(name) && FaceName.IsMatch(name);
+
+        /// <summary>保存したステージの、箱の上面の写真の場所（形が違えば null）。読み込むとき（Merge の StagePhotoTexturer）に使う。</summary>
+        public static string SavedFacePath(string stageId, string file)
+        {
+            if (!IsSafeId(stageId) || !IsFaceFile(file)) return null;
+            return Path.Combine(Application.persistentDataPath, "Stages", stageId, file);
+        }
+
+        /// <summary>箱の上面の写真を、保存したステージのフォルダに書く。</summary>
+        public bool WriteFace(string id, string file, byte[] jpeg)
+        {
+            if (!IsSafeId(id) || !IsFaceFile(file) || jpeg == null || jpeg.Length == 0)
+            {
+                return false;
+            }
+            try
+            {
+                var dir = Path.Combine(savedDir, id);
+                if (!Directory.Exists(dir))
+                {
+                    return false;
+                }
+                File.WriteAllBytes(Path.Combine(dir, file), jpeg);
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+        }
+
         /// <summary>保存用からステージを消す。同梱用は消さない。</summary>
         public bool Delete(string id)
         {

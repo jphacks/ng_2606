@@ -14,6 +14,14 @@ namespace DeskStage.App
         // 水の坂は、ジャンプで浮いている間も流す（跳んでのぼれないように）。2 段ジャンプの高さ（約 24cm）より上まで
         const float AboveRampWater = 0.30f;
 
+        /// <summary>
+        /// 水の坂から跳んで、浮いている間に流す速さ（m/秒）。歩く速さ（0.15）と同じにして、跳んでものぼれないが、強く運ばれて飛ばされないようにする（2026-11-07）。
+        /// </summary>
+        public const float WaterRampAirSpeed = 0.15f;
+
+        /// <summary>水に流される速さの合計の上限（m/秒）。水の箱が重なっていても、これより速く流さない（吹っ飛ばないように）。</summary>
+        public const float MaxWaterPush = WaterRampSpeed;
+
         /// <summary>緑の箱で、ハートを 1 つ回復するまでの時間（秒）。</summary>
         public const float HealSeconds = 1f;
 
@@ -34,6 +42,9 @@ namespace DeskStage.App
 
         /// <summary>敵の大きさ（半径 m）。当たりの判定にも使う。</summary>
         public const float EnemyRadius = 0.01f;
+
+        /// <summary>敵の見た目の大きさ（m。直径）。当たりの大きさ（EnemyRadius）より大きく見せて、見つけやすくする（2026-11-07：2.4cm → 3.6cm）。</summary>
+        public const float EnemyVisualSize = 0.036f;
 
         /// <summary>敵が登れる段差（m）。これより高い箱や壁は、通り抜けずに止まる。</summary>
         public const float EnemyMaxStep = 0.009f;
@@ -145,8 +156,18 @@ namespace DeskStage.App
         /// <summary>
         /// 坂の上（斜めの面の上、ジャンプで浮いている間も含む）にいるか。水の坂が流すかどうかに使う。local は箱の座標、heightScale は箱の高さ（m）。
         /// </summary>
-        public static bool IsOverRamp(Vector3 local, float heightScale)
+        public static bool IsOverRamp(Vector3 local, float heightScale) => IsOverRamp(local, heightScale, false);
+
+        /// <summary>
+        /// 坂の上にいるか。grounded（地面に立っている）なら、斜めの面のすぐ上（乗っている高さ）のときだけ。
+        /// 坂の上の空中でも流すのは、跳んで浮いている間だけにする（坂に重なった、ほかの箱の上に立っているときに、強く流されて吹っ飛ばないように。2026-11-07）
+        /// </summary>
+        public static bool IsOverRamp(Vector3 local, float heightScale, bool grounded)
         {
+            if (grounded)
+            {
+                return IsOnTop(local, heightScale, true);
+            }
             if (Mathf.Abs(local.x) > 0.5f || Mathf.Abs(local.z) > 0.5f)
             {
                 return false;
