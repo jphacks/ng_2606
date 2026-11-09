@@ -114,8 +114,6 @@ namespace DeskStage.App
         public const string CheckLeaveConfirm = "ほぞん していないよ。\nもどると なくなるよ。もどる？";
         public const string CheckMarkJump = "とぶ";
         public const string CheckMarkWall = "ばつ";
-        public const string CheckWallTitle = "！ とどかないよ";
-        public const string CheckWallDetail = "ひくい ものを となりに おいて、もういちど とってね";
         public const string CheckWallHint = "赤い ばつは のぼれないよ。ひくい ものを となりに おくと のぼれるよ";
         public const string Start_ = "スタート";
         public const string Goal_ = "ゴール";
