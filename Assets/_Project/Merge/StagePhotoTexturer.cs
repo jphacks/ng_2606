@@ -14,12 +14,13 @@ namespace DeskStage.Merge
     /// 貼る物は、机の板と箱の子（PhotoTop、PhotoSides）。親の素材や当たり判定は変えない。
     /// 位置が分からない箱（補助で足した箱など）は、そのまま（D の見た目）。選んでいる箱は、D の強調が見えるよう、写真を外す。
     ///
-    /// 写真を貼るのは、箱だけ。机の板と地面は、写真ではなく、きれいな色にする：
-    /// ・地面（PhotoGround）：机の板の外側。きれいな単色の大きな板を、
-    ///   「落ちた」と判定する高さ（fallDepth）に敷く。机のふちから落ちると、この地面に着く
+    /// 写真を貼るのは、箱だけ。机の板は、写真ではなく、きれいな色にする：
+    /// ・地面：机の外側には、地面を敷かない（2026-11-10：背景・机の土台・ステージだけを見せる。
+    ///   地面と机が二重の土台に見えて、見栄えが悪かったため）。机のふちから落ちると、背景の中へ落ちる
     ///   （1枚目の写真を机の外へのばす方法は、AddGround に残してあるが、使っていない）
     /// ・背景（PhotoBackdrop）：背景専用に撮った写真（BackdropStore。一覧の「はいけいを とる」で撮る）を、ぼかして、
-    ///   ステージの周りの壁（円筒）の内側に貼る。背景の写真が無ければ、背景は出さない
+    ///   ステージの周りの壁（円筒）の内側に貼る。壁の底は、写真の下のふちの色でふさぐ（下をのぞいても背景が続く）。
+    ///   背景の写真が無ければ、背景は出さない
     ///   背景は、撮影の写真が無くても（保存したステージを読み込んだときも）貼る
     /// </summary>
     public class StagePhotoTexturer : MonoBehaviour
@@ -46,7 +47,6 @@ namespace DeskStage.Merge
         const int GroundTextureSide = 64;
         const float GroundDarken = 0.85f;
         // 地面の色（きれいなクリーム色。背景のプリセットと合う、やわらかい色）
-        static readonly Color PlainGroundColor = new Color(0.94f, 0.89f, 0.78f, 1f);
 
         // 背景：ステージの周りの壁（円筒）の、半径（m）の下限と、高さ（m）。写真は、読み取れる程度の大きさ（BackdropTargetWidth 画素幅）にぼかして貼る。
         // 壁の周りの長さに合わせて、写真を横に何回か、鏡写しで並べる
@@ -185,12 +185,7 @@ namespace DeskStage.Merge
                 return;
             }
 
-            // 机の板と地面は、写真を貼らない（きれいな色）。写真を貼るのは、箱だけ
-            var desk = root.Find("Desk");
-            if (desk != null)
-            {
-                AddPlainGround(root, desk);
-            }
+            // 机の板は、写真を貼らない（きれいな色）。写真を貼るのは、箱だけ。机の外に地面は敷かない
 
             var changed = false;
 
@@ -219,6 +214,7 @@ namespace DeskStage.Merge
             // 背景：背景専用の写真があれば、いつでも貼る
             MakeBackdropPixels(BackdropStore.AtDefaultPlace().Load());
             AddBackdrop(root);
+
         }
 
         /// <summary>
@@ -453,27 +449,6 @@ namespace DeskStage.Merge
             overlays.Add(overlay);
         }
 
-        /// <summary>机の外側の地面：きれいな単色の大きな板を、落ちる高さに敷く（机のふちから落ちると、ここに着く）。</summary>
-        void AddPlainGround(Transform root, Transform desk)
-        {
-            var scale = desk.localScale;
-            var texture = new Texture2D(2, 2, TextureFormat.RGB24, false) { wrapMode = TextureWrapMode.Clamp };
-            texture.SetPixels32(new Color32[] { new Color32(255, 255, 255, 255), new Color32(255, 255, 255, 255), new Color32(255, 255, 255, 255), new Color32(255, 255, 255, 255) });
-            texture.Apply();
-            created.Add(texture);
-
-            var fallDepth = StageContext.CurrentStage != null ? StageContext.CurrentStage.fallDepth : 0.10f;
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            ground.name = GroundName;
-            RemoveCollider(ground);
-            ground.transform.SetParent(root, false);
-            ground.transform.localPosition = new Vector3(0f, -fallDepth, 0f);
-            ground.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            ground.transform.localScale = new Vector3(scale.x * GroundExtent * 2f, scale.z * GroundExtent * 2f, 1f);
-            ground.GetComponent<Renderer>().sharedMaterial = NewMaterial(texture, PlainGroundColor);
-            extras.Add(ground);
-        }
-
         /// <summary>机の外側の地面：1枚目の写真を、机の四隅から外へのばして貼った大きな板を、落ちる高さに敷く。</summary>
         void AddGround(Transform root, Transform desk, Vector2[] deskQuad, Color32[] source)
         {
@@ -547,6 +522,30 @@ namespace DeskStage.Merge
             material.mainTextureScale = new Vector2(repeats, 1f);
             wall.GetComponent<Renderer>().sharedMaterial = material;
             extras.Add(wall);
+
+            // 壁の底：Unity の円筒の底のふたは、写真が放射状に伸びて見えるので、写真の下のふちの色の板でふさぐ
+            var floor = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            floor.name = BackdropName + "Floor";
+            RemoveCollider(floor);
+            floor.transform.SetParent(root, false);
+            floor.transform.localPosition = new Vector3(0f, BackdropBottom + 0.01f, 0f);
+            floor.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            floor.transform.localScale = new Vector3(radius * 2.2f, radius * 2.2f, 1f);
+            floor.GetComponent<Renderer>().sharedMaterial = NewMaterial(null, BottomEdgeColor() * BackdropDarken);
+            extras.Add(floor);
+        }
+
+        // 背景の写真の、下のふち（いちばん下の 1 行）の色の平均
+        Color BottomEdgeColor()
+        {
+            var sum = Vector3.zero;
+            for (var x = 0; x < backdropWidth; x++)
+            {
+                Color c = backdropPixels[x];
+                sum += new Vector3(c.r, c.g, c.b);
+            }
+            sum /= Mathf.Max(1, backdropWidth);
+            return new Color(sum.x, sum.y, sum.z, 1f);
         }
 
         Material NewMaterial(Texture2D texture, Color color)

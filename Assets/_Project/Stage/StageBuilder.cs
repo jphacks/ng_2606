@@ -150,7 +150,7 @@ namespace DeskStage.Stage
             {
                 desk = CreateCube("Desk", EnsureStageRoot(), deskMaterial, FallbackDeskColor);
             }
-            var thickness = settings != null ? settings.deskThickness : 0.01f;
+            var thickness = settings != null ? settings.deskThickness : 0.03f;
             Apply(desk.transform, StageLayout.Desk(deskData, thickness));
         }
 

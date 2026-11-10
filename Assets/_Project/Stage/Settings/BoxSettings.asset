@@ -24,4 +24,4 @@ MonoBehaviour:
   assistMinWidth: 0.01
   assistMaxWidth: 0.6
   undoLimit: 20
-  deskThickness: 0.01
+  deskThickness: 0.03
