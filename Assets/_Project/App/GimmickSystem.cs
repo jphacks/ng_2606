@@ -68,8 +68,9 @@ namespace DeskStage.App
         class Billboard
         {
             public Transform Transform;
-            public Vector2 Local;     // 箱の上面の中での位置（-0.5〜0.5）
+            public Vector2 Local;     // 箱の上面の中での位置（-0.5〜0.5）。出るたびに選び直す（SpotFor）
             public float Phase;
+            public int Salt;          // 箱の中で何番目の飾りか（出る場所を、飾りごとに変える）
             public Material Material; // うすくして消す素材（回復の「＋」、炎の外側）
             public Material Core;     // 炎の芯の、うすくする素材
         }
@@ -502,14 +503,14 @@ namespace DeskStage.App
                     core.SetParent(flame, false);
                     core.localPosition = new Vector3(0f, 0.01f, -0.3f);
                     core.localScale = new Vector3(0.6f, 0.62f, 0.6f);
-                    v.Billboards.Add(new Billboard { Transform = flame, Local = local, Phase = h1 * 6.28f, Material = outer, Core = inner });
+                    v.Billboards.Add(new Billboard { Transform = flame, Local = local, Phase = h1 * 6.28f, Salt = i, Material = outer, Core = inner });
                 }
                 else
                 {
                     plusMesh ??= Keep(GimmickMeshes.Plus());
                     var material = Solid(NewMaterial(GetTexture("plus3d", GimmickMeshes.PlusTexture), Color.white));
                     var plus = MeshObject("Plus", plusMesh, material);
-                    v.Billboards.Add(new Billboard { Transform = plus, Local = local, Phase = h1 * 6.28f, Material = material });
+                    v.Billboards.Add(new Billboard { Transform = plus, Local = local, Phase = h1 * 6.28f, Salt = i, Material = material });
                 }
             }
         }
@@ -545,6 +546,13 @@ namespace DeskStage.App
         {
             var flat = Vector3.ProjectOnPlane(d, up);
             return flat.sqrMagnitude > 1e-10f ? flat.normalized : Vector3.ProjectOnPlane(Vector3.forward, up).normalized;
+        }
+
+        // 飾りが出る場所（箱の上面の中。ふちから少し内側）：箱、何番目の飾りか、何回目に出たかで決まる、ばらばらの場所
+        static Vector2 SpotFor(string id, int salt, int cycle)
+        {
+            var seed = salt * 2 + cycle * 7919;
+            return new Vector2((Hash01(id, seed) - 0.5f) * 0.7f, (Hash01(id, seed + 1) - 0.5f) * 0.7f);
         }
 
         static float Hash01(string id, int salt)
@@ -635,6 +643,10 @@ namespace DeskStage.App
                 foreach (var b in v.Billboards)
                 {
                     if (b.Transform == null) continue;
+                    // 出るたびに、箱の上面の中のランダムな場所から出す（2026-11-11。前は、いつも同じ場所だった）。
+                    // 何回目に出たか（cycle）で決めるので、浮かび上がる途中では動かない
+                    var cycle = Mathf.FloorToInt(t * 0.45f + b.Phase);
+                    b.Local = SpotFor(v.Id, b.Salt, cycle);
                     var surfaceY = v.Ramp ? RampMesh.SurfaceLocalY(b.Local.x) * 1.002f : 0.5f * 1.002f;
                     var local = new Vector3(b.Local.x, surfaceY, b.Local.y);
                     var basePoint = v.Box.TransformPoint(local);
