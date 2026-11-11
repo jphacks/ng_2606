@@ -66,8 +66,19 @@ namespace DeskStage.App.EditorTools
             Call(system, "Rebuild");
             Debug.Log("[GimmickPreview] " + system.Summary());
 
-            // 時刻をずらして 2 枚（動きの違いが分かる）
             Shoot(system, camera, Path.Combine(outDir, "gimmick-3d.png"));
+
+            // 炎と回復のエフェクトを、遊ぶときのように、低い所から近づいて見る（立体に見えるかを確かめる。2026-11-11）
+            camera.fieldOfView = 35f;
+            camera.nearClipPlane = 0.01f; // 近くの炎が切れないように
+
+            camera.transform.position = new Vector3(-0.30f, 0.20f, -0.30f);
+            camera.transform.LookAt(new Vector3(-0.18f, 0.13f, 0f));
+            Shoot(system, camera, Path.Combine(outDir, "gimmick-near.png"));
+            // 真横から（板の絵だと、うすく見える向き）
+            camera.transform.position = new Vector3(-0.18f, 0.16f, -0.42f);
+            camera.transform.LookAt(new Vector3(-0.18f, 0.13f, 0f));
+            Shoot(system, camera, Path.Combine(outDir, "gimmick-side.png"));
             Finish(0);
         }
 
