@@ -445,6 +445,8 @@ namespace DeskStage.App
             }
             // 撮影、つくっている、あそぶの間は、画面を暗くしない
             Screen.sleepTimeout = InScan(id) || id == AppScreenId.Play ? SleepTimeout.NeverSleep : SleepTimeout.SystemSetting;
+            // BGM：メニューの画面では流し続け、写真を撮る・あそぶなどでは止める（2026-11-12。前は、スタート画面の間だけ）
+            if (FlowRules.PlaysMusic(id)) AppMusic.Play(); else AppMusic.Stop();
             previousScreen = id;
         }
     }

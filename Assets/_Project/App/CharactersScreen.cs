@@ -185,6 +185,11 @@ namespace DeskStage.App
             listView.gameObject.SetActive(view == listView);
             captureView.gameObject.SetActive(view == captureView);
             reviewView.gameObject.SetActive(view == reviewView);
+            // BGM：キャラの写真を撮る・確かめる間は止め、一覧に戻ったら、また流す（2026-11-12）。この画面が出ているときだけ
+            if (Context != null && Context.Router != null && Context.Router.Current == AppScreenId.Characters)
+            {
+                if (view == listView) AppMusic.Play(); else AppMusic.Stop();
+            }
         }
 
         void ShowList()
