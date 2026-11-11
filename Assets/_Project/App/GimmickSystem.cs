@@ -720,6 +720,13 @@ namespace DeskStage.App
                     {
                         groundedWaterRamp = v.Id;
                     }
+                    // 上り向きの流れで、歩いてのぼれないほど急な坂：面のすぐ上にいる間は、坂をのぼる分の上向きの速さを与えて、流れに乗せてのぼらせる（2026-11-11）
+                    if (onRamp && (motor.IsGrounded || lastWaterRampId == v.Id) && ClimbRamp(motor, v))
+                    {
+                        lastWaterRampId = v.Id;
+                        push += PushOf(v, GimmickRules.WaterRampSpeed);
+                        continue;
+                    }
                     if (motor.IsGrounded && onRamp)
                     {
                         push += PushOf(v, GimmickRules.WaterRampSpeed);
@@ -1120,6 +1127,24 @@ namespace DeskStage.App
         }
 
         // 水の箱が流す速さ（ステージの向きを、世界の向きに直したもの）
+        // 急な水の坂を、流れに乗ってのぼらせる。のぼらせたら true（ゆるい坂、下り向き、横向きなら false）。
+        // キャラは上向きに動いているときだけ急な坂をのぼれるので、ジャンプ台と同じ跳ね上げ（Launch）で、
+        // 坂をのぼる速さ＋このフレームに重力で減る分 の上向きの速さを与える（C のキャラの中身は変えない）
+        bool ClimbRamp(CharacterMotor motor, Visual v)
+        {
+            var settings = motor.settings;
+            if (settings == null) return false;
+            var push = PushOf(v, 1f);
+            var uphill = Vector3.ProjectOnPlane(v.Box.right, Vector3.up);
+            if (push.sqrMagnitude < 1e-8f || uphill.sqrMagnitude < 1e-8f) return false;
+            var scale = v.Box.lossyScale;
+            var climb = GimmickRules.RampClimbSpeed(Vector3.Dot(push, uphill.normalized), scale.y, scale.x, GimmickRules.WaterRampSpeed, settings.slopeLimit);
+            if (climb <= 0f) return false;
+            var speed = climb + settings.gravity * Time.deltaTime;
+            motor.Launch(speed * speed / (2f * settings.gravity));
+            return true;
+        }
+
         static Vector3 PushOf(Visual v, float speed)
         {
             var world = v.Box.TransformDirection(new Vector3(v.Direction.x, 0f, v.Direction.y));

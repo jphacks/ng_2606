@@ -325,5 +325,24 @@ namespace DeskStage.App.Tests
             Assert.IsTrue(GimmickRules.IsOverRamp(high, 0.10f, false));
             Assert.IsTrue(GimmickRules.IsOverRamp(new Vector3(0.3f, 0.3f, 0f), 0.10f, true), "面の上に立っている");
         }
+
+        [Test]
+        public void 急な水の坂は_上り向きの流れなら坂に沿ってのぼる速さを与える()
+        {
+            // 高さ 10cm・長さ 5cm（約 63 度）。上り向きにまっすぐ流れると、上向きは 横の速さ × 傾き（2）
+            Assert.AreEqual(0.25f * 2f, GimmickRules.RampClimbSpeed(1f, 0.10f, 0.05f, 0.25f, 45f), 1e-5f);
+            // 斜めに流れると、のぼる向きの分だけ
+            Assert.AreEqual(0.25f * 0.5f * 2f, GimmickRules.RampClimbSpeed(0.5f, 0.10f, 0.05f, 0.25f, 45f), 1e-5f);
+        }
+
+        [Test]
+        public void ゆるい坂と下り向きと横向きは_上向きの速さを与えない()
+        {
+            // 高さ 4cm・長さ 10cm（約 22 度）：歩いてのぼれるので、今までどおり横に押すだけ
+            Assert.AreEqual(0f, GimmickRules.RampClimbSpeed(1f, 0.04f, 0.10f, 0.25f, 45f));
+            // 下り向き・横向き
+            Assert.AreEqual(0f, GimmickRules.RampClimbSpeed(-1f, 0.10f, 0.05f, 0.25f, 45f));
+            Assert.AreEqual(0f, GimmickRules.RampClimbSpeed(0f, 0.10f, 0.05f, 0.25f, 45f));
+        }
     }
 }
