@@ -225,7 +225,7 @@ namespace DeskStage.App
         // モードを選ぶ・おだい（Docs/specs/home-modes）
         public const string ModeTitle = "どれで あそぶ？";
         public const string ModeCreate = "ステージを つくる";
-        public const string ModeCreateSub = "つくえの うえの ものを とって、じぶんの ステージを つくる";
+        public const string ModeCreateSub = "つくえの ものを とって、\nじぶんの ステージを つくる";
         public const string ModeMission = "おだいで つくる";
         public const string ModeMissionSub = "おだいに あわせて ならべて、ステージを つくろう";
         public const string MissionTitle = "おだいを えらぶ";

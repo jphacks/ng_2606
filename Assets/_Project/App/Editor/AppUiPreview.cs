@@ -99,6 +99,7 @@ namespace DeskStage.App.EditorTools
         static IEnumerable<Scenario> Scenarios()
         {
             yield return new Scenario { Name = "01-title", Screen = AppScreenId.Title };
+            yield return new Scenario { Name = "01b-mode", Screen = AppScreenId.Mode };
             yield return new Scenario
             {
                 Name = "02-home-empty",
