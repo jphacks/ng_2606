@@ -762,6 +762,7 @@ namespace DeskStage.App
                         {
                             jumpPadReadyAt = Time.time + GimmickRules.JumpPadCooldownSeconds;
                             motor.Launch(motor.settings.jumpHeight * GimmickRules.JumpPadHeightScale);
+                            UiSound.Play(UiSound.Cue.JumpPad); // ばねの「びよーん」（ジャンプ台で跳んだと分かるように。2026-11-11）
                         }
                         break;
                     case BoxData.GimmickWarp:
