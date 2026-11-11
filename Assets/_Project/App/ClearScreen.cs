@@ -39,12 +39,16 @@ namespace DeskStage.App
             var title = UiKit.Label(safe, AppText.ClearTitle, Theme.Hero, Theme.Orange, TextAlignmentOptions.Center, true, "Title");
             UiKit.Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -106f), new Vector2(1400f, 260f));
 
-            // タイムは左、記録は右に並べる（2026-11-11）
+            // タイムと記録を 1 枚の大きなカードに（2026-11-11）：上の段にタイム、線で区切って、下の段に記録
             var card = UiKit.Panel(safe, "TimeCard", Color.white, Theme.CardRadius, shadow: true);
-            UiKit.Place(card.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-330f, 30f), new Vector2(880f, 220f));
+            UiKit.Place(card.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 65f), new Vector2(1160f, 350f));
             time = UiKit.Label(card.rectTransform, "", Theme.Hero * 0.8f, Theme.Ink, TextAlignmentOptions.Center, true, "Time");
-            UiKit.Fill(time.rectTransform);
-            BuildRecords(safe);
+            UiKit.Area(time.rectTransform, new Vector2(0f, 0.45f), new Vector2(1f, 1f), 10f);
+            var line = UiKit.Panel(card.rectTransform, "Line", Theme.WithAlpha(Theme.InkSoft, 0.18f), 2f);
+            UiKit.Area(line.rectTransform, new Vector2(0.05f, 0.45f), new Vector2(0.95f, 0.455f), 0f);
+            var records = UiKit.NewRect("Records", card.rectTransform);
+            UiKit.Area(records, new Vector2(0.03f, 0.04f), new Vector2(0.97f, 0.43f), 0f);
+            BuildRecords(records);
 
             // そのときのしばり（Docs/specs/course-rules。記録は、しばりで分けない）
             rulesLine = UiKit.Label(safe, "", Theme.H2, Theme.Ink, TextAlignmentOptions.Center, true, "Rules");
@@ -52,7 +56,8 @@ namespace DeskStage.App
 
             var badge = UiKit.Panel(safe, "Record", Theme.Red, 60f);
             record = badge.rectTransform;
-            UiKit.Place(record, new Vector2(0.5f, 0.5f), new Vector2(60f, 170f), new Vector2(420f, 110f));
+            // カードの右上の角の外（タイムの数字に重ならない）
+            UiKit.Place(record, new Vector2(0.5f, 0.5f), new Vector2(540f, 262f), new Vector2(420f, 110f));
             record.localRotation = Quaternion.Euler(0f, 0f, 8f);
             var recordLabel = UiKit.FitLabel(record, AppText.ClearNewRecord, Theme.H2, Color.white, TextAlignmentOptions.Center, true, "L");
             UiKit.Fill(recordLabel.rectTransform);
@@ -75,78 +80,97 @@ namespace DeskStage.App
 
         TMP_Text rulesLine;
 
-        // ---- 記録のカード（StageRecords。2026-11-11） ----
-        // 新記録：前の記録と、どれだけ速くなったか。そうでないとき：これまでの上位 3 つ（今回が入っていれば、その行に「いま」）
-        TMP_Text recordsTitle;
-        TMP_Text previousTime;
-        TMP_Text faster;
-        readonly TMP_Text[] rows = new TMP_Text[StageRecords.Keep];
-        readonly Image[] rowMarks = new Image[StageRecords.Keep];
-
-        void BuildRecords(RectTransform safe)
+        // ---- 記録の列（StageRecords。2026-11-11） ----
+        // 横 1 列に出す。新記録：「まえの きろく 0:25.5」と、緑の札「2.1びょう はやく なった！」（はじめてなら、札だけ「はじめての クリア！」）。
+        // 札は、赤い「しんきろく！」と見分けやすいよう、緑にする。
+        // そうでないとき：「これまでの きろく」と、金・銀・銅のメダルに添えたタイム 3 つ（今回が入っていれば、そのメダルを囲み、「いま」）
+        static readonly Color[] MedalColors =
         {
-            var card = UiKit.Panel(safe, "RecordsCard", Color.white, Theme.CardRadius, shadow: true);
-            UiKit.Place(card.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(450f, 30f), new Vector2(580f, 290f));
-            var area = card.rectTransform;
+            new Color(1f, 0.78f, 0.15f),  // 金
+            new Color(0.72f, 0.75f, 0.8f), // 銀
+            new Color(0.82f, 0.52f, 0.3f), // 銅
+        };
 
-            recordsTitle = UiKit.Label(area, "", Theme.Body, Theme.InkSoft, TextAlignmentOptions.Center, true, "RecordsTitle");
-            UiKit.Area(recordsTitle.rectTransform, new Vector2(0f, 0.78f), new Vector2(1f, 0.97f), 16f);
+        TMP_Text previousLine;
+        RectTransform gainPill;
+        TMP_Text gainText;
+        TMP_Text rankTitle;
+        readonly GameObject[] chips = new GameObject[StageRecords.Keep];
+        readonly TMP_Text[] chipTimes = new TMP_Text[StageRecords.Keep];
+        readonly GameObject[] chipNow = new GameObject[StageRecords.Keep];
 
-            // 新記録のとき：前の記録（大きく）と、どれだけ速くなったか（1 行。入りきらなければ文字を小さく）
-            previousTime = UiKit.Label(area, "", Theme.H1, Theme.Ink, TextAlignmentOptions.Center, true, "PreviousTime");
-            UiKit.Area(previousTime.rectTransform, new Vector2(0f, 0.5f), new Vector2(1f, 0.8f), 16f);
-            faster = UiKit.FitLabel(area, "", Theme.H2, Theme.Red, TextAlignmentOptions.Center, true, "Faster");
-            UiKit.Area(faster.rectTransform, new Vector2(0f, 0.04f), new Vector2(1f, 0.5f), 10f);
+        void BuildRecords(RectTransform row)
+        {
+            // 新記録のとき
+            previousLine = UiKit.FitLabel(row, "", Theme.H2, Theme.Ink, TextAlignmentOptions.Right, true, "Previous");
+            UiKit.Area(previousLine.rectTransform, new Vector2(0f, 0f), new Vector2(0.46f, 1f), 10f);
+            var pill = UiKit.Panel(row, "Gain", Theme.Green, 50f);
+            gainPill = pill.rectTransform;
+            pill.raycastTarget = false;
+            gainText = UiKit.FitLabel(gainPill, "", Theme.H2, Color.white, TextAlignmentOptions.Center, true, "GainText");
+            UiKit.Area(gainText.rectTransform, Vector2.zero, Vector2.one, 14f);
 
-            // 新記録でないとき：上位 3 つの行
+            // 新記録でないとき
+            rankTitle = UiKit.FitLabel(row, AppText.ClearRanking, Theme.Body, Theme.InkSoft, TextAlignmentOptions.Center, true, "RankTitle");
+            UiKit.Area(rankTitle.rectTransform, new Vector2(0f, 0f), new Vector2(0.22f, 1f), 8f);
             for (var i = 0; i < StageRecords.Keep; i++)
             {
-                var top = 0.76f - i * 0.24f;
-                var mark = UiKit.Panel(area, "RowMark" + i, Theme.WithAlpha(Theme.Orange, 0.22f), 24f);
-                UiKit.Area(mark.rectTransform, new Vector2(0.06f, top - 0.22f), new Vector2(0.94f, top), 0f);
-                mark.raycastTarget = false;
-                var nowTag = UiKit.Label(mark.rectTransform, AppText.ClearNow, Theme.Body, Theme.Orange, TextAlignmentOptions.Right, true, "Now");
-                UiKit.Area(nowTag.rectTransform, new Vector2(0.7f, 0f), new Vector2(0.97f, 1f), 0f);
-                rowMarks[i] = mark;
-                rows[i] = UiKit.Label(area, "", Theme.H2, Theme.Ink, TextAlignmentOptions.Left, true, "Row" + i);
-                UiKit.Area(rows[i].rectTransform, new Vector2(0.14f, top - 0.22f), new Vector2(0.8f, top), 0f);
+                var chip = UiKit.Panel(row, "Medal" + i, Theme.WithAlpha(Theme.Orange, 0.2f), 50f);
+                chip.raycastTarget = false;
+                var x = 0.24f + i * 0.255f;
+                UiKit.Area(chip.rectTransform, new Vector2(x, 0.04f), new Vector2(x + 0.24f, 0.96f), 0f);
+                // 囲み（今回の記録だけ見せる）。チップの下地は透明にし、囲みのときだけ色を付ける
+                chipNow[i] = chip.gameObject;
+                var holder = UiKit.NewRect("Body", row);
+                UiKit.Area(holder, new Vector2(x, 0.04f), new Vector2(x + 0.24f, 0.96f), 0f);
+                var medal = UiKit.Disc(holder, "Disc", MedalColors[i], 74f);
+                UiKit.Place(medal.rectTransform, new Vector2(0f, 0.5f), new Vector2(52f, 0f), medal.rectTransform.sizeDelta);
+                medal.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+                medal.raycastTarget = false;
+                var number = UiKit.Label(medal.rectTransform, (i + 1).ToString(), Theme.H2, Color.white, TextAlignmentOptions.Center, true, "N");
+                UiKit.Fill(number.rectTransform);
+                chipTimes[i] = UiKit.FitLabel(holder, "", Theme.H2, Theme.Ink, TextAlignmentOptions.Left, true, "Time");
+                UiKit.Area(chipTimes[i].rectTransform, new Vector2(0.4f, 0f), new Vector2(1f, 1f), 6f);
+                // 「いま」の札：囲みの上の端に、半分はみ出して付ける
+                var nowTag = UiKit.Panel(chip.rectTransform, "Now", Theme.Orange, 22f);
+                nowTag.raycastTarget = false;
+                UiKit.Place(nowTag.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, 0f), new Vector2(96f, 44f));
+                nowTag.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+                nowTag.rectTransform.anchoredPosition = Vector2.zero;
+                var nowText = UiKit.Label(nowTag.rectTransform, AppText.ClearNow, Theme.Body * 0.75f, Color.white, TextAlignmentOptions.Center, true, "T");
+                UiKit.Fill(nowText.rectTransform);
+                chips[i] = holder.gameObject;
             }
         }
 
         void ShowRecords(ClearInfo info)
         {
             var best = info.IsBest;
-            previousTime.gameObject.SetActive(best);
-            faster.gameObject.SetActive(best);
+            previousLine.gameObject.SetActive(best && info.PreviousBest.HasValue);
+            gainPill.gameObject.SetActive(best);
             if (best)
             {
                 if (info.PreviousBest.HasValue)
                 {
-                    recordsTitle.text = AppText.ClearPreviousBest;
-                    previousTime.text = FlowRules.FormatTime(info.PreviousBest.Value);
-                    faster.text = string.Format(AppText.ClearFaster, FlowRules.FormatGain(info.PreviousBest.Value, info.Seconds));
-                    UiKit.Area(faster.rectTransform, new Vector2(0f, 0.04f), new Vector2(1f, 0.5f), 10f);
+                    previousLine.text = AppText.ClearPreviousBest + "　" + FlowRules.FormatTime(info.PreviousBest.Value);
+                    gainText.text = string.Format(AppText.ClearFaster, FlowRules.FormatGain(info.PreviousBest.Value, info.Seconds));
+                    UiKit.Area(gainPill, new Vector2(0.5f, 0.08f), new Vector2(0.98f, 0.92f), 0f);
                 }
                 else
                 {
-                    // はじめてのクリア：前の記録は無いので、カードの真ん中に、ひとことだけ
-                    recordsTitle.text = "";
-                    previousTime.text = "";
-                    faster.text = AppText.ClearFirst;
-                    UiKit.Area(faster.rectTransform, new Vector2(0f, 0.3f), new Vector2(1f, 0.7f), 24f);
+                    // はじめてのクリア：前の記録は無いので、札だけを真ん中に
+                    gainText.text = AppText.ClearFirst;
+                    UiKit.Area(gainPill, new Vector2(0.28f, 0.08f), new Vector2(0.72f, 0.92f), 0f);
                 }
             }
-            else
-            {
-                recordsTitle.text = AppText.ClearRanking;
-            }
+            rankTitle.gameObject.SetActive(!best);
             var top = info.Top ?? new float[0];
             for (var i = 0; i < StageRecords.Keep; i++)
             {
                 var show = !best && i < top.Length;
-                rows[i].gameObject.SetActive(show);
-                rowMarks[i].gameObject.SetActive(show && i == info.Rank);
-                if (show) rows[i].text = string.Format(AppText.ClearRankRow, i + 1, FlowRules.FormatTime(top[i]));
+                chips[i].SetActive(show);
+                chipNow[i].SetActive(show && i == info.Rank);
+                if (show) chipTimes[i].text = FlowRules.FormatTime(top[i]);
             }
         }
 
