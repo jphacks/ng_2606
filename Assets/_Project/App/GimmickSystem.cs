@@ -74,6 +74,10 @@ namespace DeskStage.App
             public Material Core;     // 炎の芯の、うすくする素材
         }
 
+        // 浮かび上がる炎の、いちばん大きいときの大きさ（m）と、面に足をつけたまま大きくなる時間の割合
+        const float FlameSize = 0.026f;
+        const float FlameGrowPart = 0.3f;
+
         // 炎・「＋」の形（作るのは 1 回だけ）
         Mesh flameMesh;
         Mesh plusMesh;
@@ -639,15 +643,28 @@ namespace DeskStage.App
                     if (v.Kind == BoxData.GimmickFire)
                     {
                         // 回復の「＋」と同じく、ふわっと上がって、小さく薄くなって消える炎。回すと、明るく塗った正面が向こうを向くので、回さずに、ゆらゆらゆらす
+                        // 前の 3 割：箱の面に足をつけたまま、小さな炎から大きくなる（面から生えるように出る）。
+                        // 後の 7 割：面を離れて浮かび上がりながら、小さくなる。うすくするのは、消える直前だけ
+                        // （2026-11-11：前は、出たときから面の少し上に浮いていて、箱よりかなり上から出ているように見えた）
                         var k = (t * 0.45f + b.Phase) % 1f;
-                        var grow = Mathf.Sin(k * Mathf.PI);
-                        // 小さくなって消える。うすくするのは、出始めと消える直前だけ（ずっと薄いと、白っぽい幽霊のように見えた）
-                        var size = 0.026f * Mathf.Lerp(0.3f, 1f, grow);
+                        float size, rise;
+                        if (k < FlameGrowPart)
+                        {
+                            var g = k / FlameGrowPart;
+                            size = FlameSize * Mathf.Lerp(0.15f, 1f, g * g * (3f - 2f * g));
+                            rise = 0f;
+                        }
+                        else
+                        {
+                            var r = (k - FlameGrowPart) / (1f - FlameGrowPart);
+                            size = FlameSize * Mathf.Lerp(1f, 0.3f, r);
+                            rise = Mathf.Pow(r, 1.3f) * 0.045f;
+                        }
                         var sway = Mathf.Sin(t * 6f + b.Phase * 3f) * 8f;
-                        b.Transform.position = basePoint + up * (0.004f + k * 0.05f);
+                        b.Transform.position = basePoint + up * (0.0005f + rise);
                         b.Transform.rotation = facing * Quaternion.Euler(0f, 0f, sway);
                         b.Transform.localScale = new Vector3(size * 0.6f, size * 1.45f, size * 0.6f);
-                        var fade = new Color(1f, 1f, 1f, Mathf.Clamp01(grow * 3f));
+                        var fade = new Color(1f, 1f, 1f, Mathf.Clamp01((1f - k) / 0.15f));
                         if (b.Material != null) b.Material.color = fade;
                         if (b.Core != null) b.Core.color = fade;
                     }
