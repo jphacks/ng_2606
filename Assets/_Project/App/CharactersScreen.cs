@@ -177,7 +177,7 @@ namespace DeskStage.App
                 ShowList();
                 return;
             }
-            Context.Router.Show(AppScreenId.Home);
+            Context.Router.Show(AppScreenId.Mode, remember: false); // 開くボタンは、モードを選ぶ画面にある（2026-11-12）
         }
 
         void Only(RectTransform view)

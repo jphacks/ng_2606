@@ -34,20 +34,13 @@ namespace DeskStage.App
 
             var safe = UiKit.Fill(UiKit.NewRect("Safe", Rect));
 
-            // 上の帯：タイトルと、キャラ・はいけい
+            // 上の帯：タイトル（キャラ・はいけいのボタンは、モードを選ぶ画面へ移した。2026-11-12）
             // 左上：もどる（モードを選ぶ画面へ）
             var back = UiKit.Button(safe, AppText.Back, UiKit.ButtonStyle.Soft, new Vector2(330f, Theme.SmallButtonHeight),
                 OnBack, "Back", Theme.Body);
             UiKit.Place(back.Rect, new Vector2(0f, 1f), new Vector2(Theme.Margin, -45f), back.Rect.sizeDelta);
             var title = UiKit.Label(safe, AppText.HomeTitle, Theme.H1, Theme.Ink, TextAlignmentOptions.Left, true, "Title");
             UiKit.Place(title.rectTransform, new Vector2(0f, 1f), new Vector2(Theme.Margin + 380f, -50f), new Vector2(1000f, 120f));
-
-            var backdrop = UiKit.Button(safe, AppText.HomeBackdrop, UiKit.ButtonStyle.Soft, new Vector2(380f, Theme.SmallButtonHeight),
-                () => Context.Flow.OpenBackdrop(), "Backdrop", Theme.Body);
-            UiKit.Place(backdrop.Rect, new Vector2(1f, 1f), new Vector2(-Theme.Margin, -45f), backdrop.Rect.sizeDelta);
-            var characters = UiKit.Button(safe, AppText.HomeCharacters, UiKit.ButtonStyle.Soft, new Vector2(380f, Theme.SmallButtonHeight),
-                () => Context.Flow.OpenCharacters(), "Characters", Theme.Body);
-            UiKit.Place(characters.Rect, new Vector2(1f, 1f), new Vector2(-Theme.Margin - 420f, -45f), characters.Rect.sizeDelta);
 
             // 真ん中：カードの列（横にスクロール）
             var scrollRect = UiKit.NewRect("Scroll", safe);

@@ -178,7 +178,7 @@ namespace DeskStage.App
             presetObjects.Clear();
         }
 
-        public override void OnBack() => Context.Router.Show(AppScreenId.Home);
+        public override void OnBack() => Context.Router.Show(AppScreenId.Mode, remember: false); // 開くボタンは、モードを選ぶ画面にある（2026-11-12）
 
         void ShowStatus()
         {
