@@ -19,6 +19,26 @@ namespace DeskStage.App
         /// </summary>
         public const float WaterRampAirSpeed = 0.15f;
 
+        /// <summary>
+        /// 水の坂を、流れに乗ってのぼるときの上向きの速さ（m/秒。2026-11-11）。0 なら、上向きには動かさない。
+        /// キャラは、上向きに動いていないと、歩いてのぼれる角度（walkableDegrees。45 度）より急な坂をのぼれない（C の CharacterMotor）。
+        /// そこで、上り向きの流れで、坂がそれより急なときだけ、横に流す速さ pushSpeed のうち坂をのぼる向きの分（uphillShare：-1〜1）に、
+        /// 坂の傾き（高さ rampHeight ÷ 長さ rampLength）を掛けた上向きの速さを与える。ゆるい坂と下り向きは、今までどおり横に押すだけ。
+        /// </summary>
+        public static float RampClimbSpeed(float uphillShare, float rampHeight, float rampLength, float pushSpeed, float walkableDegrees)
+        {
+            if (uphillShare <= 0.01f || rampLength <= 1e-4f || rampHeight <= 0f)
+            {
+                return 0f;
+            }
+            var slope = rampHeight / rampLength;
+            if (Mathf.Atan(slope) * Mathf.Rad2Deg <= walkableDegrees)
+            {
+                return 0f;
+            }
+            return pushSpeed * uphillShare * slope;
+        }
+
         /// <summary>水に流される速さの合計の上限（m/秒）。水の箱が重なっていても、これより速く流さない（吹っ飛ばないように）。</summary>
         public const float MaxWaterPush = WaterRampSpeed;
 
