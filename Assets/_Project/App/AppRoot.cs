@@ -103,6 +103,7 @@ namespace DeskStage.App
             Context.Rules = gameObject.AddComponent<CourseRuleSystem>();
             Context.Rules.Set(Context.Gimmicks);
             Context.Overlays = gameObject.AddComponent<AppOverlays>();
+            gameObject.AddComponent<GameSounds>().Set(Context.Router);
 
             Context.Flow.Init(Context);
 
