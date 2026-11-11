@@ -19,6 +19,7 @@ namespace DeskStage.App
         Backdrop,
         Mode,
         Mission,
+        GimmickGuide,
     }
 
     /// <summary>いま遊んでいるステージの出どころ（Docs/specs/home-modes）。いちらんへ戻る先と、「なおす」「ほぞん」を出すかが変わる。</summary>

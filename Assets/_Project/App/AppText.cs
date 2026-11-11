@@ -265,5 +265,28 @@ namespace DeskStage.App
         public const string GameOverRetry = "もういちど";
         public const string GameOverList = "いちらんへ";
         public const string GameOverFix = "コースを なおす";
+
+        // ---- いろの しかけ（GimmickGuideScreen。2026-11-11。ぜんぶ ひらがな） ----
+        public const string GuideTitle = "いろの しかけ";
+        public const string GuideLead = "おりがみを はこの うえ いっぱいに はると、いろの しかけに なるよ";
+        public const string GuideNext = "つぎへ";
+        public const string GuideBlue = "あお";
+        public const string GuideRed = "あか";
+        public const string GuideGreen = "みどり";
+        public const string GuideYellow = "きいろ";
+        public const string GuidePurple = "むらさき";
+        public const string GuidePink = "ぴんく";
+        public const string GuideWaterName = "みず";
+        public const string GuideFireName = "ほのお";
+        public const string GuideHealName = "かいふく";
+        public const string GuideJumpName = "じゃんぷだい";
+        public const string GuideEnemyName = "てき";
+        public const string GuideWarpName = "わーぷ";
+        public const string GuideWater = "のると、やじるしの\nむきに ながされるよ";
+        public const string GuideFire = "のると、\nはーとが へっちゃうよ";
+        public const string GuideHeal = "のって いると、\nはーとが すこしずつ ふえるよ";
+        public const string GuideJump = "のると、びよーんと\nたかく とびあがるよ";
+        public const string GuideEnemy = "てきが でてくるよ。\nさわると、はーとが へっちゃうよ";
+        public const string GuideWarp = "のると、もう ひとつの\nぴんくの はこへ とんでいくよ";
     }
 }
