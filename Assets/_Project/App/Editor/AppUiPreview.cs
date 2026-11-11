@@ -188,7 +188,19 @@ namespace DeskStage.App.EditorTools
             {
                 Name = "14-clear",
                 Screen = AppScreenId.Clear,
-                Arg = new ClearInfo { Seconds = 23.4f, IsBest = true },
+                Arg = new ClearInfo { Seconds = 23.4f, IsBest = true, PreviousBest = 25.5f, Top = new[] { 23.4f, 25.5f, 31.2f }, Rank = 0 },
+            };
+            yield return new Scenario
+            {
+                Name = "14-clear-first",
+                Screen = AppScreenId.Clear,
+                Arg = new ClearInfo { Seconds = 23.4f, IsBest = true, Top = new[] { 23.4f }, Rank = 0 },
+            };
+            yield return new Scenario
+            {
+                Name = "14-clear-ranking",
+                Screen = AppScreenId.Clear,
+                Arg = new ClearInfo { Seconds = 27.8f, IsBest = false, PreviousBest = 23.4f, Top = new[] { 23.4f, 25.5f, 27.8f }, Rank = 2 },
             };
             yield return new Scenario { Name = "15-characters", Screen = AppScreenId.Characters };
             yield return new Scenario { Name = "16-backdrop", Screen = AppScreenId.Backdrop };

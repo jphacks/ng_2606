@@ -173,6 +173,18 @@ namespace DeskStage.App
             return $"{minutes}:{rest / 10:00}.{rest % 10}";
         }
 
+        /// <summary>
+        /// 前の記録から、どれだけ速くなったか（秒。例：25.5 → 23.4 は「2.1」）。FormatTime と同じく十分の一秒で切った値どうしの差にして、
+        /// 画面に並ぶ 2 つのタイムと、差が食い違わないようにする。十分の一秒で同じに見えるときは、百分の一秒で書く（「0.04」）。
+        /// </summary>
+        public static string FormatGain(float previous, float now)
+        {
+            var tenths = (int)(previous * 10f + 0.001f) - (int)(now * 10f + 0.001f);
+            if (tenths > 0) return $"{tenths / 10}.{tenths % 10}";
+            var hundredths = System.Math.Max(1, (int)System.Math.Round((previous - now) * 100f));
+            return $"0.{hundredths:00}";
+        }
+
         /// <summary>保存するときの、ステージの名前（「ステージ 3」のように、いまの数 + 1）。</summary>
         public static string DefaultStageName(int savedCount) => $"ステージ {savedCount + 1}";
     }

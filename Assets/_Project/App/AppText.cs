@@ -137,6 +137,13 @@ namespace DeskStage.App
         public const string ClearList = "いちらんへ";
         public const string ClearSave = "ほぞんして いちらんへ";
         public const string ClearFix = "コースを なおす";
+        // 記録（StageRecords。2026-11-11）
+        public const string ClearPreviousBest = "まえの きろく";
+        public const string ClearFaster = "{0}びょう\nはやく なった！";
+        public const string ClearFirst = "はじめての クリア！";
+        public const string ClearRanking = "これまでの きろく";
+        public const string ClearRankRow = "{0}い　{1}";
+        public const string ClearNow = "いま";
 
         // ---- キャラ ----
         public const string CharTitle = "キャラを えらぶ";
