@@ -19,6 +19,7 @@ namespace DeskStage.App
             StepRight,
             Jump,
             AirJump,
+            JumpPad,
             Goal,
         }
 
@@ -33,6 +34,7 @@ namespace DeskStage.App
         static AudioClip stepRight;
         static AudioClip jump;
         static AudioClip airJump;
+        static AudioClip jumpPad;
         static AudioClip goal;
 
         /// <summary>false にすると、音を出さない（確認用の画像を作るときなど）。</summary>
@@ -61,6 +63,7 @@ namespace DeskStage.App
                 case Cue.StepRight: clip = stepRight ??= MakeStep(205f); volume = 0.5f; break;
                 case Cue.Jump: clip = jump ??= MakeSweep(380f, 900f, 0.16f, 0.45f); break;
                 case Cue.AirJump: clip = airJump ??= MakeSweep(620f, 1400f, 0.13f, 0.4f); break;
+                case Cue.JumpPad: clip = jumpPad ??= MakeSpring(); break;
                 case Cue.Goal: clip = goal ??= MakeFanfare(); break;
                 default: clip = click ??= Make(new[] { 900f }, 0.06f, 0.45f); break;
             }
@@ -130,6 +133,32 @@ namespace DeskStage.App
         }
 
         /// <summary>ジャンプ：下から上へ、すっと上がる「ぴょん」。from から to（Hz）へ、seconds 秒で上げる。</summary>
+        /// <summary>
+        /// ジャンプ台：ばねの「びよーん」（2026-11-11）。下から上へ大きく上がりながら、高さが ぶるぶる揺れ、だんだん揺れがおさまる。
+        /// ふつうのジャンプ（すっと上がる「ぴょん」）より長く、揺れがあるので、ジャンプ台で跳んだと分かる。
+        /// </summary>
+        static AudioClip MakeSpring()
+        {
+            const float seconds = 0.42f;
+            var length = Mathf.RoundToInt(SampleRate * seconds);
+            var data = new float[length];
+            var phase = 0f;
+            for (var i = 0; i < length; i++)
+            {
+                var t = i / (float)SampleRate;
+                var k = t / seconds;
+                // 220Hz から 880Hz へ上がる。上に、ばねの揺れ（1 秒に 22 回）を重ね、揺れはだんだん小さくする
+                var frequency = Mathf.Lerp(220f, 880f, Mathf.Sqrt(k)) * (1f + 0.12f * Mathf.Sin(2f * Mathf.PI * 22f * t) * Mathf.Exp(-3f * t));
+                phase += 2f * Mathf.PI * frequency / SampleRate;
+                var envelope = Mathf.Min(1f, i / 80f) * (1f - k) * (1f - k * 0.5f);
+                var wave = Mathf.Sin(phase) * 0.8f + Mathf.Sin(2f * phase) * 0.15f;
+                data[i] = wave * envelope * 0.42f;
+            }
+            var clip = AudioClip.Create("jumppad", length, 1, SampleRate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
         static AudioClip MakeSweep(float from, float to, float seconds, float volume)
         {
             var length = Mathf.RoundToInt(SampleRate * seconds);
