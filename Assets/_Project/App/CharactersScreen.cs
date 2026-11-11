@@ -412,18 +412,24 @@ namespace DeskStage.App
             }
         }
 
-        // 「いつもの こ」の絵（青いカプセルのキャラ）
-        static void DrawDefault(RectTransform art)
+        // 「いつもの こ」の絵：遊ぶときに頭に貼る顔（DefaultFace）を、撮ったキャラと同じ顔の枠で切り抜いて出す（2026-11-11。前は青いカプセル）
+        void DrawDefault(RectTransform art)
         {
-            var body = UiKit.Panel(art, "Body", Theme.Blue, 80f);
-            UiKit.Place(body.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(170f, 250f));
-            for (var i = 0; i < 2; i++)
-            {
-                var eye = UiKit.Disc(body.rectTransform, "Eye" + i, Color.white, 52f);
-                UiKit.Place(eye.rectTransform, new Vector2(0.3f + i * 0.4f, 0.68f), Vector2.zero, eye.rectTransform.sizeDelta);
-                var pupil = UiKit.Disc(eye.rectTransform, "Pupil", Theme.Ink, 24f);
-                UiKit.Place(pupil.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, pupil.rectTransform.sizeDelta);
-            }
+            var w = DeskStage.Merge.DefaultFace.Width;
+            var h = DeskStage.Merge.DefaultFace.Height;
+            var texture = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear };
+            texture.SetPixels32(DeskStage.Merge.HumanMask.Apply(DeskStage.Merge.DefaultFace.Pixels(w, h), w, h));
+            texture.Apply();
+            tileObjects.Add(texture);
+            var rect = UiKit.Fill(UiKit.NewRect("Image", art));
+            rect.offsetMin = new Vector2(16f, 16f);
+            rect.offsetMax = new Vector2(-16f, -16f);
+            var raw = rect.gameObject.AddComponent<RawImage>();
+            raw.texture = texture;
+            raw.raycastTarget = false;
+            var fitter = rect.gameObject.AddComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+            fitter.aspectRatio = DeskStage.Merge.HumanMask.Aspect;
         }
 
         void ReleasePending()
