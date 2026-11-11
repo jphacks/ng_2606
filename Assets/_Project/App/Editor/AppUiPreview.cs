@@ -186,6 +186,17 @@ namespace DeskStage.App.EditorTools
             };
             yield return new Scenario
             {
+                // 撮ったばかりのステージ：「コースを なおす」も出る（「いちらんへ」と重ならないか）
+                Name = "19-gameover-new",
+                Screen = AppScreenId.GameOver,
+                Setup = c =>
+                {
+                    c.Gimmicks.Health.Reset();
+                    typeof(AppFlow).GetProperty("HasNewStage").SetValue(c.Flow, true);
+                },
+            };
+            yield return new Scenario
+            {
                 Name = "14-clear",
                 Screen = AppScreenId.Clear,
                 Arg = new ClearInfo { Seconds = 23.4f, IsBest = true },
