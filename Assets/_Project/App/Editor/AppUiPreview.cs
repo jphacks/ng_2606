@@ -198,6 +198,17 @@ namespace DeskStage.App.EditorTools
             };
             yield return new Scenario
             {
+                // しばりを全部付けたステージ（クリア画面の「しばり：…」の行がいちばん長くなる）
+                Name = "14-clear-rules",
+                Screen = AppScreenId.Clear,
+                Setup = c => StageContext.CurrentStage = new StageData
+                {
+                    rules = new CourseRules { maxJumps = 3, noDoubleJump = true, oneHit = true, timeLimitSeconds = 60f },
+                },
+                Arg = new ClearInfo { Seconds = 27.8f, IsBest = false, PreviousBest = 23.4f, Top = new[] { 23.4f, 25.5f, 27.8f }, Rank = 2 },
+            };
+            yield return new Scenario
+            {
                 Name = "14-clear-ranking",
                 Screen = AppScreenId.Clear,
                 Arg = new ClearInfo { Seconds = 27.8f, IsBest = false, PreviousBest = 23.4f, Top = new[] { 23.4f, 25.5f, 27.8f }, Rank = 2 },
