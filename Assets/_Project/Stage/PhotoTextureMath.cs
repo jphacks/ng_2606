@@ -157,18 +157,11 @@ namespace DeskStage.Stage
             {
                 throw new ArgumentException("四隅は 4 つ必要です", nameof(corners));
             }
+            var points = CropPoints(corners, outWidth, outHeight, uMin, uMax, vMin, vMax);
             var result = new Color32[outWidth * outHeight];
-            for (var iy = 0; iy < outHeight; iy++)
+            for (var i = 0; i < result.Length; i++)
             {
-                var v = Mathf.Lerp(vMin, vMax, (iy + 0.5f) / outHeight); // 0 が手前、1 が奥
-                for (var ix = 0; ix < outWidth; ix++)
-                {
-                    var u = Mathf.Lerp(uMin, uMax, (ix + 0.5f) / outWidth);
-                    var near = Vector2.LerpUnclamped(corners[NearLeft], corners[NearRight], u);
-                    var far = Vector2.LerpUnclamped(corners[FarLeft], corners[FarRight], u);
-                    var p = Vector2.LerpUnclamped(near, far, v);
-                    result[iy * outWidth + ix] = Sample(src, srcWidth, srcHeight, p);
-                }
+                result[i] = Sample(src, srcWidth, srcHeight, points[i]);
             }
             return result;
         }
@@ -176,19 +169,78 @@ namespace DeskStage.Stage
         /// <summary>CropRange が読む点の、写真の中の位置（同じ並び）。上に乗った箱で隠れた所を、しかけの判定から外すのに使う。</summary>
         public static Vector2[] CropPoints(Vector2[] corners, int outWidth, int outHeight, float uMin, float uMax, float vMin, float vMax)
         {
+            var map = new QuadMap(corners);
             var result = new Vector2[outWidth * outHeight];
             for (var iy = 0; iy < outHeight; iy++)
             {
-                var v = Mathf.Lerp(vMin, vMax, (iy + 0.5f) / outHeight);
+                var v = Mathf.Lerp(vMin, vMax, (iy + 0.5f) / outHeight); // 0 が手前、1 が奥
                 for (var ix = 0; ix < outWidth; ix++)
                 {
                     var u = Mathf.Lerp(uMin, uMax, (ix + 0.5f) / outWidth);
-                    var near = Vector2.LerpUnclamped(corners[NearLeft], corners[NearRight], u);
-                    var far = Vector2.LerpUnclamped(corners[FarLeft], corners[FarRight], u);
-                    result[iy * outWidth + ix] = Vector2.LerpUnclamped(near, far, v);
+                    result[iy * outWidth + ix] = map.Point(u, v);
                 }
             }
             return result;
+        }
+
+        /// <summary>
+        /// 面の上の点（u：左 0〜右 1、v：手前 0〜奥 1）が、写真のどこに写っているか（2026-11-11）。
+        /// 平らな面を写真に写すと、四角形は遠近でゆがむ（遠い側が縮む）。その関係（射影変換）をそのまま使うので、
+        /// 写真が少しななめでも、面の模様が手前と奥でずれない。前は、四隅の間をまっすぐ割り振る計算（双一次補間）で、
+        /// 遠近のある写真では、面の真ん中の模様が手前へずれていた。
+        /// 四隅が平行四辺形（遠近が無い）なら、まっすぐ割り振るのと同じになる。
+        /// </summary>
+        public readonly struct QuadMap
+        {
+            readonly float a, b, c, d, e, f, g, h;
+            readonly bool projective;
+            readonly Vector2[] corners;
+
+            public QuadMap(Vector2[] corners)
+            {
+                this.corners = corners;
+                // 単位の正方形 (0,0) (1,0) (1,1) (0,1) → 手前左、手前右、奥右、奥左（Heckbert の式）
+                var p0 = corners[NearLeft];
+                var p1 = corners[NearRight];
+                var p2 = corners[FarRight];
+                var p3 = corners[FarLeft];
+                var dx1 = p1.x - p2.x;
+                var dx2 = p3.x - p2.x;
+                var dx3 = p0.x - p1.x + p2.x - p3.x;
+                var dy1 = p1.y - p2.y;
+                var dy2 = p3.y - p2.y;
+                var dy3 = p0.y - p1.y + p2.y - p3.y;
+                var den = dx1 * dy2 - dx2 * dy1;
+                if (Mathf.Abs(den) < 1e-9f)
+                {
+                    // 四隅がつぶれている：まっすぐ割り振る計算にする
+                    a = b = c = d = e = f = g = h = 0f;
+                    projective = false;
+                    return;
+                }
+                g = (dx3 * dy2 - dx2 * dy3) / den;
+                h = (dx1 * dy3 - dx3 * dy1) / den;
+                a = p1.x - p0.x + g * p1.x;
+                b = p3.x - p0.x + h * p3.x;
+                c = p0.x;
+                d = p1.y - p0.y + g * p1.y;
+                e = p3.y - p0.y + h * p3.y;
+                f = p0.y;
+                projective = true;
+            }
+
+            public Vector2 Point(float u, float v)
+            {
+                var w = g * u + h * v + 1f;
+                if (projective && w > 1e-4f)
+                {
+                    return new Vector2((a * u + b * v + c) / w, (d * u + e * v + f) / w);
+                }
+                // 面の外へ大きくのばしたとき（地面）などで、計算が裏返る所は、まっすぐ割り振る
+                var near = Vector2.LerpUnclamped(corners[NearLeft], corners[NearRight], u);
+                var far = Vector2.LerpUnclamped(corners[FarLeft], corners[FarRight], u);
+                return Vector2.LerpUnclamped(near, far, v);
+            }
         }
 
         /// <summary>点が、四角形（ぐるっと一周する順の 4 点。凸）の中（ふちを含む）にあるか。</summary>

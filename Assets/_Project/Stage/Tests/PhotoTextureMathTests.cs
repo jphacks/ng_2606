@@ -273,5 +273,56 @@ namespace DeskStage.Stage.Tests
                 Assert.IsTrue(PhotoTextureMath.InsideQuad(corners, p), $"{p} が四隅の外");
             }
         }
+
+        // ---- 遠近を正しく直す計算（QuadMap） ----
+
+        // 左奥、右奥、右手前、左手前（写真の y は下向き）
+        static Vector2[] Trapezoid() => new[]
+        {
+            new Vector2(0.35f, 0.2f), new Vector2(0.65f, 0.2f), new Vector2(0.9f, 0.8f), new Vector2(0.1f, 0.8f),
+        };
+
+        [Test]
+        public void 面の四隅は写真の四隅に写る()
+        {
+            var q = Trapezoid();
+            var map = new PhotoTextureMath.QuadMap(q);
+            AssertNear(q[PhotoTextureMath.NearLeft], map.Point(0f, 0f));
+            AssertNear(q[PhotoTextureMath.NearRight], map.Point(1f, 0f));
+            AssertNear(q[PhotoTextureMath.FarRight], map.Point(1f, 1f));
+            AssertNear(q[PhotoTextureMath.FarLeft], map.Point(0f, 1f));
+        }
+
+        [Test]
+        public void 遠近のある写真では面の真ん中は対角線の交わる点に写る()
+        {
+            // 遠い側（上）が縮んだ台形。面の真ん中は、四隅の平均より奥（上）に写る
+            var q = Trapezoid();
+            var center = new PhotoTextureMath.QuadMap(q).Point(0.5f, 0.5f);
+            // 対角線（左手前→右奥、右手前→左奥）の交わる点
+            var a = q[PhotoTextureMath.NearLeft];
+            var b = q[PhotoTextureMath.FarRight];
+            var c = q[PhotoTextureMath.NearRight];
+            var d = q[PhotoTextureMath.FarLeft];
+            var t = ((c.x - a.x) * (d.y - c.y) - (c.y - a.y) * (d.x - c.x)) / ((b.x - a.x) * (d.y - c.y) - (b.y - a.y) * (d.x - c.x));
+            AssertNear(a + (b - a) * t, center);
+            Assert.Less(center.y, 0.5f, "四隅の平均（y = 0.5）より奥");
+        }
+
+        [Test]
+        public void 遠近の無い平行四辺形では今までと同じ割り振り()
+        {
+            var q = new[] { new Vector2(0.3f, 0.2f), new Vector2(0.8f, 0.3f), new Vector2(0.7f, 0.8f), new Vector2(0.2f, 0.7f) };
+            var map = new PhotoTextureMath.QuadMap(q);
+            var near = Vector2.Lerp(q[PhotoTextureMath.NearLeft], q[PhotoTextureMath.NearRight], 0.25f);
+            var far = Vector2.Lerp(q[PhotoTextureMath.FarLeft], q[PhotoTextureMath.FarRight], 0.25f);
+            AssertNear(Vector2.Lerp(near, far, 0.6f), map.Point(0.25f, 0.6f));
+        }
+
+        static void AssertNear(Vector2 expected, Vector2 actual)
+        {
+            Assert.AreEqual(expected.x, actual.x, 1e-4f, "x");
+            Assert.AreEqual(expected.y, actual.y, 1e-4f, "y");
+        }
     }
 }

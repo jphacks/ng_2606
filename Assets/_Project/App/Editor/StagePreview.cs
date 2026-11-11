@@ -136,7 +136,8 @@ namespace DeskStage.App.EditorTools
                 typeof(StagePhotoTexturer).GetMethod("MakeBackdropPixels", flags).Invoke(texturer, new object[] { File.ReadAllBytes(backdrop) });
                 typeof(StagePhotoTexturer).GetMethod("AddBackdrop", flags).Invoke(texturer, new object[] { root });
             }
-            // 光を整える処理があれば、実機と同じく、写真を貼ったあとに呼ぶ
+            // 足もとの暗がりと、光を整える処理（実機と同じく、写真と背景を貼ったあとに呼ぶ）
+            typeof(StagePhotoTexturer).GetMethod("AddContactShadows", flags)?.Invoke(texturer, new object[] { root });
             typeof(StagePhotoTexturer).GetMethod("ApplyLighting", flags)?.Invoke(texturer, null);
         }
 
