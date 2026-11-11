@@ -34,7 +34,8 @@ namespace DeskStage.App.EditorTools
                 return;
             }
             Directory.CreateDirectory(outDir);
-            QualitySettings.SetQualityLevel(0, true); // iPhone と同じ「Mobile」の設定（URP の資産）
+            var quality = QualitySettings.GetQualityLevel();
+            QualitySettings.SetQualityLevel(0, true); // iPhone と同じ「Mobile」の設定（URP の資産）。描き終えたら戻す（設定ファイルを書き換えないように）
 
             // 1 回目の描画は素材がそろわないことがあるので、捨てる絵を先に描く
             foreach (var pass in new[] { "warmup", "play", "near" })
@@ -48,6 +49,7 @@ namespace DeskStage.App.EditorTools
                 var path = Path.Combine(outDir, "stage-" + pass + ".png");
                 Shoot(camera, path);
             }
+            QualitySettings.SetQualityLevel(quality, true);
             EditorApplication.Exit(0);
         }
 
