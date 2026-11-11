@@ -70,13 +70,12 @@ namespace DeskStage.App
             public Transform Transform;
             public Vector2 Local;     // 箱の上面の中での位置（-0.5〜0.5）
             public float Phase;
-            public bool Spark;        // 炎の火の粉（舞い上がって消える）
-            public Material Material; // 回復の「＋」の、うすくする素材
+            public Material Material; // うすくして消す素材（回復の「＋」、炎の外側）
+            public Material Core;     // 炎の芯の、うすくする素材
         }
 
-        // 炎・火の粉・「＋」の形（作るのは 1 回だけ）
+        // 炎・「＋」の形（作るのは 1 回だけ）
         Mesh flameMesh;
-        Mesh sparkMesh;
         Mesh plusMesh;
 
         class Enemy
@@ -382,7 +381,6 @@ namespace DeskStage.App
             created.Clear();
             textures.Clear();
             flameMesh = null;
-            sparkMesh = null;
             plusMesh = null;
         }
 
@@ -469,7 +467,7 @@ namespace DeskStage.App
         }
 
         // 炎と回復の「立ち上がる」飾り（立体。2026-11-11：前は、カメラへ向けた板の絵で、横から見るとうすかった）
-        //  ・炎：しずくの形の炎（内側に明るい芯）と、舞い上がる火の粉
+        //  ・炎：しずくの形の炎（内側に明るい芯）が、回復の「＋」と同じく、ふわっと上がって消える（2026-11-11。前は、その場でゆれる炎と、舞い上がる火の粉）
         //  ・回復：厚みのある「＋」が、回りながら、ふわっと上がって消える
         void BuildBillboards(Visual v)
         {
@@ -481,9 +479,8 @@ namespace DeskStage.App
             var scale = v.Box.localScale;
             var area = scale.x * scale.z;
             var fire = v.Kind == BoxData.GimmickFire;
-            var count = fire
-                ? Mathf.Clamp(Mathf.RoundToInt(area / 0.0012f), 2, 7)
-                : Mathf.Clamp(Mathf.RoundToInt(area / 0.004f), 1, 3);
+            // 炎も回復も、浮かび上がる飾りを、箱の広さに合わせて 1〜3 個
+            var count = Mathf.Clamp(Mathf.RoundToInt(area / 0.004f), 1, 3);
             for (var i = 0; i < count; i++)
             {
                 var h1 = Hash01(v.Id, i * 2);
@@ -491,19 +488,17 @@ namespace DeskStage.App
                 var local = new Vector2((h1 - 0.5f) * 0.7f, (h2 - 0.5f) * 0.7f);
                 if (fire)
                 {
+                    // 回復の「＋」と同じく、浮かび上がって消える小さな炎（2026-11-11）。薄くして消すので、炎ごとに素材を分ける
                     flameMesh ??= Keep(GimmickMeshes.Flame());
-                    var flame = MeshObject("Flame", flameMesh, Solid(NewMaterial(GetTexture("flame3d", () => GimmickMeshes.FlameTexture(false)), Color.white)));
+                    var outer = Solid(NewMaterial(GetTexture("flame3d", () => GimmickMeshes.FlameTexture(false)), Color.white));
+                    var flame = MeshObject("Flame", flameMesh, outer);
                     // 芯：炎の子。カメラ寄り（-z）に出して、外の炎の手前に、明るい内側の炎として見せる
-                    var core = MeshObject("FlameCore", flameMesh, Solid(NewMaterial(GetTexture("flamecore", () => GimmickMeshes.FlameTexture(true)), Color.white)));
+                    var inner = Solid(NewMaterial(GetTexture("flamecore", () => GimmickMeshes.FlameTexture(true)), Color.white));
+                    var core = MeshObject("FlameCore", flameMesh, inner);
                     core.SetParent(flame, false);
                     core.localPosition = new Vector3(0f, 0.01f, -0.3f);
                     core.localScale = new Vector3(0.6f, 0.62f, 0.6f);
-                    v.Billboards.Add(new Billboard { Transform = flame, Local = local, Phase = h1 * 6.28f });
-
-                    // 火の粉：炎ごとに 1 つ
-                    sparkMesh ??= Keep(GimmickMeshes.Spark());
-                    var spark = MeshObject("Spark", sparkMesh, Solid(NewMaterial(GetTexture("flame3d", () => GimmickMeshes.FlameTexture(false)), Color.white)));
-                    v.Billboards.Add(new Billboard { Transform = spark, Local = local, Phase = h2, Spark = true });
+                    v.Billboards.Add(new Billboard { Transform = flame, Local = local, Phase = h1 * 6.28f, Material = outer, Core = inner });
                 }
                 else
                 {
@@ -641,24 +636,20 @@ namespace DeskStage.App
                     var basePoint = v.Box.TransformPoint(local);
                     // 横の向きだけカメラへ向ける（立てたまま。上から見ると、丸い形が見える）
                     var facing = Quaternion.LookRotation(Flat(basePoint - (cam != null ? cam.transform.position : basePoint - Vector3.forward), up), up);
-                    if (b.Spark)
+                    if (v.Kind == BoxData.GimmickFire)
                     {
-                        // 火の粉：炎の上へ、ゆれながら舞い上がり、小さくなって消える
-                        var k = (t * 0.9f + b.Phase) % 1f;
-                        var drift = facing * new Vector3(Mathf.Sin(t * 5f + b.Phase * 9f) * 0.006f, 0f, 0f);
-                        b.Transform.position = basePoint + up * (0.02f + k * 0.07f) + drift;
-                        b.Transform.rotation = facing * Quaternion.Euler(t * 200f, t * 150f, 0f);
-                        b.Transform.localScale = Vector3.one * (0.006f * (1f - k));
-                    }
-                    else if (v.Kind == BoxData.GimmickFire)
-                    {
-                        // ゆらゆら大きさが変わり、少しゆれる炎。足もとは、上面に付ける（形の足もとが原点）
-                        var wobble = 0.5f + 0.5f * Mathf.Sin(t * 9f + b.Phase);
-                        var size = 0.03f + 0.014f * wobble;
-                        var sway = Mathf.Sin(t * 6f + b.Phase * 3f) * 7f;
-                        b.Transform.position = basePoint + up * 0.001f;
+                        // 回復の「＋」と同じく、ふわっと上がって、小さく薄くなって消える炎。回すと、明るく塗った正面が向こうを向くので、回さずに、ゆらゆらゆらす
+                        var k = (t * 0.45f + b.Phase) % 1f;
+                        var grow = Mathf.Sin(k * Mathf.PI);
+                        // 小さくなって消える。うすくするのは、出始めと消える直前だけ（ずっと薄いと、白っぽい幽霊のように見えた）
+                        var size = 0.026f * Mathf.Lerp(0.3f, 1f, grow);
+                        var sway = Mathf.Sin(t * 6f + b.Phase * 3f) * 8f;
+                        b.Transform.position = basePoint + up * (0.004f + k * 0.05f);
                         b.Transform.rotation = facing * Quaternion.Euler(0f, 0f, sway);
                         b.Transform.localScale = new Vector3(size * 0.6f, size * 1.45f, size * 0.6f);
+                        var fade = new Color(1f, 1f, 1f, Mathf.Clamp01(grow * 3f));
+                        if (b.Material != null) b.Material.color = fade;
+                        if (b.Core != null) b.Core.color = fade;
                     }
                     else
                     {
