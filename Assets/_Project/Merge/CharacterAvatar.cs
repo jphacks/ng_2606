@@ -7,8 +7,9 @@ namespace DeskStage.Merge
     /// <summary>
     /// 遊ぶとき、選んだ写真のキャラ（人形の切り抜き）を、キャラの体の代わりに立てる（キャラクターを写真で作る）。
     /// C の GameFlow が GameStarted を出したときに、キャラ（CharacterMotor）の体（Body、Nose）を隠し、
-    /// 切り抜きの板（Cutout）を足してカメラへ向ける。選んでいなければ、いつものキャラのまま。
+    /// 切り抜きの板（Cutout）を足してカメラへ向ける。
     /// 顔の枠（HumanMask）で撮ったキャラは、板ではなく、立体の体（CharacterBody3D）を立てて顔の写真を頭に貼り、手足を動かす（CharacterLimbs。2026-11-10）。
+    /// 選んでいなければ「いつもの こ」：描いた顔（DefaultFace）で、同じ立体の体を立てる（2026-11-11。前は C の青いカプセル）。
     /// 当たり判定や動きは、C のキャラのまま変えない。見た目だけ。
     /// </summary>
     public class CharacterAvatar : MonoBehaviour
@@ -57,15 +58,17 @@ namespace DeskStage.Merge
             SetBodyVisible(player, true);
             Release();
 
+            // 身長は、C のキャラの当たり判定の高さ（3cm）の SizeScale 倍
+            var controller = motor.GetComponent<CharacterController>();
+            var height = (controller != null ? controller.height : 0.03f) * SizeScale;
+
+            // 撮ったキャラを選んでいない（または読めない）ときは、「いつもの こ」：描いた顔（DefaultFace）で、同じ立体の体を立てる（2026-11-11）
             var id = store.SelectedId;
-            if (string.IsNullOrEmpty(id) || cutoutMaterial == null)
+            var info = string.IsNullOrEmpty(id) ? null : store.Find(id);
+            var png = info != null ? store.LoadPng(id) : null;
+            if (png == null)
             {
-                return;
-            }
-            var info = store.Find(id);
-            var png = store.LoadPng(id);
-            if (info == null || png == null)
-            {
+                ApplyDefault(motor, height);
                 return;
             }
 
@@ -77,16 +80,11 @@ namespace DeskStage.Merge
             if (!texture.LoadImage(png))
             {
                 Release();
+                ApplyDefault(motor, height);
                 return;
             }
 
-            material = new Material(cutoutMaterial);
-            material.SetTexture("_BaseMap", texture);
-            material.mainTexture = texture;
-
-            // 身長は、C のキャラの当たり判定の高さ（3cm）の SizeScale 倍。横は、切り抜きの縦横の比
-            var controller = motor.GetComponent<CharacterController>();
-            var height = (controller != null ? controller.height : 0.03f) * SizeScale;
+            // 横は、切り抜きの縦横の比
             var aspect = info.aspect > 0f ? info.aspect : (float)texture.width / texture.height;
 
             // 顔の枠で撮ったキャラは、顔の写真を立体の頭に貼る。前の人型の枠で撮ったキャラは、人型の頭の部分を顔として使う（縦横の比で見分ける）
@@ -95,10 +93,20 @@ namespace DeskStage.Merge
                 : (Vector4?)null;
             if (face != null)
             {
-                BuildBody(motor, height, face.Value);
-                SetBodyVisible(player, false);
+                if (BuildBody(motor, height, face.Value, null))
+                {
+                    SetBodyVisible(player, false);
+                }
                 return;
             }
+            if (cutoutMaterial == null)
+            {
+                return;
+            }
+
+            material = new Material(cutoutMaterial);
+            material.SetTexture("_BaseMap", texture);
+            material.mainTexture = texture;
 
             var cutout = GameObject.CreatePrimitive(PrimitiveType.Quad);
             cutout.name = CutoutName;
@@ -117,12 +125,30 @@ namespace DeskStage.Merge
             SetBodyVisible(player, false);
         }
 
-        // 立体の体：陰の付く素材（無ければ、切り抜きの素材）に写真を貼り、6 つの部品を作って、手足を動かす部品を付ける
-        void BuildBody(CharacterMotor motor, float height, Vector4 face)
+        // 「いつもの こ」：描いた顔を、撮った顔の写真と同じ枠（HumanMask.Face）で貼る。作れなければ、C のカプセルのまま
+        void ApplyDefault(CharacterMotor motor, float height)
+        {
+            texture = DefaultFace.Create();
+            if (BuildBody(motor, height, HumanMask.Face, DefaultFace.HairColor))
+            {
+                SetBodyVisible(motor.transform, false);
+            }
+            else
+            {
+                Release();
+            }
+        }
+
+        // 立体の体：陰の付く素材（無ければ、切り抜きの素材）に写真を貼り、6 つの部品を作って、手足を動かす部品を付ける。素材が無ければ作らない
+        bool BuildBody(CharacterMotor motor, float height, Vector4 face, Color? hair)
         {
             var player = motor.transform;
             var lit = Shader.Find("Universal Render Pipeline/Lit");
-            var front = lit != null ? new Material(lit) : new Material(material);
+            var front = lit != null ? new Material(lit) : cutoutMaterial != null ? new Material(cutoutMaterial) : null;
+            if (front == null)
+            {
+                return false;
+            }
             front.SetTexture("_BaseMap", texture);
             front.mainTexture = texture;
             if (front.HasProperty("_Smoothness")) front.SetFloat("_Smoothness", 0.1f);
@@ -132,8 +158,9 @@ namespace DeskStage.Merge
             var root = new GameObject(BodyName).transform;
             root.SetParent(player, false);
             root.gameObject.layer = player.gameObject.layer;
-            var joints = CharacterBody3D.Build(root, front, texture, face, height, created);
+            var joints = CharacterBody3D.Build(root, front, texture, face, height, created, hair);
             root.gameObject.AddComponent<CharacterLimbs>().Set(motor, joints, height);
+            return true;
         }
 
         static void SetBodyVisible(Transform player, bool visible)
