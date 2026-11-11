@@ -11,6 +11,11 @@ namespace DeskStage.Merge
     /// </summary>
     public class CharacterLimbs : MonoBehaviour
     {
+        /// <summary>
+        /// 歩いていて、足が地面に着いた（引数は左足か）。足を振るのと同じ位相から数えるので、足音が足の動きとずれない（2026-11-11）。
+        /// 音を鳴らすのは App（GameSounds）。
+        /// </summary>
+        public static event System.Action<bool> FootDown;
 
         /// <summary>目標の姿勢へ近づく速さ（1 秒あたり。大きいほど、すばやく追いつく）。</summary>
         const float Follow = 12f;
@@ -64,6 +69,7 @@ namespace DeskStage.Merge
             var walk = motor.settings != null && motor.settings.walkSpeed > 0f ? motor.settings.walkSpeed : 0.15f;
             var speed01 = Mathf.Clamp01(horizontalSpeed / walk);
             // 足の運び：進んだ距離の分だけ、位相を進める（1 往復で CycleLength 進む）。地面にいるときだけ
+            var step = LimbPose.StepIndex(phase);
             if (motor.IsGrounded)
             {
                 phase += stepDistance / Mathf.Max(LimbPose.CycleLength(CharacterBody3D.LegLength * height), 1e-4f) * 2f * Mathf.PI;
@@ -72,6 +78,12 @@ namespace DeskStage.Merge
             var k = 1f - Mathf.Exp(-Follow * dt);
             var grounded = state == LimbPose.State.Ground;
             swingScale = Mathf.Lerp(swingScale, grounded ? speed01 : 0f, k);
+            // 足音：足がいちばん前に出て着いたとき。止まっている・小さな足踏みでは鳴らさない
+            var nextStep = LimbPose.StepIndex(phase);
+            if (nextStep != step && grounded && swingScale >= LimbPose.StepSoundSwing && !motor.Paused)
+            {
+                FootDown?.Invoke((nextStep & 1) == 1);
+            }
             air = Mathf.Lerp(air, grounded ? 0f : 1f, k);
             var walkPose = LimbPose.Evaluate(LimbPose.State.Ground, phase, swingScale, Time.time);
             if (!grounded)

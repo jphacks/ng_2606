@@ -82,7 +82,7 @@ namespace DeskStage.App
             rulesLine.text = info.MissionDone ? AppText.MissionClear
                 : summary.Length > 0 ? string.Format(AppText.RulesClear, summary) : "";
             rulesLine.color = info.MissionDone ? Theme.Red : Theme.Ink;
-            UiSound.Play(UiSound.Cue.Success);
+            UiSound.Play(UiSound.Cue.Goal); // ゴール専用のファンファーレ（2026-11-11。前は、回復などと同じ「できた」の音）
             Refresh();
         }
 
