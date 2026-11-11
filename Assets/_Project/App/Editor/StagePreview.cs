@@ -38,14 +38,16 @@ namespace DeskStage.App.EditorTools
             QualitySettings.SetQualityLevel(0, true); // iPhone と同じ「Mobile」の設定（URP の資産）。描き終えたら戻す（設定ファイルを書き換えないように）
 
             // 1 回目の描画は素材がそろわないことがあるので、捨てる絵を先に描く
-            foreach (var pass in new[] { "warmup", "play", "near" })
+            foreach (var pass in new[] { "warmup", "play", "near", "top" })
             {
                 EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
                 var stage = JsonUtility.FromJson<StageData>(File.ReadAllText(Path.Combine(stageDir, "stage.json")));
                 var root = Build(stage);
                 AddLights();
                 Texture(root, stage, stageDir, Arg("-backdrop"));
-                var camera = MakeCamera(stage, pass == "near");
+                AddGimmicks();
+                AddMarkers(stage);
+                var camera = MakeCamera(stage, pass);
                 var path = Path.Combine(outDir, "stage-" + pass + ".png");
                 Shoot(camera, path);
             }
@@ -141,8 +143,38 @@ namespace DeskStage.App.EditorTools
             typeof(StagePhotoTexturer).GetMethod("ApplyLighting", flags)?.Invoke(texturer, null);
         }
 
-        // 遊ぶときのカメラに近い向き：キャラの後ろ上から、机の真ん中を見る。near は、低い所から箱に近づく
-        static Camera MakeCamera(StageData stage, bool near)
+        // しかけの見た目（模様、立ち上がる炎と＋、ワープの番号）。遊ぶときと同じ GimmickSystem で作る
+        static void AddGimmicks()
+        {
+            var system = new GameObject("Gimmicks").AddComponent<GimmickSystem>();
+            system.SetMaterial(AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/App/Materials/GimmickUnlit.mat"));
+            Theme.Font = AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>("Assets/_Project/UI/Fonts/NotoSansJP-Regular SDF.asset");
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            typeof(GimmickSystem).GetMethod("Rebuild", flags)?.Invoke(system, null);
+            typeof(GimmickSystem).GetMethod("AnimatePads", flags)?.Invoke(system, null);
+            typeof(GimmickSystem).GetMethod("AnimateBillboards", flags)?.Invoke(system, null);
+        }
+
+        // スタート（緑）とゴール（金色）の目印：机の上に立てた、低い円柱
+        static void AddMarkers(StageData stage)
+        {
+            Marker(stage.spawn.position, new Color(0.2f, 0.8f, 0.4f), 0.025f);
+            if (stage.goal != null && stage.goal.radius > 0f) Marker(stage.goal.position, new Color(1f, 0.8f, 0.1f), stage.goal.radius);
+        }
+
+        static void Marker(float[] at, Color color, float radius)
+        {
+            var marker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            marker.name = "Marker";
+            marker.transform.position = new Vector3(at[0], at[1] + 0.003f, at[2]);
+            marker.transform.localScale = new Vector3(radius * 2f, 0.003f, radius * 2f);
+            var material = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+            material.SetColor("_BaseColor", color);
+            marker.GetComponent<Renderer>().sharedMaterial = material;
+        }
+
+        // 遊ぶときのカメラに近い向き：キャラの後ろ上から、机の真ん中を見る。near は、低い所から箱に近づく。top は、真上から
+        static Camera MakeCamera(StageData stage, string pass)
         {
             var camera = new GameObject("Camera").AddComponent<Camera>();
             camera.clearFlags = CameraClearFlags.SolidColor;
@@ -152,7 +184,12 @@ namespace DeskStage.App.EditorTools
             camera.farClipPlane = 20f;
             camera.tag = "MainCamera";
             var size = Mathf.Max(stage.desk.width, stage.desk.depth);
-            if (near)
+            if (pass == "top")
+            {
+                camera.transform.position = new Vector3(0f, size * 1.15f, -0.001f);
+                camera.transform.LookAt(Vector3.zero);
+            }
+            else if (pass == "near")
             {
                 camera.transform.position = new Vector3(size * 0.1f, 0.12f, -stage.desk.depth * 0.55f);
                 camera.transform.LookAt(new Vector3(-size * 0.1f, 0.04f, 0f));
