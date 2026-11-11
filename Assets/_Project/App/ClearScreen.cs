@@ -86,15 +86,16 @@ namespace DeskStage.App
         RectTransform recordsRect;
         RectTransform rulesBand;
 
-        // カードの大きさと段の分け方。しばり・お題の帯があるときは、カードを下へ伸ばし、いちばん下に帯の段を足す
+        // カードの大きさと段の分け方。しばり・お題の帯があるときは、カードを上下に伸ばし、いちばん下に帯の段（2 行まで）を足す
         // （前は、カードの外に 1 行で出していて、長いと折り返して、カードやボタンに重なっていた）
         void LayoutCard(bool withRules)
         {
-            var height = withRules ? 430f : 350f;
-            UiKit.Place(cardRect, new Vector2(0.5f, 0.5f), new Vector2(0f, withRules ? 45f : 65f), new Vector2(1160f, height));
+            // タイトルの下から、「もういちど あそぶ」の上までに収める
+            var height = withRules ? 420f : 350f;
+            UiKit.Place(cardRect, new Vector2(0.5f, 0.5f), new Vector2(0f, withRules ? 50f : 65f), new Vector2(1160f, height));
             // 段の境目（下から、カードの高さに対する割合）
-            var rulesTop = withRules ? 90f / height : 0f;
-            var timeBottom = rulesTop + (1f - rulesTop) * 0.45f;
+            var rulesTop = withRules ? 118f / height : 0f;
+            var timeBottom = rulesTop + (1f - rulesTop) * (withRules ? 0.43f : 0.45f);
             UiKit.Area(time.rectTransform, new Vector2(0f, timeBottom), new Vector2(1f, 1f), 10f);
             UiKit.Area(divider, new Vector2(0.05f, timeBottom), new Vector2(0.95f, timeBottom + 2f / height), 0f);
             UiKit.Area(recordsRect, new Vector2(0.03f, rulesTop + 12f / height), new Vector2(0.97f, timeBottom - 6f / height), 0f);
@@ -102,10 +103,40 @@ namespace DeskStage.App
             UiKit.Area(rulesBand, new Vector2(0.03f, 14f / height), new Vector2(0.97f, rulesTop), 0f);
         }
 
-        // 今回、しばりかお題の帯を出すか（文の中身は OnEnter で入れる）
-        static bool HasRulesLine(ClearInfo info)
+        // しばりの項目（「ジャンプ 3かい まで」など）の途中では改行しない。項目が 3 つ以上なら、2 行の長さがそろう切れ目で改行する
+        // （1 行に詰めると、字が小さくなったり、最後の項目だけが 2 行目に残ったりするため）
+        static string NoBreakItems(string summary)
         {
-            return info.MissionDone || CourseRuleSystem.Summary(StageContext.CurrentStage != null ? StageContext.CurrentStage.rules : null).Length > 0;
+            var items = summary.Split('・');
+            var split = items.Length >= 3 ? BalancedSplit(items, AppText.RulesClear.Length) : items.Length;
+            var text = new System.Text.StringBuilder();
+            for (var i = 0; i < items.Length; i++)
+            {
+                if (i > 0) text.Append(i == split ? "\n" : "・");
+                text.Append("<nobr>").Append(items[i]).Append("</nobr>");
+            }
+            return text.ToString();
+        }
+
+        // 1 行目に items[0..k) を入れたとき、長い方の行の文字数がいちばん少なくなる k（1 行目には、前に付く文字 prefix の分も数える）
+        static int BalancedSplit(string[] items, int prefix)
+        {
+            var total = prefix;
+            foreach (var item in items) total += item.Length + 1;
+            var best = 1;
+            var bestLongest = int.MaxValue;
+            var first = prefix;
+            for (var k = 1; k < items.Length; k++)
+            {
+                first += items[k - 1].Length + 1;
+                var longest = Mathf.Max(first, total - first);
+                if (longest < bestLongest)
+                {
+                    bestLongest = longest;
+                    best = k;
+                }
+            }
+            return best;
         }
 
         // ---- 記録の列（StageRecords。2026-11-11） ----
@@ -208,10 +239,10 @@ namespace DeskStage.App
             time.text = string.Format(AppText.ClearTime, FlowRules.FormatTime(info.Seconds));
             record.gameObject.SetActive(info.IsBest);
             ShowRecords(info);
-            LayoutCard(HasRulesLine(info));
             var summary = CourseRuleSystem.Summary(StageContext.CurrentStage != null ? StageContext.CurrentStage.rules : null);
+            LayoutCard(info.MissionDone || summary.Length > 0);
             rulesLine.text = info.MissionDone ? AppText.MissionClear
-                : summary.Length > 0 ? string.Format(AppText.RulesClear, summary) : "";
+                : summary.Length > 0 ? string.Format(AppText.RulesClear, NoBreakItems(summary)) : "";
             rulesLine.color = info.MissionDone ? Theme.Red : Theme.Ink;
             UiSound.Play(UiSound.Cue.Goal); // ゴール専用のファンファーレ（2026-11-11。前は、回復などと同じ「できた」の音）
             Refresh();
