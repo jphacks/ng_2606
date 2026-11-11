@@ -51,7 +51,7 @@ namespace DeskStage.App
 
             // 真ん中：カードの列（横にスクロール）
             var scrollRect = UiKit.NewRect("Scroll", safe);
-            UiKit.Area(scrollRect, new Vector2(0f, 0.17f), new Vector2(1f, 0.8f));
+            UiKit.Area(scrollRect, new Vector2(0f, 0.21f), new Vector2(1f, 0.81f));
             var scroll = scrollRect.gameObject.AddComponent<ScrollRect>();
             scroll.horizontal = true;
             scroll.vertical = false;
@@ -79,9 +79,9 @@ namespace DeskStage.App
             emptyLabel = UiKit.Label(safe, AppText.HomeEmpty, Theme.Body, Theme.InkSoft, TextAlignmentOptions.Left, false, "Empty");
             UiKit.Place(emptyLabel.rectTransform, new Vector2(0f, 0.5f), new Vector2(Theme.Margin + CardWidth + 80f, 0f), new Vector2(1200f, 220f));
 
-            // 下の帯：選んだステージの操作
+            // 下の帯：選んだステージの操作。ボタンの上下に、カードと画面のふちからのすき間を空ける（2026-11-11：くっついていた）
             actionBar = UiKit.NewRect("ActionBar", safe);
-            UiKit.Area(actionBar, new Vector2(0f, 0f), new Vector2(1f, 0.17f));
+            UiKit.Area(actionBar, new Vector2(0f, 0.01f), new Vector2(1f, 0.2f));
             actionHint = UiKit.Label(actionBar, AppText.HomeSelectHint, Theme.Body, Theme.InkSoft, TextAlignmentOptions.Center, false, "Hint");
             UiKit.Fill(actionHint.rectTransform);
             playButton = UiKit.Button(actionBar, AppText.HomePlay, UiKit.ButtonStyle.Primary, new Vector2(640f, Theme.ButtonHeight),

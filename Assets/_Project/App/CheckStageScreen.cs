@@ -95,7 +95,8 @@ namespace DeskStage.App
 
             hint = UiKit.Label(safe, "", Theme.Body, Color.white, TextAlignmentOptions.Center, true, "Hint");
             var hintBack = UiKit.Panel(safe, "HintBack", Theme.WithAlpha(Theme.Navy, 0.78f), 60f);
-            UiKit.Place(hintBack.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -190f), new Vector2(1500f, 100f));
+            // 上の説明（MainHint）の下に、すき間を空けて置く（2026-11-11：重なっていた）
+            UiKit.Place(hintBack.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -240f), new Vector2(1500f, 100f));
             hint.transform.SetParent(hintBack.rectTransform, false);
             UiKit.Fill(hint.rectTransform);
             hintBack.raycastTarget = false; // ひとことの板は、タップをじゃましない
@@ -121,7 +122,7 @@ namespace DeskStage.App
                 () => Context.Flow.PlayFromCheck(), "Play", Theme.H1);
             UiKit.Place(playButton.Rect, new Vector2(1f, 0f), new Vector2(-Theme.Margin, 50f), playButton.Rect.sizeDelta);
             needCourse = UiKit.Label(barSafe, AppText.CheckNeedCourse, Theme.Small, Theme.Orange, TextAlignmentOptions.Right, true, "NeedCourse");
-            UiKit.Place(needCourse.rectTransform, new Vector2(1f, 0f), new Vector2(-Theme.Margin, 235f), new Vector2(1100f, 56f));
+            UiKit.Place(needCourse.rectTransform, new Vector2(1f, 0f), new Vector2(-Theme.Margin - 10f, 262f), new Vector2(1100f, 56f)); // 「あそぶ」の上に、すき間を空けて
 
             // コースの操作（「コース」を押したときだけ）：スタートとゴールを並べ、しばりは少し離して右に置く（置く物と、条件を分ける）
             courseGroup = UiKit.NewRect("CourseGroup", barSafe);

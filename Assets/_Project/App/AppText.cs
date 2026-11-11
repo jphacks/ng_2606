@@ -74,7 +74,7 @@ namespace DeskStage.App
 
         // ---- しっぱい ----
         public const string ErrorTitle = "うまく いかなかったよ";
-        public const string ErrorCameraDenied = "カメラが つかえないよ。\nせっていで カメラを ゆるして ね";
+        public const string ErrorCameraDenied = "カメラが つかえないよ。\nせっていで カメラを ゆるしてね";
         public const string ErrorCameraOpenSettings = "せっていを ひらく";
         public const string ErrorNetwork = "インターネットに つながらないよ。\nつながってから、もういちど やってみてね";
         public const string ErrorServer = "ステージを つくれなかったよ。\nすこし まってから、もういちど やってみてね";
@@ -212,7 +212,7 @@ namespace DeskStage.App
         public const string GimmickEnemyHit = "いたっ！ ハートが へったよ";
         public const string GimmickHealed = "かいふく！";
         public const string GimmickWarped = "ワープ！";
-        public const string GimmickHint = "おりがみを はこの うえ いっぱいに はると、\nしかけに なるよ\n（あお：みず　あか：ほのお　みどり：かいふく\n　きいろ：ジャンプだい　むらさき：てき　ピンク：ワープ）";
+        public const string GimmickHint = "おりがみを はこの うえ いっぱいに はると しかけに なるよ\nあお：みず　あか：ほのお　みどり：かいふく\nきいろ：ジャンプだい　むらさき：てき　ピンク：ワープ";
         public const string ReachGimmickBadge = "しかけ";
         public const string GameOverTitle = "ゲームオーバー";
         public const string GameOverHint = "ハートが なくなっちゃった";
