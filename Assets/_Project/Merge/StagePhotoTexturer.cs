@@ -217,6 +217,7 @@ namespace DeskStage.Merge
             // 背景：背景専用の写真があれば、いつでも貼る
             MakeBackdropPixels(BackdropStore.AtDefaultPlace().Load());
             AddBackdrop(root);
+            AddContactShadows(root);
             ApplyLighting();
 
         }
@@ -623,6 +624,12 @@ namespace DeskStage.Merge
             material.SetFloat("_Smoothness", SurfaceSmoothness);
             created.Add(material);
             return material;
+        }
+
+        /// <summary>物が机に接するところの、やわらかい暗がり（StageContactShadows）。StagePreview（開発用）からも呼ぶ。</summary>
+        void AddContactShadows(Transform root)
+        {
+            StageContactShadows.Add(root, StageContext.CurrentStage, photoMaterial, created, extras);
         }
 
         /// <summary>光を整える（StageLighting）。背景があれば、その色を使う。StagePreview（開発用）からも呼ぶ。</summary>
