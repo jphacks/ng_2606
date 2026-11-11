@@ -34,6 +34,15 @@ namespace DeskStage.Merge
         /// </summary>
         public static float CycleLength(float legLength) => 4f * legLength * Mathf.Sin(LegSwing * Mathf.Deg2Rad);
 
+        /// <summary>
+        /// 何歩目か（足音を鳴らす数え方。2026-11-11）。足は、位相が π/2 + kπ のとき、いちばん前に出て地面に着く
+        /// （π/2 で右足、3π/2 で左足）。この数が増えたら、足が 1 回着いた。偶数は右足、奇数は左足。
+        /// </summary>
+        public static int StepIndex(float phase) => Mathf.FloorToInt((phase - Mathf.PI / 2f) / Mathf.PI);
+
+        /// <summary>足音を鳴らす、いちばん小さな振りの大きさ（0〜1）。これより小さい足踏みでは鳴らさない。</summary>
+        public const float StepSoundSwing = 0.3f;
+
         /// <summary>跳んでいる間に、腕を上げる角度（度）。</summary>
         public const float JumpRaise = 130f;
 
