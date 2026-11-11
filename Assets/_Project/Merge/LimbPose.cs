@@ -32,7 +32,13 @@ namespace DeskStage.Merge
         /// 足を 1 往復（2 歩）させる間に進む距離（m）。足の長さ legLength（付け根から足の裏まで）と、振る角度 LegSwing から決める：
         /// 1 歩で、足先が前後に 2 × 足の長さ × sin(角度) 動くので、2 歩で その 2 倍。進んだ距離の分だけ足を運べば、足がすべって見えない。
         /// </summary>
-        public static float CycleLength(float legLength) => 4f * legLength * Mathf.Sin(LegSwing * Mathf.Deg2Rad);
+        public static float CycleLength(float legLength) => 4f * legLength * Mathf.Sin(LegSwing * Mathf.Deg2Rad) * StrideScale;
+
+        /// <summary>
+        /// 歩幅を、足の形から決まる長さの何倍にするか（2026-11-11：1 → 2.5。1 秒に約 11 歩から、約 4 歩に）。大きいほど、同じ速さでも手足をゆっくり振る
+        /// （足音も、足の動きから数えるので、同じだけ間が空く）。1 より大きいと、足は少しすべるが、キャラが小さいので目立たない。
+        /// </summary>
+        public const float StrideScale = 2.5f;
 
         /// <summary>
         /// 何歩目か（足音を鳴らす数え方。2026-11-11）。足は、位相が π/2 + kπ のとき、いちばん前に出て地面に着く

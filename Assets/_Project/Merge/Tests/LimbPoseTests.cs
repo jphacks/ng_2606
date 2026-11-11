@@ -45,7 +45,7 @@ namespace DeskStage.Merge.Tests
         public void 歩幅は足の長さと振る角度で決まる()
         {
             // 足の長さ 1cm、45 度：1 往復で 4 × 0.01 × sin45 ≒ 2.8cm 進む
-            Assert.AreEqual(4f * 0.01f * Mathf.Sin(LimbPose.LegSwing * Mathf.Deg2Rad), LimbPose.CycleLength(0.01f), 1e-6f);
+            Assert.AreEqual(4f * 0.01f * Mathf.Sin(LimbPose.LegSwing * Mathf.Deg2Rad) * LimbPose.StrideScale, LimbPose.CycleLength(0.01f), 1e-6f);
             Assert.Greater(LimbPose.CycleLength(0.02f), LimbPose.CycleLength(0.01f));
         }
 
