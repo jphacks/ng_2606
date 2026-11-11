@@ -2,38 +2,134 @@
   "version": 2,
   "id": "sample-01",
   "name": "おてほん",
-  "createdAt": "2026-10-24T12:00:00+09:00",
-  "desk": { "width": 0.90, "depth": 0.44 },
+  "createdAt": "2026-11-12T12:00:00+09:00",
+  "desk": { "width": 0.9, "depth": 0.5 },
   "boxes": [
     {
       "id": "box-01",
-      "center": [-0.22, 0.01, 0.0],
-      "size": [0.15, 0.02, 0.22],
+      "center": [-0.27, 0.01, 0.13],
+      "size": [0.14, 0.02, 0.14],
       "yawDegrees": 0,
       "source": "auto",
-      "texture": ""
+      "texture": "",
+      "gimmick": "water",
+      "flow": 1,
+      "ramp": false,
+      "warpTo": ""
     },
     {
       "id": "box-02",
-      "center": [-0.095, 0.015, 0.0],
-      "size": [0.10, 0.03, 0.35],
+      "center": [-0.12, 0.015, 0.13],
+      "size": [0.1, 0.03, 0.14],
       "yawDegrees": 0,
       "source": "auto",
-      "texture": ""
+      "texture": "",
+      "gimmick": "heal",
+      "flow": 0,
+      "ramp": false,
+      "warpTo": ""
     },
     {
       "id": "box-03",
-      "center": [0.21, 0.07, 0.0],
-      "size": [0.22, 0.14, 0.20],
+      "center": [0.01, 0.01, 0.13],
+      "size": [0.1, 0.02, 0.14],
       "yawDegrees": 0,
       "source": "auto",
-      "texture": ""
+      "texture": "",
+      "gimmick": "jumppad",
+      "flow": 0,
+      "ramp": false,
+      "warpTo": ""
+    },
+    {
+      "id": "box-04",
+      "center": [0.15, 0.09, 0.13],
+      "size": [0.12, 0.18, 0.14],
+      "yawDegrees": 0,
+      "source": "auto",
+      "texture": "",
+      "gimmick": "",
+      "flow": 0,
+      "ramp": false,
+      "warpTo": ""
+    },
+    {
+      "id": "box-05",
+      "center": [0.33, 0.06, 0.13],
+      "size": [0.18, 0.12, 0.16],
+      "yawDegrees": 0,
+      "source": "auto",
+      "texture": "",
+      "gimmick": "enemy",
+      "flow": 0,
+      "ramp": false,
+      "warpTo": ""
+    },
+    {
+      "id": "box-06",
+      "center": [0.36, 0.01, -0.12],
+      "size": [0.12, 0.02, 0.12],
+      "yawDegrees": 0,
+      "source": "auto",
+      "texture": "",
+      "gimmick": "warp",
+      "flow": 0,
+      "ramp": false,
+      "warpTo": "box-07"
+    },
+    {
+      "id": "box-07",
+      "center": [-0.36, 0.01, -0.13],
+      "size": [0.12, 0.02, 0.12],
+      "yawDegrees": 0,
+      "source": "auto",
+      "texture": "",
+      "gimmick": "warp",
+      "flow": 0,
+      "ramp": false,
+      "warpTo": "box-06"
+    },
+    {
+      "id": "box-08",
+      "center": [-0.22, 0.01, -0.13],
+      "size": [0.1, 0.02, 0.1],
+      "yawDegrees": 0,
+      "source": "auto",
+      "texture": "",
+      "gimmick": "fire",
+      "flow": 0,
+      "ramp": false,
+      "warpTo": ""
+    },
+    {
+      "id": "box-09",
+      "center": [-0.05, 0.06, -0.13],
+      "size": [0.1, 0.12, 0.14],
+      "yawDegrees": 0,
+      "source": "auto",
+      "texture": "",
+      "gimmick": "water",
+      "flow": 1,
+      "ramp": true,
+      "warpTo": ""
+    },
+    {
+      "id": "box-10",
+      "center": [0.08, 0.06, -0.13],
+      "size": [0.16, 0.12, 0.16],
+      "yawDegrees": 0,
+      "source": "auto",
+      "texture": "",
+      "gimmick": "",
+      "flow": 0,
+      "ramp": false,
+      "warpTo": ""
     }
   ],
-  "spawn": { "position": [-0.38, 0.0, 0.0], "yawDegrees": 90 },
-  "goal": { "position": [0.40, 0.0, 0.0], "radius": 0.03 },
+  "spawn": { "position": [-0.4, 0.0, 0.13], "yawDegrees": 90 },
+  "goal": { "position": [0.1, 0.12, -0.13], "radius": 0.03 },
   "checkpoints": [
-    { "position": [-0.095, 0.03, 0.0], "radius": 0.03 }
+    { "position": [0.15, 0.18, 0.13], "radius": 0.03 }
   ],
-  "fallDepth": 0.10
+  "fallDepth": 0.1
 }
