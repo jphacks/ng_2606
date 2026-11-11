@@ -128,8 +128,6 @@
   ],
   "spawn": { "position": [-0.4, 0.0, 0.13], "yawDegrees": 90 },
   "goal": { "position": [0.1, 0.12, -0.13], "radius": 0.03 },
-  "checkpoints": [
-    { "position": [0.15, 0.18, 0.13], "radius": 0.03 }
-  ],
+  "checkpoints": [],
   "fallDepth": 0.1
 }
