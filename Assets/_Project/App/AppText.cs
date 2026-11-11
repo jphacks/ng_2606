@@ -143,7 +143,7 @@ namespace DeskStage.App
         public const string CharDefault = "いつもの こ";
         public const string CharNew = "あたらしく とる";
         public const string CharDelete = "えらんだ こを けす";
-        public const string CharCaptureHint = "にんぎょうを わくに あわせてね\nあたまから あしまで\nぜんぶ いれてね";
+        public const string CharCaptureHint = "かおを まるい わくに\nあわせてね\nかみの けも いれてね";
         public const string CharTake = "とる";
         public const string CharReviewAsk = "この こに する？";
         public const string CharReviewOk = "これに する";
@@ -157,10 +157,7 @@ namespace DeskStage.App
         public const string BackdropTitle = "ステージの はいけい";
         public const string BackdropNone = "はいけいは まだ ないよ。\nステージの うしろは なにも でないよ";
         public const string BackdropCurrent = "いまの はいけいは これだよ";
-        public const string BackdropNew = "あたらしく とる";
         public const string BackdropClear = "なくす";
-        public const string BackdropHint = "ステージの うしろに\nみせたい けしきを うつしてね\n（かべ、まど、へやの ようす など）";
-        public const string BackdropAsk = "この けしきに する？";
         public const string BackdropSaved = "はいけいを ほぞんしたよ。\nつぎの ステージから うしろに でるよ";
         public const string BackdropCleared = "はいけいを なくしたよ";
 
@@ -183,7 +180,6 @@ namespace DeskStage.App
         public const string CheckCourseChoose = "「スタート」か「ゴール」を えらんでね";
         public const string CharDeleteConfirm = "えらんでいる こを けすよ。\nもとには もどせないよ";
         public const string CharNamed = "キャラ";
-        public const string BackdropFailed = "うまく とれなかったよ。\nもういちど やってみてね";
         public const string BackdropClearConfirm = "はいけいを なくすよ。\nいい？";
         public const string BackdropPick = "きれいな はいけいから えらぶ";
         public const string BackdropCurrentPreset = "いまの はいけい：{0}";

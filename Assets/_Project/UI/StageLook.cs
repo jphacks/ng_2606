@@ -23,6 +23,9 @@ namespace DeskStage.UI
 
         public void SetLook(ViewLook value) => look = value;
 
+        /// <summary>使っている見た目の素材の組（無ければ null）。</summary>
+        public ViewLook Look => look;
+
         void OnEnable()
         {
             StageContext.StageBuilt += Apply;

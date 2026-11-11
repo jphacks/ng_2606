@@ -59,7 +59,7 @@ namespace DeskStage.App
         {
             // 理由：ハートが なくなった（ふつう）、しばりの時間切れ・いっぱつ アウト
             hint.text = arg as string ?? AppText.GameOverHint;
-            hearts.Set(Context.Gimmicks.Health.Hearts);
+            hearts.ShowHealth(Context.Gimmicks.Health.Hearts, Context.Rules.State.Rules); // いっぱつ アウトなら、1 つだけ
             fix.gameObject.SetActive(Context.Flow.HasNewStage && !Context.Flow.PlayingSaved);
         }
 

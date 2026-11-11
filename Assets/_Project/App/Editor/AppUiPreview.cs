@@ -198,12 +198,6 @@ namespace DeskStage.App.EditorTools
                 Screen = AppScreenId.Characters,
                 Setup = c => Invoke(c.Router.Get(AppScreenId.Characters), "ShowCapture"),
             };
-            yield return new Scenario
-            {
-                Name = "18-backdrop-capture",
-                Screen = AppScreenId.Backdrop,
-                Setup = c => Invoke(c.Router.Get(AppScreenId.Backdrop), "ShowCapture"),
-            };
         }
 
         static void Invoke(object target, string method)

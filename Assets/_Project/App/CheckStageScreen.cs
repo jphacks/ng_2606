@@ -396,6 +396,23 @@ namespace DeskStage.App
             RefreshMission();
         }
 
+        StageLook stageLook;
+
+        // 机の板を、遊ぶ画面と同じ、中身の詰まった土台にする（D の StageLook は、この場面では、ふちの線だけの素材にする）。
+        // 2026-11-10：机の外の地面を消したので、ふちの線だけでは、土台が消えたように見えたため。StageLook が貼り直したあとに上書きする
+        void LateUpdate()
+        {
+            if (stageLook == null) stageLook = FindFirstObjectByType<StageLook>();
+            var solid = stageLook != null && stageLook.Look != null ? stageLook.Look.DeskPlay : null;
+            var root = StageContext.StageRoot;
+            var desk = root != null ? root.Find("Desk") : null;
+            var renderer = desk != null ? desk.GetComponent<Renderer>() : null;
+            if (solid != null && renderer != null && renderer.sharedMaterial != solid)
+            {
+                renderer.sharedMaterial = solid;
+            }
+        }
+
         void Refresh()
         {
             var flow = Context.Flow;
