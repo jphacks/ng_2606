@@ -46,7 +46,7 @@ namespace DeskStage.App
 
             var list = UiKit.Button(safe, AppText.GameOverList, UiKit.ButtonStyle.Soft, new Vector2(520f, Theme.SmallButtonHeight),
                 () => Context.Flow.BackToList(), "List", Theme.Body);
-            UiKit.Place(list.Rect, new Vector2(0.5f, 0f), new Vector2(-300f, 60f), list.Rect.sizeDelta);
+            UiKit.Place(list.Rect, new Vector2(0.5f, 0f), new Vector2(0f, 60f), list.Rect.sizeDelta); // 下のボタンは 1 つだけなので、真ん中に
             fix = UiKit.Button(safe, AppText.GameOverFix, UiKit.ButtonStyle.Soft, new Vector2(520f, Theme.SmallButtonHeight),
                 () => Context.Router.Back(), "Fix", Theme.Body);
             UiKit.Place(fix.Rect, new Vector2(0.5f, 0f), new Vector2(300f, 60f), fix.Rect.sizeDelta);
