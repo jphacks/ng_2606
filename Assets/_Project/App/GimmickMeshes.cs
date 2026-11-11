@@ -9,7 +9,6 @@ namespace DeskStage.App
     ///  ・炎（Flame）：しずくの形の回転体。u は「カメラから見た正面からの角度」（0 が正面、1 が真後ろ）、v は高さ。
     ///    キャラの横の向きだけカメラへ向けて使い、正面を明るく、ふちを暗く塗ると、どこから見てもふくらんで見える
     ///  ・回復（Plus）：厚みのある「＋」。面の向きごとに、色の絵の別の場所を使う（上と正面は明るく、側面は濃い）
-    ///  ・火の粉（Spark）：小さな八面体
     /// どれも、大きさ 1（炎は、幅 1・高さ 1。足もとが原点）。
     /// </summary>
     public static class GimmickMeshes
@@ -193,39 +192,6 @@ namespace DeskStage.App
             texture.SetPixels32(pixels);
             texture.Apply();
             return texture;
-        }
-
-        /// <summary>火の粉：小さな八面体（大きさ 1）。色の絵は、炎の絵の下の明るい所を使う。</summary>
-        public static Mesh Spark()
-        {
-            var points = new[]
-            {
-                Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward, Vector3.back,
-            };
-            var faces = new[]
-            {
-                (0, 4, 3), (0, 3, 5), (0, 5, 2), (0, 2, 4),
-                (1, 3, 4), (1, 5, 3), (1, 2, 5), (1, 4, 2),
-            };
-            var vertices = new List<Vector3>();
-            var uvs = new List<Vector2>();
-            var triangles = new List<int>();
-            foreach (var (a, b, c) in faces)
-            {
-                foreach (var i in new[] { a, b, c })
-                {
-                    triangles.Add(vertices.Count);
-                    vertices.Add(points[i] * 0.5f);
-                    uvs.Add(new Vector2(0.05f, 0.3f));
-                }
-            }
-            var mesh = new Mesh { name = "Spark" };
-            mesh.SetVertices(vertices);
-            mesh.SetUVs(0, uvs);
-            mesh.SetTriangles(triangles, 0);
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-            return mesh;
         }
     }
 }
