@@ -175,7 +175,7 @@ namespace DeskStage.App
             BeginCapture(false);
         }
 
-        /// <summary>撮影・たしかめから、いちらんへ戻る。撮影は閉じる（ScreenChanged で行う）。</summary>
+        /// <summary>撮り方の説明・撮影・たしかめから、いちらんへ戻る（お題を選んでいれば、お題の画面へ）。撮影は閉じる（ScreenChanged で行う）。</summary>
         public void LeaveToHome()
         {
             waitingBuilt = false;
