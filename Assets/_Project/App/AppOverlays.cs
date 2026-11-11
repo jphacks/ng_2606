@@ -29,6 +29,10 @@ namespace DeskStage.App
         Image toastBackground;
         TMP_Text toastText;
         float toastHideAt = -1f; // この時刻（実時間）を過ぎたら、ひとことを消す。消し忘れがないよう、毎フレーム見る
+        float toastShownAt;      // ひとことを出した時刻（実時間）
+
+        /// <summary>ひとことを出してから、これより後のタップで消す（秒）。出すきっかけになったタップで、すぐ消えないように。</summary>
+        const float ToastTapGuardSeconds = 0.2f;
 
         RectTransform busyRoot;
         TMP_Text busyText;
@@ -108,7 +112,7 @@ namespace DeskStage.App
             toastRoot.gameObject.SetActive(false);
         }
 
-        /// <summary>画面の上に、ひとこと出す（数秒で消える）。</summary>
+        /// <summary>画面の上に、ひとこと出す（数秒たつか、画面のどこかを押すと消える）。</summary>
         public void Toast(string message, ToastKind kind = ToastKind.Info, float seconds = 2.6f)
         {
             if (toastRoot == null)
@@ -132,7 +136,8 @@ namespace DeskStage.App
             toastText.text = message;
             toastRoot.SetAsLastSibling();
             toastRoot.gameObject.SetActive(true);
-            toastHideAt = Time.realtimeSinceStartup + seconds;
+            toastShownAt = Time.realtimeSinceStartup;
+            toastHideAt = toastShownAt + seconds;
         }
 
         /// <summary>ひとことを、すぐ消す（スタート・ゴールを置く場所を選ぶときなど、画面の上を空けたいとき）。</summary>
@@ -144,11 +149,31 @@ namespace DeskStage.App
 
         void Update()
         {
-            if (toastHideAt >= 0f && Time.realtimeSinceStartup >= toastHideAt)
+            if (toastHideAt < 0f)
             {
-                toastHideAt = -1f;
-                if (toastRoot != null) toastRoot.gameObject.SetActive(false);
+                return;
             }
+            var now = Time.realtimeSinceStartup;
+            // 時間がたつか、画面のどこかを 1 回押したら消す（2026-11-11）。押したタップは、そのまま後ろにも届く（ひとことは、タップをじゃましない）
+            if (now >= toastHideAt || (now >= toastShownAt + ToastTapGuardSeconds && AnyPressThisFrame()))
+            {
+                HideToast();
+            }
+        }
+
+        // このフレームに、画面のどこかが新しく押されたか（指が 2 本でも、あとから置いた指も数える。エディタではマウス）
+        static bool AnyPressThisFrame()
+        {
+            var touchscreen = UnityEngine.InputSystem.Touchscreen.current;
+            if (touchscreen != null)
+            {
+                foreach (var touch in touchscreen.touches)
+                {
+                    if (touch.press.wasPressedThisFrame) return true;
+                }
+            }
+            var pointer = UnityEngine.InputSystem.Pointer.current;
+            return pointer != null && pointer.press.wasPressedThisFrame;
         }
 
         // ---- 読み込み中 ----
