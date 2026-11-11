@@ -103,6 +103,7 @@ namespace DeskStage.App
             Context.Rules = gameObject.AddComponent<CourseRuleSystem>();
             Context.Rules.Set(Context.Gimmicks);
             Context.Overlays = gameObject.AddComponent<AppOverlays>();
+            gameObject.AddComponent<GameSounds>().Set(Context.Router);
 
             Context.Flow.Init(Context);
 
@@ -112,6 +113,7 @@ namespace DeskStage.App
             AddScreen<MissionScreen>(AppScreenId.Mission);
             AddScreen<HowToScreen>(AppScreenId.HowTo);
             AddScreen<ReachScreen>(AppScreenId.Reach);
+            AddScreen<GimmickGuideScreen>(AppScreenId.GimmickGuide);
             AddScreen<CaptureScreen>(AppScreenId.Capture);
             AddScreen<GeneratingScreen>(AppScreenId.Generating);
             AddScreen<CheckStageScreen>(AppScreenId.Check);

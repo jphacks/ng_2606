@@ -11,6 +11,9 @@ namespace DeskStage.Merge
     /// ・1枚目（真上）の写真は、A の PhotoCapture が撮ったときに受け取る
     /// ・写真の中の机と箱の上面の位置は、B の StagePhotoRegions（答えの deskInPhoto1、topFaceInPhoto1）
     /// ・StageBuilt で、机の板に机の絵、箱の上面にその部分の写真を貼る。側面は、上面の平均の色で塗る
+    /// ・上面と側面は、光の計算をする素材（Lit）にする（2026-11-11）：光の当たる向きで明るさが変わり、影も受ける。
+    ///   前は、光の計算をしない素材で、側面を作り物で暗くしていたので、立体に見えにくく、影も出なかった。
+    ///   写真と背景を貼ったあとに、光を整える（StageLighting：光源を 1 つに、環境の光を背景の色に）
     /// 貼る物は、机の板と箱の子（PhotoTop、PhotoSides）。親の素材や当たり判定は変えない。
     /// 位置が分からない箱（補助で足した箱など）は、そのまま（D の見た目）。選んでいる箱は、D の強調が見えるよう、写真を外す。
     ///
@@ -34,8 +37,8 @@ namespace DeskStage.Merge
         // 同じ高さで重なって、ちらつかないように、ほんの少し浮かせる（m）
         const float Lift = 0.0005f;
 
-        // 側面は、上面の平均の色を、少し暗くして、上面との違いが分かるようにする
-        const float SideDarken = 0.8f;
+        // 写真の面（上面と側面）の、つやの少なさ（紙や段ボールのような、つやの無い感じ）。光の計算をする素材（Lit）に使う
+        const float SurfaceSmoothness = 0.12f;
 
         // 机の絵から、物の写真を消すときの、場所の広げ方（写真の割合）：左右に SideMargin、下へ（上面の高さ × SideExtendRatio）
         const float SideMargin = 0.02f;
@@ -214,6 +217,8 @@ namespace DeskStage.Merge
             // 背景：背景専用の写真があれば、いつでも貼る
             MakeBackdropPixels(BackdropStore.AtDefaultPlace().Load());
             AddBackdrop(root);
+            AddContactShadows(root);
+            ApplyLighting();
 
         }
 
@@ -452,7 +457,8 @@ namespace DeskStage.Merge
 
             if (paintSides)
             {
-                var average = (Color)averagePixel * SideDarken;
+                // 側面の暗さは、光の計算に任せる（光の当たらない面は、影の色になる）
+                var average = (Color)averagePixel;
                 average.a = 1f;
                 var sides = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 sides.name = SidesName;
@@ -461,7 +467,7 @@ namespace DeskStage.Merge
                 sides.transform.localPosition = Vector3.zero;
                 sides.transform.localScale = new Vector3(1.004f, 1.002f, 1.004f);
                 sides.layer = target.gameObject.layer;
-                var sideMaterial = NewMaterial(null, average);
+                var sideMaterial = NewSurfaceMaterial(null, average);
                 sides.GetComponent<Renderer>().sharedMaterial = sideMaterial;
                 overlay.Sides = sides;
                 topY = 0.5f * 1.002f;
@@ -491,7 +497,10 @@ namespace DeskStage.Merge
                 top.transform.localScale = Vector3.one;
             }
             top.layer = target.gameObject.layer;
-            top.GetComponent<Renderer>().sharedMaterial = NewMaterial(texture, Color.white);
+            var topRenderer = top.GetComponent<Renderer>();
+            topRenderer.sharedMaterial = NewSurfaceMaterial(texture, Color.white);
+            // 上面の板は、すぐ下の箱が影を落とすので、自分は影を落とさない（自分の影で、まだらにならないように）
+            topRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             overlay.Top = top;
 
             overlays.Add(overlay);
@@ -594,6 +603,39 @@ namespace DeskStage.Merge
             }
             sum /= Mathf.Max(1, backdropWidth);
             return new Color(sum.x, sum.y, sum.z, 1f);
+        }
+
+        // 写真の面（箱の上面と側面）の素材：光の計算をする素材（URP の Lit）。見つからなければ、今までの光の計算をしない素材
+        Material NewSurfaceMaterial(Texture2D texture, Color color)
+        {
+            var lit = Shader.Find("Universal Render Pipeline/Lit");
+            if (lit == null)
+            {
+                return NewMaterial(texture, color);
+            }
+            var material = new Material(lit);
+            if (texture != null)
+            {
+                material.SetTexture("_BaseMap", texture);
+                material.mainTexture = texture;
+            }
+            material.SetColor("_BaseColor", color);
+            material.color = color;
+            material.SetFloat("_Smoothness", SurfaceSmoothness);
+            created.Add(material);
+            return material;
+        }
+
+        /// <summary>物が机に接するところの、やわらかい暗がり（StageContactShadows）。StagePreview（開発用）からも呼ぶ。</summary>
+        void AddContactShadows(Transform root)
+        {
+            StageContactShadows.Add(root, StageContext.CurrentStage, photoMaterial, created, extras);
+        }
+
+        /// <summary>光を整える（StageLighting）。背景があれば、その色を使う。StagePreview（開発用）からも呼ぶ。</summary>
+        void ApplyLighting()
+        {
+            StageLighting.Apply(backdropPixels, backdropWidth, backdropHeight);
         }
 
         Material NewMaterial(Texture2D texture, Color color)

@@ -3,8 +3,9 @@ using UnityEngine;
 namespace DeskStage.App
 {
     /// <summary>
-    /// しかけの絵（コードで描く小さな絵）。水の矢印、炎の地面、炎、回復の地面、＋、
+    /// しかけの絵（コードで描く小さな絵）。水の矢印、炎の地面、回復の地面、
     /// ジャンプ台の地面、敵の出る地面、敵の顔、ワープの地面。ファイルは持たない。
+    /// 立ち上がる炎と＋は、立体の形（GimmickMeshes。2026-11-11）。
     /// </summary>
     public static class GimmickTextures
     {
@@ -67,29 +68,6 @@ namespace DeskStage.App
             return New(pixels, TextureWrapMode.Repeat);
         }
 
-        /// <summary>炎（しずくの形。下が赤、上がオレンジ〜黄色）。</summary>
-        public static Texture2D Flame()
-        {
-            var pixels = new Color32[Size * Size];
-            for (var y = 0; y < Size; y++)
-            {
-                for (var x = 0; x < Size; x++)
-                {
-                    var u = (x + 0.5f) / Size * 2f - 1f; // -1〜1
-                    var v = (y + 0.5f) / Size;           // 0（下）〜1（上）
-                    // 下は太く、上は細い。先がとがる
-                    var width = Mathf.Pow(1f - v, 0.8f) * (0.25f + 0.65f * Mathf.Sin(Mathf.Clamp01(v * 3f) * Mathf.PI * 0.5f));
-                    var inside = Mathf.Abs(u) < width;
-                    var edge = Mathf.Clamp01((width - Mathf.Abs(u)) * 6f);
-                    var color = Color.Lerp(new Color(1f, 0.25f, 0.05f), new Color(1f, 0.9f, 0.3f), Mathf.Clamp01(v * 1.3f));
-                    // 中心は明るく
-                    color = Color.Lerp(color, new Color(1f, 1f, 0.8f), Mathf.Clamp01(1f - Mathf.Abs(u) / Mathf.Max(width, 0.01f)) * 0.5f * (1f - v));
-                    pixels[y * Size + x] = C(color.r, color.g, color.b, inside ? edge : 0f);
-                }
-            }
-            return New(pixels, TextureWrapMode.Clamp);
-        }
-
         /// <summary>回復の地面：やわらかい緑に、白い＋を、1 つ。</summary>
         public static Texture2D Heal()
         {
@@ -107,24 +85,6 @@ namespace DeskStage.App
                 }
             }
             return New(pixels, TextureWrapMode.Repeat);
-        }
-
-        /// <summary>ふわっと上がる＋（白い＋に、緑のふち。まわりは透明）。</summary>
-        public static Texture2D Plus()
-        {
-            var pixels = new Color32[Size * Size];
-            for (var y = 0; y < Size; y++)
-            {
-                for (var x = 0; x < Size; x++)
-                {
-                    var p = new Vector2((x + 0.5f) / Size - 0.5f, (y + 0.5f) / Size - 0.5f);
-                    var core = (Mathf.Abs(p.x) < 0.09f && Mathf.Abs(p.y) < 0.36f) || (Mathf.Abs(p.y) < 0.09f && Mathf.Abs(p.x) < 0.36f);
-                    var rim = (Mathf.Abs(p.x) < 0.14f && Mathf.Abs(p.y) < 0.41f) || (Mathf.Abs(p.y) < 0.14f && Mathf.Abs(p.x) < 0.41f);
-                    var color = core ? Color.white : new Color(0.2f, 0.75f, 0.4f);
-                    pixels[y * Size + x] = C(color.r, color.g, color.b, rim ? 1f : 0f);
-                }
-            }
-            return New(pixels, TextureWrapMode.Clamp);
         }
 
         /// <summary>ジャンプ台の地面：黄色に、上を指す白い山形（＾）を 2 つ。</summary>

@@ -43,7 +43,8 @@ namespace DeskStage.App
             go.Rect.gameObject.AddComponent<Bobbing>().Amplitude = 6f;
         }
 
-        public override void OnBack() => Context.Router.Show(AppScreenId.Home);
+        // お題から来たときは、お題の画面へ戻る（いちらんへ飛ばない）
+        public override void OnBack() => Context.Flow.LeaveToHome();
 
         RectTransform Card(RectTransform parent, int index)
         {

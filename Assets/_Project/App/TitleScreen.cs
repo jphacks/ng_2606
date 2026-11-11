@@ -7,7 +7,7 @@ namespace DeskStage.App
     /// <summary>
     /// タイトル。アイキャッチ（Downloads/eyecatch.png）に合わせた景色：灰ベージュの壁と、木目の机。
     /// 机の上に、赤い本、木の積み木、段ボールの箱が並び、積み木の上にキャラが立つ。左上に「ならべて！ステージ」。
-    /// 「はじめる」でホームへ。
+    /// 「はじめる」でホームへ。見えている間は、BGM（AppMusic）を鳴らす。
     /// </summary>
     public class TitleScreen : AppScreen
     {
@@ -31,6 +31,11 @@ namespace DeskStage.App
             }
             BuildDrawn();
         }
+
+        // スタート画面の BGM（AppMusic。2026-11-11）：見えている間だけ鳴らす
+        public override void OnEnter(object arg) => AppMusic.Play();
+
+        public override void OnExit() => AppMusic.Stop();
 
         // 写真（アイキャッチ）をそのまま出す。題字も写真に入っているので、重ねるのは「はじめる」だけ。
         // 画面の縦横の比が違うときは、写真の上下（または左右）を、同じだけ切って、画面いっぱいにする

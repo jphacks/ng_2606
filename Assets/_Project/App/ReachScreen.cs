@@ -39,19 +39,20 @@ namespace DeskStage.App
 
             BuildGauge(safe, walkCm, jumpCm);
 
-            // 右：3 つの意味
+            // 右：3 つの意味と、しかけ。左の目盛りの右から、画面の右のふちの近くまで使う（2026-11-11：しかけの文がはみ出していた）
             var rows = UiKit.NewRect("Rows", safe);
-            UiKit.Place(rows, new Vector2(0.64f, 0.5f), new Vector2(0f, 20f), new Vector2(1280f, 700f));
+            UiKit.Place(rows, new Vector2(0.665f, 0.5f), new Vector2(0f, 20f), new Vector2(RowWidth, 700f));
             Row(rows, 0, WalkColor, AppText.ReachWalkBadge, string.Format(AppText.ReachWalk, FormatCm(walkCm)), 0f, 150f, 42f);
             Row(rows, 1, JumpColor, AppText.ReachJumpBadge, string.Format(AppText.ReachJump, FormatCm(jumpCm)), 170f, 150f, 42f);
             Row(rows, 2, WallColor, AppText.ReachWallBadge, string.Format(AppText.ReachWall, FormatCm(jumpCm)), 340f, 150f, 42f);
-            Row(rows, 3, Theme.Hex("B58CFF"), AppText.ReachGimmickBadge, AppText.GimmickHint, 510f, 190f, 32f);
+            Row(rows, 3, Theme.Hex("B58CFF"), AppText.ReachGimmickBadge, AppText.GimmickHint, 510f, 190f, 36f);
 
             var examples = UiKit.Label(safe, AppText.ReachExamples, Theme.Small, Theme.InkSoft, TextAlignmentOptions.Left, false, "Examples");
             UiKit.Place(examples.rectTransform, new Vector2(0f, 0f), new Vector2(Theme.Margin, 50f), new Vector2(1500f, 70f));
 
-            var go = UiKit.Button(safe, AppText.ReachGo, UiKit.ButtonStyle.Primary, new Vector2(640f, Theme.ButtonHeight),
-                () => Context.Flow.BeginCapture(true), "Go", Theme.H1);
+            // 次は、いろの しかけの説明（GimmickGuideScreen。2026-11-11）。撮り始めるのは、その画面から
+            var go = UiKit.Button(safe, AppText.GuideNext, UiKit.ButtonStyle.Primary, new Vector2(640f, Theme.ButtonHeight),
+                () => Context.Router.Show(AppScreenId.GimmickGuide), "Go", Theme.H1);
             UiKit.Place(go.Rect, new Vector2(1f, 0f), new Vector2(-Theme.Margin, 40f), go.Rect.sizeDelta);
             go.Rect.gameObject.AddComponent<Bobbing>().Amplitude = 6f;
         }
@@ -132,10 +133,12 @@ namespace DeskStage.App
 
         // ---- 右の説明 ----
 
+        const float RowWidth = 1480f;
+
         void Row(RectTransform parent, int index, Color color, string badgeText, string text, float top, float height, float fontSize)
         {
             var card = UiKit.Panel(parent, "Row" + index, Color.white, Theme.CardRadius, shadow: true);
-            UiKit.Place(card.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -top), new Vector2(1280f, height));
+            UiKit.Place(card.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -top), new Vector2(RowWidth, height));
             card.rectTransform.pivot = new Vector2(0.5f, 1f);
 
             var badge = UiKit.Panel(card.rectTransform, "Badge", color, 60f);
@@ -145,8 +148,10 @@ namespace DeskStage.App
             badgeLabel.rectTransform.offsetMin = new Vector2(14f, 6f);
             badgeLabel.rectTransform.offsetMax = new Vector2(-14f, -6f);
 
-            var label = UiKit.Label(card.rectTransform, text, fontSize, Theme.Ink, TextAlignmentOptions.Left, true, "Text");
+            // 入りきらないときは、はみ出さずに、少しだけ字を小さくする
+            var label = UiKit.FitLabel(card.rectTransform, text, fontSize, Theme.Ink, TextAlignmentOptions.Left, true, "Text");
             label.textWrappingMode = TextWrappingModes.NoWrap;
+            label.fontSizeMin = fontSize * 0.75f;
             UiKit.Fill(label.rectTransform);
             label.rectTransform.offsetMin = new Vector2(400f, 10f);
             label.rectTransform.offsetMax = new Vector2(-24f, -10f);

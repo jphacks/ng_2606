@@ -57,8 +57,9 @@ namespace DeskStage.Merge
         /// <summary>
         /// 体を作り、parent の子にする。height はキャラの身長（m）。足の下の端が parent の原点（足元）に来る。
         /// material は、顔の写真 photo を貼った素材。face は、写真の中の顔の楕円。返す配列は、部品ごとの軸（PartCount の並び）。
+        /// hairColor は後ろ頭の色。無ければ、顔の写真の平均の色を暗くした色（「いつもの こ」は DefaultFace.HairColor を渡す）。
         /// </summary>
-        public static Transform[] Build(Transform parent, Material material, Texture2D photo, Vector4 face, float height, List<Object> created)
+        public static Transform[] Build(Transform parent, Material material, Texture2D photo, Vector4 face, float height, List<Object> created, Color? hairColor = null)
         {
             LoadMeshes();
             var joints = new Transform[PartCount];
@@ -67,7 +68,7 @@ namespace DeskStage.Merge
             var head = Joint(parent, "Head", HeadCenter * height);
             var headMesh = Ellipsoid(face, HeadRadius.x * height, HeadRadius.y * height, HeadRadius.z * height);
             created.Add(headMesh);
-            var hair = AverageColor(photo, face) * HairDarken;
+            var hair = hairColor ?? AverageColor(photo, face) * HairDarken;
             hair.a = 1f;
             var headBall = new GameObject("HeadBall");
             headBall.transform.SetParent(head, false);

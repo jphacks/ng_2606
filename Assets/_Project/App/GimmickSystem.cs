@@ -64,12 +64,24 @@ namespace DeskStage.App
             public List<Billboard> Billboards = new List<Billboard>();
         }
 
+        // 炎と回復の、立ち上がる飾り（立体。GimmickMeshes）
         class Billboard
         {
             public Transform Transform;
-            public Vector2 Local;     // 箱の上面の中での位置（-0.5〜0.5）
+            public Vector2 Local;     // 箱の上面の中での位置（-0.5〜0.5）。出るたびに選び直す（SpotFor）
             public float Phase;
+            public int Salt;          // 箱の中で何番目の飾りか（出る場所を、飾りごとに変える）
+            public Material Material; // うすくして消す素材（回復の「＋」、炎の外側）
+            public Material Core;     // 炎の芯の、うすくする素材
         }
+
+        // 浮かび上がる炎の、いちばん大きいときの大きさ（m）と、面に足をつけたまま大きくなる時間の割合
+        const float FlameSize = 0.026f;
+        const float FlameGrowPart = 0.3f;
+
+        // 炎・「＋」の形（作るのは 1 回だけ）
+        Mesh flameMesh;
+        Mesh plusMesh;
 
         class Enemy
         {
@@ -373,6 +385,8 @@ namespace DeskStage.App
             }
             created.Clear();
             textures.Clear();
+            flameMesh = null;
+            plusMesh = null;
         }
 
         Material NewMaterial(Texture2D texture, Color tint)
@@ -457,7 +471,9 @@ namespace DeskStage.App
             pad.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 
-        // 炎と回復の「立ち上がる」飾り（いつも カメラの方を向く）
+        // 炎と回復の「立ち上がる」飾り（立体。2026-11-11：前は、カメラへ向けた板の絵で、横から見るとうすかった）
+        //  ・炎：しずくの形の炎（内側に明るい芯）が、回復の「＋」と同じく、ふわっと上がって消える（2026-11-11。前は、その場でゆれる炎と、舞い上がる火の粉）
+        //  ・回復：厚みのある「＋」が、回りながら、ふわっと上がって消える
         void BuildBillboards(Visual v)
         {
             // 立ち上がる飾りは、炎と回復だけ
@@ -467,30 +483,76 @@ namespace DeskStage.App
             }
             var scale = v.Box.localScale;
             var area = scale.x * scale.z;
-            var count = v.Kind == BoxData.GimmickFire
-                ? Mathf.Clamp(Mathf.RoundToInt(area / 0.0012f), 2, 7)
-                : Mathf.Clamp(Mathf.RoundToInt(area / 0.004f), 1, 3);
-            var texture = v.Kind == BoxData.GimmickFire
-                ? GetTexture("flame", GimmickTextures.Flame)
-                : GetTexture("plus", GimmickTextures.Plus);
+            var fire = v.Kind == BoxData.GimmickFire;
+            // 炎も回復も、浮かび上がる飾りを、箱の広さに合わせて 1〜3 個
+            var count = Mathf.Clamp(Mathf.RoundToInt(area / 0.004f), 1, 3);
             for (var i = 0; i < count; i++)
             {
-                var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                go.name = "GimmickSprite";
-                var collider = go.GetComponent<Collider>();
-                if (collider != null) UiKit.Kill(collider);
-                go.transform.SetParent(transform, false);
-                go.GetComponent<Renderer>().sharedMaterial = NewMaterial(texture, Color.white);
-                go.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 var h1 = Hash01(v.Id, i * 2);
                 var h2 = Hash01(v.Id, i * 2 + 1);
-                v.Billboards.Add(new Billboard
+                var local = new Vector2((h1 - 0.5f) * 0.7f, (h2 - 0.5f) * 0.7f);
+                if (fire)
                 {
-                    Transform = go.transform,
-                    Local = new Vector2((h1 - 0.5f) * 0.7f, (h2 - 0.5f) * 0.7f),
-                    Phase = h1 * 6.28f,
-                });
+                    // 回復の「＋」と同じく、浮かび上がって消える小さな炎（2026-11-11）。薄くして消すので、炎ごとに素材を分ける
+                    flameMesh ??= Keep(GimmickMeshes.Flame());
+                    var outer = Solid(NewMaterial(GetTexture("flame3d", () => GimmickMeshes.FlameTexture(false)), Color.white));
+                    var flame = MeshObject("Flame", flameMesh, outer);
+                    // 芯：炎の子。カメラ寄り（-z）に出して、外の炎の手前に、明るい内側の炎として見せる
+                    var inner = Solid(NewMaterial(GetTexture("flamecore", () => GimmickMeshes.FlameTexture(true)), Color.white));
+                    var core = MeshObject("FlameCore", flameMesh, inner);
+                    core.SetParent(flame, false);
+                    core.localPosition = new Vector3(0f, 0.01f, -0.3f);
+                    core.localScale = new Vector3(0.6f, 0.62f, 0.6f);
+                    v.Billboards.Add(new Billboard { Transform = flame, Local = local, Phase = h1 * 6.28f, Salt = i, Material = outer, Core = inner });
+                }
+                else
+                {
+                    plusMesh ??= Keep(GimmickMeshes.Plus());
+                    var material = Solid(NewMaterial(GetTexture("plus3d", GimmickMeshes.PlusTexture), Color.white));
+                    var plus = MeshObject("Plus", plusMesh, material);
+                    v.Billboards.Add(new Billboard { Transform = plus, Local = local, Phase = h1 * 6.28f, Salt = i, Material = material });
+                }
             }
+        }
+
+        // 立体の飾りの素材：奥行きを書き、裏の面を描かない（しかけの素材は半透明・両面なので、そのままだと裏の面が手前に透けて見える）
+        static Material Solid(Material material)
+        {
+            if (material.HasProperty("_ZWrite")) material.SetFloat("_ZWrite", 1f);
+            if (material.HasProperty("_Cull")) material.SetFloat("_Cull", (float)UnityEngine.Rendering.CullMode.Back);
+            return material;
+        }
+
+        Mesh Keep(Mesh mesh)
+        {
+            created.Add(mesh);
+            return mesh;
+        }
+
+        // 形と素材の物を作る（当たり判定なし、影なし）
+        Transform MeshObject(string name, Mesh mesh, Material material)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(transform, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return go.transform;
+        }
+
+        // 向き d から、up の向きの分を除いた、横の向き（無ければ、前）
+        static Vector3 Flat(Vector3 d, Vector3 up)
+        {
+            var flat = Vector3.ProjectOnPlane(d, up);
+            return flat.sqrMagnitude > 1e-10f ? flat.normalized : Vector3.ProjectOnPlane(Vector3.forward, up).normalized;
+        }
+
+        // 飾りが出る場所（箱の上面の中。ふちから少し内側）：箱、何番目の飾りか、何回目に出たかで決まる、ばらばらの場所
+        static Vector2 SpotFor(string id, int salt, int cycle)
+        {
+            var seed = salt * 2 + cycle * 7919;
+            return new Vector2((Hash01(id, seed) - 0.5f) * 0.7f, (Hash01(id, seed + 1) - 0.5f) * 0.7f);
         }
 
         static float Hash01(string id, int salt)
@@ -577,35 +639,56 @@ namespace DeskStage.App
             {
                 if (v.Box == null) continue;
                 var scale = v.Box.lossyScale;
+                var up = v.Box.up;
                 foreach (var b in v.Billboards)
                 {
                     if (b.Transform == null) continue;
+                    // 出るたびに、箱の上面の中のランダムな場所から出す（2026-11-11。前は、いつも同じ場所だった）。
+                    // 何回目に出たか（cycle）で決めるので、浮かび上がる途中では動かない
+                    var cycle = Mathf.FloorToInt(t * 0.45f + b.Phase);
+                    b.Local = SpotFor(v.Id, b.Salt, cycle);
                     var surfaceY = v.Ramp ? RampMesh.SurfaceLocalY(b.Local.x) * 1.002f : 0.5f * 1.002f;
                     var local = new Vector3(b.Local.x, surfaceY, b.Local.y);
                     var basePoint = v.Box.TransformPoint(local);
-                    float size;
-                    float lift;
-                    var renderer = b.Transform.GetComponent<Renderer>();
+                    // 横の向きだけカメラへ向ける（立てたまま。上から見ると、丸い形が見える）
+                    var facing = Quaternion.LookRotation(Flat(basePoint - (cam != null ? cam.transform.position : basePoint - Vector3.forward), up), up);
                     if (v.Kind == BoxData.GimmickFire)
                     {
-                        // ゆらゆら大きさが変わる炎。足もとは、上面に付ける
-                        var wobble = 0.5f + 0.5f * Mathf.Sin(t * 9f + b.Phase);
-                        size = 0.03f + 0.014f * wobble;
-                        lift = size * 0.5f + 0.003f;
+                        // 回復の「＋」と同じく、ふわっと上がって、小さく薄くなって消える炎。回すと、明るく塗った正面が向こうを向くので、回さずに、ゆらゆらゆらす
+                        // 前の 3 割：箱の面に足をつけたまま、小さな炎から大きくなる（面から生えるように出る）。
+                        // 後の 7 割：面を離れて浮かび上がりながら、小さくなる。うすくするのは、消える直前だけ
+                        // （2026-11-11：前は、出たときから面の少し上に浮いていて、箱よりかなり上から出ているように見えた）
+                        var k = (t * 0.45f + b.Phase) % 1f;
+                        float size, rise;
+                        if (k < FlameGrowPart)
+                        {
+                            var g = k / FlameGrowPart;
+                            size = FlameSize * Mathf.Lerp(0.15f, 1f, g * g * (3f - 2f * g));
+                            rise = 0f;
+                        }
+                        else
+                        {
+                            var r = (k - FlameGrowPart) / (1f - FlameGrowPart);
+                            size = FlameSize * Mathf.Lerp(1f, 0.3f, r);
+                            rise = Mathf.Pow(r, 1.3f) * 0.045f;
+                        }
+                        var sway = Mathf.Sin(t * 6f + b.Phase * 3f) * 8f;
+                        b.Transform.position = basePoint + up * (0.0005f + rise);
+                        b.Transform.rotation = facing * Quaternion.Euler(0f, 0f, sway);
+                        b.Transform.localScale = new Vector3(size * 0.6f, size * 1.45f, size * 0.6f);
+                        var fade = new Color(1f, 1f, 1f, Mathf.Clamp01((1f - k) / 0.15f));
+                        if (b.Material != null) b.Material.color = fade;
+                        if (b.Core != null) b.Core.color = fade;
                     }
                     else
                     {
-                        // ふわっと上がって消える＋
+                        // 回りながら、ふわっと上がって消える＋
                         var k = (t * 0.45f + b.Phase) % 1f;
-                        size = 0.022f;
-                        lift = 0.006f + k * 0.05f;
-                        if (renderer != null) renderer.sharedMaterial.color = new Color(1f, 1f, 1f, Mathf.Sin(k * Mathf.PI));
-                    }
-                    b.Transform.position = basePoint + v.Box.up * lift;
-                    b.Transform.localScale = new Vector3(size, size * (v.Kind == BoxData.GimmickFire ? 1.4f : 1f), 1f);
-                    if (cam != null)
-                    {
-                        b.Transform.rotation = Quaternion.LookRotation(b.Transform.position - cam.transform.position, cam.transform.up);
+                        var size = 0.02f;
+                        b.Transform.position = basePoint + up * (0.012f + k * 0.05f);
+                        b.Transform.rotation = Quaternion.AngleAxis(t * 90f + b.Phase * 57f, up) * Quaternion.LookRotation(Flat(v.Box.forward, up), up);
+                        b.Transform.localScale = Vector3.one * size * Mathf.Lerp(0.6f, 1f, Mathf.Sin(k * Mathf.PI));
+                        if (b.Material != null) b.Material.color = new Color(1f, 1f, 1f, Mathf.Sin(k * Mathf.PI));
                     }
                 }
                 _ = scale;
@@ -657,6 +740,13 @@ namespace DeskStage.App
                     {
                         groundedWaterRamp = v.Id;
                     }
+                    // 上り向きの流れで、歩いてのぼれないほど急な坂：面のすぐ上にいる間は、坂をのぼる分の上向きの速さを与えて、流れに乗せてのぼらせる（2026-11-11）
+                    if (onRamp && (motor.IsGrounded || lastWaterRampId == v.Id) && ClimbRamp(motor, v))
+                    {
+                        lastWaterRampId = v.Id;
+                        push += PushOf(v, GimmickRules.WaterRampSpeed);
+                        continue;
+                    }
                     if (motor.IsGrounded && onRamp)
                     {
                         push += PushOf(v, GimmickRules.WaterRampSpeed);
@@ -684,6 +774,7 @@ namespace DeskStage.App
                         {
                             jumpPadReadyAt = Time.time + GimmickRules.JumpPadCooldownSeconds;
                             motor.Launch(motor.settings.jumpHeight * GimmickRules.JumpPadHeightScale);
+                            UiSound.Play(UiSound.Cue.JumpPad); // ばねの「びよーん」（ジャンプ台で跳んだと分かるように。2026-11-11）
                         }
                         break;
                     case BoxData.GimmickWarp:
@@ -1057,6 +1148,24 @@ namespace DeskStage.App
         }
 
         // 水の箱が流す速さ（ステージの向きを、世界の向きに直したもの）
+        // 急な水の坂を、流れに乗ってのぼらせる。のぼらせたら true（ゆるい坂、下り向き、横向きなら false）。
+        // キャラは上向きに動いているときだけ急な坂をのぼれるので、ジャンプ台と同じ跳ね上げ（Launch）で、
+        // 坂をのぼる速さ＋このフレームに重力で減る分 の上向きの速さを与える（C のキャラの中身は変えない）
+        bool ClimbRamp(CharacterMotor motor, Visual v)
+        {
+            var settings = motor.settings;
+            if (settings == null) return false;
+            var push = PushOf(v, 1f);
+            var uphill = Vector3.ProjectOnPlane(v.Box.right, Vector3.up);
+            if (push.sqrMagnitude < 1e-8f || uphill.sqrMagnitude < 1e-8f) return false;
+            var scale = v.Box.lossyScale;
+            var climb = GimmickRules.RampClimbSpeed(Vector3.Dot(push, uphill.normalized), scale.y, scale.x, GimmickRules.WaterRampSpeed, settings.slopeLimit);
+            if (climb <= 0f) return false;
+            var speed = climb + settings.gravity * Time.deltaTime;
+            motor.Launch(speed * speed / (2f * settings.gravity));
+            return true;
+        }
+
         static Vector3 PushOf(Visual v, float speed)
         {
             var world = v.Box.TransformDirection(new Vector3(v.Direction.x, 0f, v.Direction.y));

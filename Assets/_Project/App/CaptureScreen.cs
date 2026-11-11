@@ -50,6 +50,10 @@ namespace DeskStage.App
             UiKit.Fill(preparing);
             var spin = UiKit.Spinner(preparing, "Spinner", Color.white, 150f);
             UiKit.Place(spin.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0f, 50f), new Vector2(150f, 150f));
+            // 文の後ろに、うすい暗い下地（目安の線が、文字に重ならないように）
+            var prepBack = UiKit.Panel(preparing, "TextBack", Theme.WithAlpha(Theme.Navy, 0.85f), 50f);
+            prepBack.raycastTarget = false;
+            UiKit.Place(prepBack.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -80f), new Vector2(760f, 100f));
             var prep = UiKit.Label(preparing, AppText.CapturePreparing, Theme.Body, Color.white, TextAlignmentOptions.Center, false, "Text");
             UiKit.Place(prep.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -80f), new Vector2(900f, 100f));
 
@@ -72,8 +76,9 @@ namespace DeskStage.App
             hint = UiKit.Label(safe, "", 48f, Color.white, TextAlignmentOptions.Center, true, "Hint");
             hint.textWrappingMode = TMPro.TextWrappingModes.NoWrap; // 改行は、文の中の \n だけ（勝手に折り返して、1 文字だけ次の行に落ちないように）
             UiKit.Place(hint.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 150f), new Vector2(880f, 260f));
-            warning = UiKit.Label(safe, "", Theme.Body, Theme.Orange, TextAlignmentOptions.Center, true, "Warning");
-            UiKit.Place(warning.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -35f), new Vector2(880f, 110f));
+            // 注意の文は、右の欄のふちから少し離す。入りきらないときは、字を小さくする（2026-11-11：両側のふちに、くっついていた）
+            warning = UiKit.FitLabel(safe, "", Theme.Body, Theme.Orange, TextAlignmentOptions.Center, true, "Warning");
+            UiKit.Place(warning.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -35f), new Vector2(800f, 110f));
 
             shutter = UiParts.Shutter(safe, OnShutter, 260f);
             UiKit.Place(shutter.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(0f, 120f), new Vector2(260f, 260f));
@@ -92,7 +97,8 @@ namespace DeskStage.App
             dim.color = Theme.WithAlpha(Theme.Navy, 0.82f);
 
             var card = UiKit.Panel(failure, "Card", Theme.Card, Theme.CardRadius, shadow: true);
-            UiKit.Place(card.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1500f, 900f));
+            // 文と「せっていを ひらく」と下のボタンの間に、すき間を空ける高さ（2026-11-11：900 では詰まっていた）
+            UiKit.Place(card.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1500f, 1000f));
 
             var face = UiKit.Disc(card.rectTransform, "Face", Theme.Orange, 150f);
             UiKit.Place(face.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -40f), face.rectTransform.sizeDelta);
@@ -112,7 +118,7 @@ namespace DeskStage.App
             UiKit.Place(home.Rect, new Vector2(0.27f, 0f), new Vector2(0f, 60f), home.Rect.sizeDelta);
             failureSettings = UiKit.Button(card.rectTransform, AppText.ErrorCameraOpenSettings, UiKit.ButtonStyle.Secondary,
                 new Vector2(560f, Theme.SmallButtonHeight), () => Application.OpenURL("app-settings:"), "Settings", Theme.Body);
-            UiKit.Place(failureSettings.Rect, new Vector2(0.5f, 0f), new Vector2(0f, 250f), failureSettings.Rect.sizeDelta);
+            UiKit.Place(failureSettings.Rect, new Vector2(0.5f, 0f), new Vector2(0f, 290f), failureSettings.Rect.sizeDelta);
             failure.gameObject.SetActive(false);
         }
 

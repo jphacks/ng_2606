@@ -67,6 +67,7 @@ namespace DeskStage.App
             StageContext.SaveCompleted += OnSaveCompleted;
             StageContext.ThermalStateChanged += OnThermal;
             GameEvents.Goal += OnGoal;
+            GameEvents.GameStarted += OnGameStarted;
             GameEvents.CoursePlaced += OnCoursePlaced;
             context.Gimmicks.GameOver += OnGameOver;
             context.Rules.GameOver += ShowGameOver;
@@ -81,6 +82,7 @@ namespace DeskStage.App
             StageContext.SaveCompleted -= OnSaveCompleted;
             StageContext.ThermalStateChanged -= OnThermal;
             GameEvents.Goal -= OnGoal;
+            GameEvents.GameStarted -= OnGameStarted;
             GameEvents.CoursePlaced -= OnCoursePlaced;
             if (context.Gimmicks != null) context.Gimmicks.GameOver -= OnGameOver;
             if (context.Rules != null) context.Rules.GameOver -= ShowGameOver;
@@ -175,7 +177,7 @@ namespace DeskStage.App
             BeginCapture(false);
         }
 
-        /// <summary>撮影・たしかめから、いちらんへ戻る。撮影は閉じる（ScreenChanged で行う）。</summary>
+        /// <summary>撮り方の説明・撮影・たしかめから、いちらんへ戻る（お題を選んでいれば、お題の画面へ）。撮影は閉じる（ScreenChanged で行う）。</summary>
         public void LeaveToHome()
         {
             waitingBuilt = false;
@@ -370,6 +372,11 @@ namespace DeskStage.App
             }
         }
 
+        static string CurrentStageId => StageContext.CurrentStage != null ? StageContext.CurrentStage.id : "";
+
+        // 遊び始め：このステージの上位の記録が、まだ無ければ、C の最速記録を引き継ぐ（ゴールすると C の記録は上書きされるため、先に読む）
+        void OnGameStarted() => StageRecords.Seed(CurrentStageId);
+
         void OnGoal(float seconds, bool isBest)
         {
             if (context.Router.Current == AppScreenId.Play)
@@ -380,7 +387,17 @@ namespace DeskStage.App
                 {
                     MissionStamps.Mark(mission.Id);
                 }
-                context.Router.Show(AppScreenId.Clear, new ClearInfo { Seconds = seconds, IsBest = isBest, MissionDone = mission != null }, false);
+                // 上位の記録を覚えて、クリアの画面で、前の記録と、これまでの上位を見せる
+                var records = StageRecords.Add(CurrentStageId, seconds);
+                context.Router.Show(AppScreenId.Clear, new ClearInfo
+                {
+                    Seconds = seconds,
+                    IsBest = isBest,
+                    MissionDone = mission != null,
+                    PreviousBest = records.PreviousBest,
+                    Top = records.Top,
+                    Rank = records.Rank,
+                }, false);
             }
         }
 
@@ -439,5 +456,11 @@ namespace DeskStage.App
         public bool IsBest;
         /// <summary>お題を達成した（スタンプが付いた）。</summary>
         public bool MissionDone;
+        /// <summary>今回より前の、いちばん速いタイム（初めてのクリアなら null）。StageRecords。</summary>
+        public float? PreviousBest;
+        /// <summary>今回を入れたあとの、速い順のタイム（3 つまで）。</summary>
+        public float[] Top;
+        /// <summary>今回のタイムの順位（0 が 1 位）。上位に入らなければ -1。</summary>
+        public int Rank = -1;
     }
 }
