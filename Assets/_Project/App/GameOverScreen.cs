@@ -11,6 +11,7 @@ namespace DeskStage.App
     public class GameOverScreen : AppScreen
     {
         AppButton fix;
+        AppButton list;
 
         protected override void Build()
         {
@@ -44,9 +45,9 @@ namespace DeskStage.App
                 () => Context.Flow.PlayAgain(), "Again", Theme.H1);
             UiKit.Place(again.Rect, new Vector2(0.5f, 0f), new Vector2(0f, 240f), again.Rect.sizeDelta);
 
-            var list = UiKit.Button(safe, AppText.GameOverList, UiKit.ButtonStyle.Soft, new Vector2(520f, Theme.SmallButtonHeight),
+            // 「いちらんへ」の場所は、「コースを なおす」を出すかどうかで決める（OnEnter）
+            list = UiKit.Button(safe, AppText.GameOverList, UiKit.ButtonStyle.Soft, new Vector2(520f, Theme.SmallButtonHeight),
                 () => Context.Flow.BackToList(), "List", Theme.Body);
-            UiKit.Place(list.Rect, new Vector2(0.5f, 0f), new Vector2(0f, 60f), list.Rect.sizeDelta); // 下のボタンは 1 つだけなので、真ん中に
             fix = UiKit.Button(safe, AppText.GameOverFix, UiKit.ButtonStyle.Soft, new Vector2(520f, Theme.SmallButtonHeight),
                 () => Context.Router.Back(), "Fix", Theme.Body);
             UiKit.Place(fix.Rect, new Vector2(0.5f, 0f), new Vector2(300f, 60f), fix.Rect.sizeDelta);
@@ -60,7 +61,10 @@ namespace DeskStage.App
             // 理由：ハートが なくなった（ふつう）、しばりの時間切れ・いっぱつ アウト
             hint.text = arg as string ?? AppText.GameOverHint;
             hearts.ShowHealth(Context.Gimmicks.Health.Hearts, Context.Rules.State.Rules); // いっぱつ アウトなら、1 つだけ
-            fix.gameObject.SetActive(Context.Flow.HasNewStage && !Context.Flow.PlayingSaved);
+            var canFix = Context.Flow.HasNewStage && !Context.Flow.PlayingSaved;
+            fix.gameObject.SetActive(canFix);
+            // 「コースを なおす」も出すときは、左右に並べる。出さないときは、「いちらんへ」を真ん中に（2026-11-11：真ん中に置いたまま、重なっていた）
+            UiKit.Place(list.Rect, new Vector2(0.5f, 0f), new Vector2(canFix ? -300f : 0f, 60f), list.Rect.sizeDelta);
         }
 
         public override void OnBack() => Context.Flow.BackToList();
