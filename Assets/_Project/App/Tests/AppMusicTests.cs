@@ -10,8 +10,8 @@ namespace DeskStage.App.Tests
         public void 曲はちょうど8小節で音が割れない()
         {
             var data = AppMusic.Samples();
-            // 1 分に 112 拍、4 拍子、8 小節
-            var seconds = 60f / 112f * 4f * 8f;
+            // 4 拍子で、AppMusic.Bars 小節
+            var seconds = 60f / AppMusic.Bpm * 4f * AppMusic.Bars;
             Assert.AreEqual(Mathf.RoundToInt(22050 * seconds), data.Length);
             var peak = 0f;
             foreach (var v in data) peak = Mathf.Max(peak, Mathf.Abs(v));
