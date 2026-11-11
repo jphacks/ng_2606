@@ -3,27 +3,28 @@ using UnityEngine;
 namespace DeskStage.Merge
 {
     /// <summary>
-    /// キャラクターを写真で作るときの、人型の枠（太めで 3 等身くらい）。
-    /// 人形を、この枠に合わせて撮り、枠の中だけをキャラにする（背景を自動で切り抜くのではなく、枠の形で切り抜く）。
-    /// きれいな人型でなくても、いろいろなキャラが入るように、頭、胴、両腕、両足を、ふっくらとした楕円の集まりにしてある。
+    /// キャラクターを写真で作るときの枠：顔だけの、まるい枠（2026-11-10。前は、頭・胴・両腕・両足の人型だった）。
+    /// 顔を、この枠に合わせて撮り、枠の中だけを使う。立体のキャラ（CharacterBody3D）の頭の前に貼る。胴・手足は、だれが撮っても同じ。
     /// 座標は、枠の箱の中の割合：横は左から右へ 0〜1、縦は下から上へ 0〜1。箱の横：縦 ＝ Aspect。
     /// MonoBehaviour から切り離して、EditMode テストで確かめる。
     /// </summary>
     public static class HumanMask
     {
-        /// <summary>枠の箱の、横 ÷ 縦。3:4。</summary>
-        public const float Aspect = 0.75f;
+        /// <summary>
+        /// 枠の箱の、横 ÷ 縦。4:5。前の人型の枠（3:4）で撮ったキャラと、撮った絵の縦横の比で見分ける（CharacterAvatar）。
+        /// </summary>
+        public const float Aspect = 0.8f;
 
-        // 楕円の中心 (cx, cy) と半径 (rx, ry)。頭が全体の約 3 分の 1 の高さ（3 等身）
-        static readonly Vector4[] Parts =
-        {
-            new Vector4(0.50f, 0.80f, 0.27f, 0.19f), // 頭
-            new Vector4(0.50f, 0.46f, 0.31f, 0.25f), // 胴
-            new Vector4(0.14f, 0.50f, 0.12f, 0.20f), // 左うで
-            new Vector4(0.86f, 0.50f, 0.12f, 0.20f), // 右うで
-            new Vector4(0.36f, 0.13f, 0.14f, 0.13f), // 左あし
-            new Vector4(0.64f, 0.13f, 0.14f, 0.13f), // 右あし
-        };
+        /// <summary>前の人型の枠の、横 ÷ 縦（このキャラは、人型の頭の部分を顔として使う）。</summary>
+        public const float LegacyAspect = 0.75f;
+
+        /// <summary>顔の楕円（x, y：中心、z, w：横と縦の半径。枠の箱の中の割合）。少し縦に長い。</summary>
+        public static readonly Vector4 Face = new Vector4(0.50f, 0.50f, 0.46f, 0.40f);
+
+        /// <summary>前の人型の枠の、頭の楕円（前の枠で撮ったキャラの顔として使う）。</summary>
+        public static readonly Vector4 LegacyHead = new Vector4(0.50f, 0.80f, 0.27f, 0.19f);
+
+        static readonly Vector4[] Parts = { Face };
 
         // ふちのぼかしの幅（楕円の大きさに対する割合）。小さいほど、くっきりする
         const float Edge = 0.06f;

@@ -902,12 +902,22 @@ namespace DeskStage.App
             return root;
         }
 
+        // 敵の玉の形（Unity の球の形を借りる）
+        static Mesh sphereMesh;
+
+        // 敵の体の部品。当たり判定は付けない（2026-11-10：CreatePrimitive の当たり判定を消しきれずに残っていて、
+        // 動く敵にキャラクターがめり込み、1 フレームで 20〜30cm はじき飛ばされていたため。敵に当たったかは EnemyTouches で調べる）
         void Part(Transform parent, string name, Vector3 position, Vector3 scale, Color color)
         {
-            var part = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            part.name = name;
-            var collider = part.GetComponent<Collider>();
-            if (collider != null) UiKit.Kill(collider);
+            if (sphereMesh == null)
+            {
+                var probe = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                sphereMesh = probe.GetComponent<MeshFilter>().sharedMesh;
+                DestroyImmediate(probe);
+            }
+            var part = new GameObject(name);
+            part.AddComponent<MeshFilter>().sharedMesh = sphereMesh;
+            part.AddComponent<MeshRenderer>();
             part.transform.SetParent(parent, false);
             part.transform.localPosition = position;
             part.transform.localScale = scale;

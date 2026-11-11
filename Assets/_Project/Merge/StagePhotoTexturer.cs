@@ -321,6 +321,53 @@ namespace DeskStage.Merge
             return visible.Count >= pixels.Length * MinVisibleRatio ? visible.ToArray() : pixels;
         }
 
+        // 上面の写真のうち、写真で、より高い箱に隠れていた所を、見えている所の平均の色で埋める（pixels を書き換える）。
+        // 2026-11-10：隠した箱（ピンクの紙など）が、低い箱の上面に写り込んでいたため。色の判定（VisiblePixels）と同じ考え方
+        static void FillHidden(string id, Color32[] pixels, Vector2[] points)
+        {
+            var myHeight = HeightOf(id);
+            var covers = new List<Vector2[]>();
+            foreach (var pair in StagePhotoRegions.TopFaces)
+            {
+                if (pair.Key != id && HeightOf(pair.Key) > myHeight + 0.005f)
+                {
+                    covers.Add(pair.Value);
+                }
+            }
+            if (covers.Count == 0)
+            {
+                return;
+            }
+            var hidden = new bool[pixels.Length];
+            long r = 0, g = 0, b = 0;
+            var visibleCount = 0;
+            for (var i = 0; i < pixels.Length; i++)
+            {
+                foreach (var q in covers)
+                {
+                    if (PhotoTextureMath.InsideQuad(q, points[i]))
+                    {
+                        hidden[i] = true;
+                        break;
+                    }
+                }
+                if (hidden[i]) continue;
+                r += pixels[i].r;
+                g += pixels[i].g;
+                b += pixels[i].b;
+                visibleCount++;
+            }
+            if (visibleCount == 0 || visibleCount == pixels.Length)
+            {
+                return;
+            }
+            var fill = new Color32((byte)(r / visibleCount), (byte)(g / visibleCount), (byte)(b / visibleCount), 255);
+            for (var i = 0; i < pixels.Length; i++)
+            {
+                if (hidden[i]) pixels[i] = fill;
+            }
+        }
+
         // 箱の高さ（作業中の箱。無ければ 0）
         static float HeightOf(string id)
         {
@@ -343,6 +390,7 @@ namespace DeskStage.Merge
             var outHeight = wide ? Mathf.Max(16, Mathf.RoundToInt(MaxTextureSide * ratio)) : MaxTextureSide;
 
             var pixels = PhotoTextureMath.Crop(source, photoWidth, photoHeight, ordered, outWidth, outHeight);
+            FillHidden(boxId, pixels, PhotoTextureMath.CropPoints(ordered, outWidth, outHeight, 0f, 1f, 0f, 1f));
             var texture = new Texture2D(outWidth, outHeight, TextureFormat.RGB24, true) { wrapMode = TextureWrapMode.Clamp };
             texture.SetPixels32(pixels);
             texture.Apply();

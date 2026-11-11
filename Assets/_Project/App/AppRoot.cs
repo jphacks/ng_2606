@@ -40,6 +40,9 @@ namespace DeskStage.App
 
         void Start()
         {
+            // D の開発用のデバッグ表示（3 本指で 2 回たたくと出る）は、遊ぶ人がうっかり出して画面が隠れるので、アプリでは使わない（2026-11-10）
+            var debugOverlay = FindFirstObjectByType<DebugOverlay>();
+            if (debugOverlay != null) Destroy(debugOverlay.gameObject);
             Context.Router.Show(firstScreen, remember: false, animate: false);
         }
 

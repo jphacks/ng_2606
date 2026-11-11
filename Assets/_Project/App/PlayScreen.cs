@@ -141,7 +141,13 @@ namespace DeskStage.App
             Context.Gimmicks.Warped += OnWarped;
             flashTime = 1f;
             damageFlash.color = new Color(1f, 0.15f, 0.15f, 0f);
-            hearts.Set(Context.Gimmicks.Health.Hearts);
+            RefreshHearts();
+        }
+
+        // ハート：しばりの「いっぱつ アウト」なら 1 つだけ出す（1 回当たると、ゲームオーバーなので）
+        void RefreshHearts()
+        {
+            hearts.ShowHealth(Context.Gimmicks.Health.Hearts, Context.Rules.State.Rules);
         }
 
         public override void OnExit()
@@ -156,7 +162,7 @@ namespace DeskStage.App
 
         void Update()
         {
-            hearts.Set(Context.Gimmicks.Health.Hearts);
+            RefreshHearts();
             RefreshJumpMarks();
             var rules = Context.Rules.PlayText();
             rulesBack.SetActive(rules.Length > 0);

@@ -3,18 +3,14 @@ using UnityEngine;
 
 namespace DeskStage.Merge.Tests
 {
-    /// <summary>HumanMask：人形を撮るときの、太めで 3 等身くらいの人型の枠。</summary>
+    /// <summary>HumanMask：キャラを撮るときの、顔だけのまるい枠。</summary>
     public class HumanMaskTests
     {
         [Test]
-        public void 頭と胴と足の中心は枠の中()
+        public void 顔の真ん中は枠の中()
         {
-            Assert.AreEqual(1f, HumanMask.Coverage(0.50f, 0.80f), 1e-4f); // 頭
-            Assert.AreEqual(1f, HumanMask.Coverage(0.50f, 0.46f), 1e-4f); // 胴
-            Assert.AreEqual(1f, HumanMask.Coverage(0.36f, 0.13f), 1e-4f); // 左あし
-            Assert.AreEqual(1f, HumanMask.Coverage(0.64f, 0.13f), 1e-4f); // 右あし
-            Assert.AreEqual(1f, HumanMask.Coverage(0.14f, 0.50f), 1e-4f); // 左うで
-            Assert.AreEqual(1f, HumanMask.Coverage(0.86f, 0.50f), 1e-4f); // 右うで
+            Assert.AreEqual(1f, HumanMask.Coverage(0.50f, 0.50f), 1e-4f);
+            Assert.AreEqual(1f, HumanMask.Coverage(0.50f, 0.80f), 1e-4f);
         }
 
         [Test]
@@ -27,27 +23,17 @@ namespace DeskStage.Merge.Tests
         }
 
         [Test]
-        public void 頭の横と足のあいだは外から区別できる()
+        public void 顔は少し縦に長い()
         {
-            // 頭の左右、肩の上は、枠の外（人型のくびれ）
-            Assert.AreEqual(0f, HumanMask.Coverage(0.10f, 0.85f));
-            Assert.AreEqual(0f, HumanMask.Coverage(0.90f, 0.85f));
-        }
-
-        [Test]
-        public void 頭の高さは全体の約3分の1()
-        {
-            // 頭の上端（0.99 付近）は枠の中、頭の高さは 0.38。全体の高さ 1 に対して、約 2.6 頭身（3 等身に近い）
-            Assert.Greater(HumanMask.Coverage(0.50f, 0.98f), 0f);
-            Assert.AreEqual(0f, HumanMask.Coverage(0.50f, 1.0f));
-            var headHeight = 2f * 0.19f;
-            Assert.That(1f / headHeight, Is.InRange(2.4f, 3.2f));
+            // 写真の中で、縦の長さ（w × 高さ）が、横の長さ（z × 幅）より長い
+            var f = HumanMask.Face;
+            Assert.Greater(f.w, f.z * HumanMask.Aspect);
         }
 
         [Test]
         public void 枠は太め()
         {
-            // 箱の面積の、半分より少し多いくらい（細すぎると、いろいろなキャラが入らない）
+            // 箱の面積の、半分より少し多いくらい
             var area = HumanMask.AreaFraction();
             Assert.That(area, Is.InRange(0.45f, 0.75f), $"面積の割合 {area:0.00}");
         }
@@ -62,7 +48,7 @@ namespace DeskStage.Merge.Tests
 
             var masked = HumanMask.Apply(rgb, w, h);
 
-            // 真ん中（胴）は不透明、左下の隅は透明。色は変わらない
+            // 真ん中（顔）は不透明、左下の隅は透明。色は変わらない
             var center = masked[(h / 2) * w + w / 2];
             Assert.AreEqual(255, center.a);
             Assert.AreEqual(10, center.r);

@@ -1,4 +1,5 @@
 using System;
+using DeskStage.Shared;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -162,6 +163,35 @@ namespace DeskStage.App
                 row.hearts.Add(parts);
             }
             return row;
+        }
+
+        /// <summary>出すハートの数（左から count 個。残りは隠す）。出すハートが、列の真ん中に来るよう、列の幅も合わせる。</summary>
+        public void SetCount(int count)
+        {
+            count = Mathf.Clamp(count, 1, hearts.Count);
+            for (var i = 0; i < hearts.Count; i++)
+            {
+                var heart = hearts[i][0].rectTransform.parent.gameObject;
+                if (heart.activeSelf != (i < count)) heart.SetActive(i < count);
+            }
+            var size = Rect.sizeDelta.y;
+            Rect.sizeDelta = new Vector2(count * size * 1.2f, size);
+        }
+
+        /// <summary>
+        /// ハートの数と、満ちている数を、しばりに合わせて出す。「いっぱつ アウト」なら 1 つだけ出し、1 回でも当たっていれば空にする。
+        /// 遊ぶ画面とゲームオーバーの画面で、同じ出し方にする。
+        /// </summary>
+        public void ShowHealth(int hearts, CourseRules rules)
+        {
+            if (rules != null && rules.oneHit)
+            {
+                SetCount(1);
+                Set(hearts >= PlayerHealth.Max ? 1 : 0);
+                return;
+            }
+            SetCount(PlayerHealth.Max);
+            Set(hearts);
         }
 
         /// <summary>満ちているハートの数を決める（左から）。</summary>
