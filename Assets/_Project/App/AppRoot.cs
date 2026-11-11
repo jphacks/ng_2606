@@ -113,6 +113,7 @@ namespace DeskStage.App
             AddScreen<MissionScreen>(AppScreenId.Mission);
             AddScreen<HowToScreen>(AppScreenId.HowTo);
             AddScreen<ReachScreen>(AppScreenId.Reach);
+            AddScreen<GimmickGuideScreen>(AppScreenId.GimmickGuide);
             AddScreen<CaptureScreen>(AppScreenId.Capture);
             AddScreen<GeneratingScreen>(AppScreenId.Generating);
             AddScreen<CheckStageScreen>(AppScreenId.Check);

@@ -123,6 +123,7 @@ namespace DeskStage.App.EditorTools
             };
             yield return new Scenario { Name = "05-howto", Screen = AppScreenId.HowTo };
             yield return new Scenario { Name = "05b-reach", Screen = AppScreenId.Reach };
+            yield return new Scenario { Name = "05c-gimmick-guide", Screen = AppScreenId.GimmickGuide };
             yield return new Scenario
             {
                 Name = "06-capture-top",

@@ -50,8 +50,9 @@ namespace DeskStage.App
             var examples = UiKit.Label(safe, AppText.ReachExamples, Theme.Small, Theme.InkSoft, TextAlignmentOptions.Left, false, "Examples");
             UiKit.Place(examples.rectTransform, new Vector2(0f, 0f), new Vector2(Theme.Margin, 50f), new Vector2(1500f, 70f));
 
-            var go = UiKit.Button(safe, AppText.ReachGo, UiKit.ButtonStyle.Primary, new Vector2(640f, Theme.ButtonHeight),
-                () => Context.Flow.BeginCapture(true), "Go", Theme.H1);
+            // 次は、いろの しかけの説明（GimmickGuideScreen。2026-11-11）。撮り始めるのは、その画面から
+            var go = UiKit.Button(safe, AppText.GuideNext, UiKit.ButtonStyle.Primary, new Vector2(640f, Theme.ButtonHeight),
+                () => Context.Router.Show(AppScreenId.GimmickGuide), "Go", Theme.H1);
             UiKit.Place(go.Rect, new Vector2(1f, 0f), new Vector2(-Theme.Margin, 40f), go.Rect.sizeDelta);
             go.Rect.gameObject.AddComponent<Bobbing>().Amplitude = 6f;
         }
