@@ -159,6 +159,16 @@ namespace DeskStage.App
             p.Alpha = alpha;
             p.GroundY = at.y - 0.002f;
             p.Alive = true;
+            // 出した瞬間に、大きさ・向き・濃さを決める。知らせ（CharacterLimbs）は LateUpdate から来るので、このフレームの
+            // 自分の LateUpdate が先に終わっていることがある。作ったばかりの板が 1m 四方の白いまま映り、スタート直後の
+            // 最初の着地で、画面全体が光っていた（2026-11-12）
+            p.Transform.localScale = new Vector3(startSize, startSize, startSize);
+            var cam = Camera.main;
+            if (cam != null) p.Transform.rotation = Quaternion.LookRotation(at - cam.transform.position, cam.transform.up);
+            var color = DustColor;
+            color.a = 0f;
+            p.Material.color = color;
+            p.Material.SetColor("_BaseColor", color);
         }
 
         Puff Make()
