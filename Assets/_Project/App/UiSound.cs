@@ -59,8 +59,8 @@ namespace DeskStage.App
                 case Cue.Error: clip = error ??= Make(new[] { 330f, 247f }, 0.16f, 0.5f); break;
                 case Cue.Shutter: clip = shutter ??= MakeNoiseClick(); break;
                 // 足音は、何度も鳴るので小さめ。左右で少し高さを変える
-                case Cue.StepLeft: clip = stepLeft ??= MakeStep(230f); volume = 0.5f; break;
-                case Cue.StepRight: clip = stepRight ??= MakeStep(205f); volume = 0.5f; break;
+                case Cue.StepLeft: clip = stepLeft ??= MakeStep(1.09f); volume = 0.5f; break;
+                case Cue.StepRight: clip = stepRight ??= MakeStep(1f); volume = 0.5f; break;
                 case Cue.Jump: clip = jump ??= MakeSweep(380f, 900f, 0.16f, 0.45f); break;
                 case Cue.AirJump: clip = airJump ??= MakeSweep(620f, 1400f, 0.13f, 0.4f); break;
                 case Cue.JumpPad: clip = jumpPad ??= MakeSpring(); break;
@@ -103,29 +103,26 @@ namespace DeskStage.App
         }
 
         /// <summary>
-        /// 足音：やわらかい「ぽふ」（2026-11-11）。pitch は音の高さ（Hz）。
-        /// 立ち上がりをゆっくり（約 8 ミリ秒）にし、少し高さを下げながら、すぐ小さくなる丸い音。高い音を削る。
-        /// 前は、ざらざらした雑音を一瞬混ぜていて、パンという破裂音（銃のよう）に聞こえた。
+        /// 足音：やわらかい靴底で走るような、弾む軽い「たったっ」（2026-11-12）。pitch は高さの倍率（左右で少し変えて、リズムを出す）。
+        /// 620Hz から 430Hz へ少し下げる短い音。立ち上がりをやわらかく（約 3 ミリ秒）し、高い音を削って、角のない音にする。
+        /// 前の低い「ぽふ」は、太鼓のように聞こえた。その前は、雑音を混ぜたパンという音で、銃のように聞こえた。
         /// </summary>
         static AudioClip MakeStep(float pitch)
         {
-            var length = Mathf.RoundToInt(SampleRate * 0.11f);
+            var length = Mathf.RoundToInt(SampleRate * 0.05f);
             var data = new float[length];
             var phase = 0f;
             var smooth = 0f;
-            var attackSamples = SampleRate * 0.008f;
             for (var i = 0; i < length; i++)
             {
                 var t = i / (float)SampleRate;
-                // 高さを、出だしの 1.25 倍から、少しずつ下げる
-                var frequency = pitch * (1f + 0.25f * Mathf.Exp(-t / 0.02f));
+                var frequency = Mathf.Lerp(620f, 430f, Mathf.Clamp01(t / 0.03f)) * pitch;
                 phase += 2f * Mathf.PI * frequency / SampleRate;
-                var attack = Mathf.Sin(Mathf.Clamp01(i / attackSamples) * Mathf.PI * 0.5f);
-                var envelope = attack * Mathf.Exp(-t / 0.028f);
-                var tone = Mathf.Sin(phase) + 0.12f * Mathf.Sin(2f * phase);
+                var attack = Mathf.Sin(Mathf.Clamp01(i / (SampleRate * 0.003f)) * Mathf.PI * 0.5f);
+                var tone = Mathf.Sin(phase) + 0.2f * Mathf.Sin(2f * phase);
                 // 高い音を削って、角のない音にする
-                smooth = Mathf.Lerp(smooth, tone * envelope, 0.35f);
-                data[i] = smooth * 0.5f;
+                smooth = Mathf.Lerp(smooth, tone * attack * Mathf.Exp(-t * 75f), 0.5f);
+                data[i] = smooth * 0.55f;
             }
             var clip = AudioClip.Create("step", length, 1, SampleRate, false);
             clip.SetData(data, 0);
