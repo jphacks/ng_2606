@@ -8,8 +8,8 @@ namespace DeskStage.App.Tests
         [Test]
         public void 歩くと小さく少なく走ると大きく多い()
         {
-            Assert.AreEqual(1, DustEffects.StepPuffs(0.3f), "ゆっくり歩く");
-            Assert.AreEqual(3, DustEffects.StepPuffs(1f), "走る");
+            Assert.AreEqual(2, DustEffects.StepPuffs(0.3f), "ゆっくり歩く");
+            Assert.AreEqual(4, DustEffects.StepPuffs(1f), "走る");
             Assert.Less(DustEffects.StepSize(0.3f), DustEffects.StepSize(1f));
         }
 

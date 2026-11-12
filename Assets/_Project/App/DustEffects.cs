@@ -15,7 +15,7 @@ namespace DeskStage.App
     /// </summary>
     public class DustEffects : MonoBehaviour
     {
-        const int Count = 48;
+        const int Count = 64;
         static readonly Color DustColor = new Color(0.86f, 0.82f, 0.76f);
 
         class Puff
@@ -28,6 +28,7 @@ namespace DeskStage.App
             public float StartSize;
             public float EndSize;
             public float Alpha;
+            public float GroundY;     // 煙が出た地面の高さ（板の下のふちを、これより下にしない）
             public bool Alive;
         }
 
@@ -89,28 +90,29 @@ namespace DeskStage.App
 
         // ---- 煙の出し方（数と大きさ）。テストで確かめる ----
 
-        /// <summary>足が着いたときの煙の数（歩くと 1、速いほど増えて、走ると 3）。</summary>
-        public static int StepPuffs(float speed01) => speed01 < 0.45f ? 1 : speed01 < 0.8f ? 2 : 3;
+        /// <summary>足が着いたときの煙の数（歩くと 2、速いほど増えて、走ると 4。2026-11-12：1〜3 から増やした）。</summary>
+        public static int StepPuffs(float speed01) => speed01 < 0.45f ? 2 : speed01 < 0.8f ? 3 : 4;
 
         /// <summary>足が着いたときの煙の大きさ（m。消えるときの大きさ）。歩くと小さく、走ると大きめ。</summary>
-        public static float StepSize(float speed01) => Mathf.Lerp(0.007f, 0.016f, Mathf.Clamp01(speed01));
+        public static float StepSize(float speed01) => Mathf.Lerp(0.008f, 0.018f, Mathf.Clamp01(speed01));
 
         /// <summary>着地の煙の大きさ（m）。速く落ちてきたほど大きい（落ちる速さ 0.3〜1.5m/秒の間で変わる）。</summary>
         public static float LandSize(float fallSpeed) => Mathf.Lerp(0.012f, 0.024f, Mathf.InverseLerp(0.3f, 1.5f, fallSpeed));
 
         /// <summary>着地の煙の数（輪に並べる）。</summary>
-        public static int LandPuffs(float fallSpeed) => fallSpeed < 0.8f ? 6 : 9;
+        public static int LandPuffs(float fallSpeed) => fallSpeed < 0.8f ? 8 : 12;
 
         void OnStepped(Vector3 feet, Vector3 forward, float speed01)
         {
             if (!Playing) return;
             var count = StepPuffs(speed01);
             var size = StepSize(speed01);
+            var right = Vector3.Cross(Vector3.up, forward);
             for (var i = 0; i < count; i++)
             {
-                // 足もとの少し後ろから、後ろへ少し広がる（左右に少しばらつかせる）
-                var side = Vector3.Cross(Vector3.up, forward) * Random.Range(-0.5f, 0.5f);
-                var direction = (-forward + side).normalized;
+                // 足もとから、後ろと左右へ散らす（後ろだけだと、キャラを正面から見たとき、体の後ろに隠れて見えなかった）
+                var spread = count == 1 ? 0f : Mathf.Lerp(-1.3f, 1.3f, i / (float)(count - 1));
+                var direction = (-forward * 0.7f + right * (spread + Random.Range(-0.2f, 0.2f))).normalized;
                 Spawn(feet - forward * 0.004f + Vector3.up * 0.002f, direction * Random.Range(0.02f, 0.035f) * (0.6f + speed01) + Vector3.up * 0.012f,
                     size * 0.4f, size * Random.Range(0.85f, 1.15f), Random.Range(0.35f, 0.5f), 0.55f + 0.2f * speed01);
             }
@@ -119,7 +121,7 @@ namespace DeskStage.App
         void OnJumped(bool air)
         {
             if (!Playing || air || hooked == null) return;
-            Ring(hooked.transform.position, 6, 0.04f, 0.010f, 0.45f, 0.6f);
+            Ring(hooked.transform.position, 8, 0.04f, 0.011f, 0.45f, 0.6f);
         }
 
         void OnLanded(Vector3 feet, float fallSpeed)
@@ -155,6 +157,7 @@ namespace DeskStage.App
             p.StartSize = startSize;
             p.EndSize = endSize;
             p.Alpha = alpha;
+            p.GroundY = at.y - 0.002f;
             p.Alive = true;
         }
 
@@ -194,6 +197,10 @@ namespace DeskStage.App
                 // 広がりながら、だんだん遅くなる。少し上がる
                 p.Transform.position += p.Velocity * dt * (1f - k);
                 var size = Mathf.Lerp(p.StartSize, p.EndSize, 1f - (1f - k) * (1f - k));
+                // 板の下のふちを、地面より上に保つ（低い所から横向きに見ると、下半分が机にめり込んで隠れ、見る向きで量が違って見えた）
+                var position = p.Transform.position;
+                position.y = Mathf.Max(position.y, p.GroundY + size * 0.5f);
+                p.Transform.position = position;
                 p.Transform.localScale = new Vector3(size, size, size);
                 if (cam != null) p.Transform.rotation = Quaternion.LookRotation(p.Transform.position - cam.transform.position, cam.transform.up);
                 var color = DustColor;
