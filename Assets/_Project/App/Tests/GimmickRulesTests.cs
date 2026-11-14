@@ -344,5 +344,21 @@ namespace DeskStage.App.Tests
             Assert.AreEqual(0f, GimmickRules.RampClimbSpeed(-1f, 0.10f, 0.05f, 0.25f, 45f));
             Assert.AreEqual(0f, GimmickRules.RampClimbSpeed(0f, 0.10f, 0.05f, 0.25f, 45f));
         }
+
+        [Test]
+        public void しかけの箱の側面はしかけの色_しかけが無ければ決めない()
+        {
+            var water = GimmickRules.SideColor(BoxData.GimmickWater).Value;
+            Assert.Greater(water.b, water.r, "水は青");
+            var fire = GimmickRules.SideColor(BoxData.GimmickFire).Value;
+            Assert.Greater(fire.r, fire.b, "炎は赤");
+            var heal = GimmickRules.SideColor(BoxData.GimmickHeal).Value;
+            Assert.Greater(heal.g, heal.r, "回復は緑");
+            Assert.IsTrue(GimmickRules.SideColor(BoxData.GimmickJumpPad).HasValue);
+            Assert.IsTrue(GimmickRules.SideColor(BoxData.GimmickEnemy).HasValue);
+            Assert.IsTrue(GimmickRules.SideColor(BoxData.GimmickWarp).HasValue);
+            Assert.IsFalse(GimmickRules.SideColor("").HasValue);
+            Assert.IsFalse(GimmickRules.SideColor(null).HasValue);
+        }
     }
 }

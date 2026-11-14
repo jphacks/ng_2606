@@ -23,6 +23,12 @@ namespace DeskStage.UI
 
         public void SetLook(ViewLook value) => look = value;
 
+        /// <summary>
+        /// 遊ぶ画面で、箱の色を決める口（箱の id → 色。決めないなら null）。しかけ（App の GimmickSystem）が、しかけの箱をしかけの色にするのに使う
+        /// （2026-11-15：写真の無いお手本ステージで、箱の側面が、しかけと関係のない色だった）。写真を貼った箱は、側面を写真の色の箱で覆うので変わらない。
+        /// </summary>
+        public static System.Func<string, Color?> BoxColorOverride;
+
         /// <summary>使っている見た目の素材の組（無ければ null）。</summary>
         public ViewLook Look => look;
 
@@ -100,7 +106,8 @@ namespace DeskStage.UI
                     continue;
                 }
                 block.Clear();
-                block.SetColor(BaseColorId, look.BoxPalette[colors[i]]);
+                var color = BoxColorOverride?.Invoke(boxRenderers[i].name) ?? look.BoxPalette[colors[i]];
+                block.SetColor(BaseColorId, color);
                 boxRenderers[i].SetPropertyBlock(block);
             }
         }

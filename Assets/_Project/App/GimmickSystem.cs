@@ -265,6 +265,17 @@ namespace DeskStage.App
             StagePhotoTexturer.GimmicksChanged += MarkDirty;
             ScanContext.BoxesChanged += OnBoxesChanged;
             GameEvents.GameStarted += OnGameStarted;
+            DeskStage.UI.StageLook.BoxColorOverride = SideColor;
+        }
+
+        // しかけの箱の色（写真の無い箱の側面に出る。しかけの模様の地の色に合わせる）
+        Color? SideColor(string boxId)
+        {
+            foreach (var b in CurrentBoxes())
+            {
+                if (b.id == boxId) return GimmickRules.SideColor(b.gimmick);
+            }
+            return null;
         }
 
         void OnDisable()
@@ -273,6 +284,7 @@ namespace DeskStage.App
             StagePhotoTexturer.GimmicksChanged -= MarkDirty;
             ScanContext.BoxesChanged -= OnBoxesChanged;
             GameEvents.GameStarted -= OnGameStarted;
+            if (DeskStage.UI.StageLook.BoxColorOverride == (Func<string, Color?>)SideColor) DeskStage.UI.StageLook.BoxColorOverride = null;
             Clear();
         }
 

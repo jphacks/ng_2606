@@ -200,7 +200,27 @@ namespace DeskStage.App
         /// 水の流れる向き（箱の座標の x・z の、どれか 1 方向）。flow が 1〜4 なら、選んだ向き（+x、+z、-x、-z）。
         /// 0 なら、箱の id から決める（同じ id なら、いつも同じ向き）。
         /// </summary>
-        public static Vector2 WaterDirection(string boxId, int flow = 0)
+        public static Vector2 WaterDirection(string boxId, int flow = 0) => WaterDirectionCore(boxId, flow);
+
+        /// <summary>
+        /// 写真の無い箱の側面に塗る、しかけの色（2026-11-15。お手本ステージの箱の側面が、しかけと関係のない色だった）。
+        /// しかけの模様の地の色（GimmickTextures）に合わせる。しかけが無ければ null（ふだんの箱の色のまま）。
+        /// </summary>
+        public static Color? SideColor(string gimmick)
+        {
+            switch (gimmick)
+            {
+                case DeskStage.Shared.BoxData.GimmickWater: return new Color(0.2f, 0.5f, 0.92f);
+                case DeskStage.Shared.BoxData.GimmickFire: return new Color(0.9f, 0.3f, 0.12f);
+                case DeskStage.Shared.BoxData.GimmickHeal: return new Color(0.28f, 0.75f, 0.45f);
+                case DeskStage.Shared.BoxData.GimmickJumpPad: return new Color(1f, 0.78f, 0.15f);
+                case DeskStage.Shared.BoxData.GimmickEnemy: return new Color(0.5f, 0.28f, 0.78f);
+                case DeskStage.Shared.BoxData.GimmickWarp: return new Color(1f, 0.5f, 0.75f);
+                default: return null;
+            }
+        }
+
+        static Vector2 WaterDirectionCore(string boxId, int flow)
         {
             switch (WaterIndex(boxId, flow))
             {
