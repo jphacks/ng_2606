@@ -132,7 +132,7 @@ namespace DeskStage.App
 
         public void DeleteStage(string id)
         {
-            if (string.IsNullOrEmpty(id)) return;
+            if (!FlowRules.CanDeleteStage(id)) return; // お手本は消せない
             UiRequests.RequestDeleteStage(id);
             context.Overlays.Toast(AppText.HomeDeleted, AppOverlays.ToastKind.Info);
         }

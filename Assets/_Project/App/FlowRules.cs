@@ -73,6 +73,13 @@ namespace DeskStage.App
         /// </summary>
         public static bool PlaysMusic(AppScreenId screen) => ModeFor(screen) == AppMode.Menu;
 
+        /// <summary>
+        /// 一覧から消せるステージか（2026-11-15）。お手本（id が sample で始まる、同梱のステージ）は消せない。
+        /// 消すと、更新番号が上がるまで戻らず、はじめての子が遊ぶお手本が無くなるため。
+        /// </summary>
+        public static bool CanDeleteStage(string stageId) =>
+            !string.IsNullOrEmpty(stageId) && !stageId.StartsWith("sample", System.StringComparison.Ordinal);
+
         /// <summary>画面に対応する場面（StageContext.Mode）。D の ScreenModeMap と同じ決まり。</summary>
         public static AppMode ModeFor(AppScreenId screen)
         {

@@ -107,7 +107,7 @@ namespace DeskStage.App
 
         void OnDelete()
         {
-            if (string.IsNullOrEmpty(selectedId))
+            if (!FlowRules.CanDeleteStage(selectedId))
             {
                 return;
             }
@@ -271,7 +271,10 @@ namespace DeskStage.App
             var has = !string.IsNullOrEmpty(selectedId);
             actionHint.gameObject.SetActive(!has);
             playButton.gameObject.SetActive(has);
-            deleteButton.gameObject.SetActive(has);
+            // お手本は消せない：「けす」を出さず、「あそぶ」を真ん中に置く
+            var deletable = has && FlowRules.CanDeleteStage(selectedId);
+            deleteButton.gameObject.SetActive(deletable);
+            playButton.Rect.anchoredPosition = new Vector2(deletable ? -190f : 0f, 0f);
         }
 
         // ---- 絵の読み込み ----

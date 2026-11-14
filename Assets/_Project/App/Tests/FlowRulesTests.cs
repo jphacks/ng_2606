@@ -139,5 +139,14 @@ namespace DeskStage.App.Tests
             Assert.AreEqual("ステージ 1", FlowRules.DefaultStageName(0));
             Assert.AreEqual("ステージ 4", FlowRules.DefaultStageName(3));
         }
+
+        [Test]
+        public void お手本のステージは消せず_自分のステージは消せる()
+        {
+            Assert.IsFalse(FlowRules.CanDeleteStage("sample-01"));
+            Assert.IsTrue(FlowRules.CanDeleteStage("stage-20261115-101500"));
+            Assert.IsFalse(FlowRules.CanDeleteStage(""));
+            Assert.IsFalse(FlowRules.CanDeleteStage(null));
+        }
     }
 }
