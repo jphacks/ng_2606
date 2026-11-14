@@ -650,8 +650,8 @@ namespace DeskStage.App
                 // 水：上面の真ん中に、青い丸と、いまの流れの向きを画面の上で指す白い矢印（2026-11-15：ボタンの文字だけでは、
                 // いまどちら向きか分からず、押すたびに何が変わったかも見えにくかった）。ワープは、小さな白い点のまま
                 var arrow = flowArrows[used - 1];
-                var size = isWarp ? FlowDotSize : FlowArrowDotSize;
-                dot.rectTransform.sizeDelta = new Vector2(size, size);
+                var dotSize = isWarp ? FlowDotSize : FlowArrowDotSize;
+                dot.rectTransform.sizeDelta = new Vector2(dotSize, dotSize);
                 dot.color = isWarp ? Color.white : Theme.Blue;
                 arrow.gameObject.SetActive(!isWarp && FlowAngle(cam, box, id, anchor, out var angle) && SetArrow(arrow, angle));
             }
