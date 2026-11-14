@@ -47,7 +47,7 @@ namespace DeskStage.App
         readonly List<AppButton> flowButtons = new List<AppButton>();
         readonly List<Image> flowLines = new List<Image>();
         readonly List<Image> flowDots = new List<Image>();
-        readonly List<TMP_Text> flowArrows = new List<TMP_Text>();
+        readonly List<RectTransform> flowArrows = new List<RectTransform>();
         readonly List<Rect> placedButtons = new List<Rect>();
         readonly List<string> flowIds = new List<string>();
         readonly List<string> warpIds = new List<string>();
@@ -677,16 +677,34 @@ namespace DeskStage.App
             var dot = UiKit.Disc(flowLayer, "FlowDot", Color.white, FlowDotSize);
             dot.rectTransform.anchorMin = dot.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             flowDots.Add(dot);
-            var arrow = UiKit.Label(dot.rectTransform, "▲", FlowArrowDotSize * 0.5f, Color.white, TextAlignmentOptions.Center, true, "FlowArrow");
-            UiKit.Fill(arrow.rectTransform);
-            arrow.raycastTarget = false;
-            flowArrows.Add(arrow);
+            flowArrows.Add(MakeFlowArrow(dot.rectTransform));
             flowButtons.Add(UiKit.Button(flowLayer, AppText.CheckFlow, UiKit.ButtonStyle.Soft, new Vector2(SideButtonWidth, Theme.SmallButtonHeight),
                 null, "Flow", Theme.Body));
         }
 
         const float FlowDotSize = 26f;
-        const float FlowArrowDotSize = 76f;
+        const float FlowArrowDotSize = 96f;
+
+        // 「→」の形の矢印（軸の棒＋先の三角）。右を向いた形で作り、回して向きを合わせる
+        // （2026-11-15：三角だけでは、どちらが先か分からなかった）
+        static RectTransform MakeFlowArrow(RectTransform parent)
+        {
+            var arrow = UiKit.NewRect("FlowArrow", parent);
+            arrow.anchorMin = arrow.anchorMax = new Vector2(0.5f, 0.5f);
+            arrow.sizeDelta = new Vector2(FlowArrowDotSize, FlowArrowDotSize);
+            var shaft = UiKit.Panel(arrow, "Shaft", Color.white, 4f);
+            shaft.raycastTarget = false;
+            shaft.rectTransform.anchorMin = shaft.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            shaft.rectTransform.sizeDelta = new Vector2(FlowArrowDotSize * 0.46f, FlowArrowDotSize * 0.14f);
+            shaft.rectTransform.anchoredPosition = new Vector2(-FlowArrowDotSize * 0.12f, 0f);
+            var head = UiKit.Label(arrow, "▲", FlowArrowDotSize * 0.5f, Color.white, TextAlignmentOptions.Center, true, "Head");
+            head.raycastTarget = false;
+            head.rectTransform.anchorMin = head.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            head.rectTransform.sizeDelta = new Vector2(FlowArrowDotSize * 0.5f, FlowArrowDotSize * 0.5f);
+            head.rectTransform.anchoredPosition = new Vector2(FlowArrowDotSize * 0.17f, 0f);
+            head.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -90f); // 「▲」は上向きなので、右へ向ける
+            return arrow;
+        }
 
         // 水の流れの向きを、画面の上の角度（度。右が 0、反時計回り）にする。流れは、箱の座標の (x, z) の向き（GimmickRules.WaterDirection）。
         // 箱の大きさで向きがゆがまないよう、回転だけで世界の向きにする
@@ -718,10 +736,10 @@ namespace DeskStage.App
             return AppText.FlowLeft;
         }
 
-        // 「▲」は上（90 度）を指すので、その分だけ戻して回す
-        static bool SetArrow(TMP_Text arrow, float angle)
+        // 矢印は右（0 度）を向いた形なので、角度だけ回す
+        static bool SetArrow(RectTransform arrow, float angle)
         {
-            arrow.rectTransform.localRotation = Quaternion.Euler(0f, 0f, angle - 90f);
+            arrow.localRotation = Quaternion.Euler(0f, 0f, angle);
             return true;
         }
 
