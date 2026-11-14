@@ -197,7 +197,7 @@ namespace DeskStage.App
         void OnDamaged(int remaining)
         {
             flashTime = 0f;
-            UiSound.Play(UiSound.Cue.Error);
+            // 音は GameSounds が鳴らす（炎は「パチパチッ」、敵は「びびっ」。2026-11-15）
             var text = Context.Gimmicks.LastDamageWasEnemy ? AppText.GimmickEnemyHit : AppText.GimmickHit;
             Context.Overlays.Toast(text, AppOverlays.ToastKind.Bad, 1.6f);
         }
@@ -210,7 +210,7 @@ namespace DeskStage.App
 
         void OnWarped()
         {
-            UiSound.Play(UiSound.Cue.Success);
+            // 音は GameSounds が鳴らす（「ひゅいーん＋きらきら」。2026-11-15）
             Context.Overlays.Toast(AppText.GimmickWarped, AppOverlays.ToastKind.Good, 1.0f);
         }
 

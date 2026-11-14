@@ -41,6 +41,16 @@ namespace DeskStage.App.Tests
             Assert.AreEqual(expected, FlowRules.PlaysMusic(screen));
         }
 
+        [TestCase(AppScreenId.Play, true)]
+        [TestCase(AppScreenId.Check, false)]
+        [TestCase(AppScreenId.Clear, false)]
+        [TestCase(AppScreenId.GameOver, false)]
+        [TestCase(AppScreenId.Home, false)]
+        public void 遊んでいるときのBGMは遊ぶ画面だけ(AppScreenId screen, bool expected)
+        {
+            Assert.AreEqual(expected, FlowRules.PlaysGameMusic(screen));
+        }
+
         [Test]
         public void すべての画面に場面が決まっている()
         {

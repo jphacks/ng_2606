@@ -412,7 +412,8 @@ namespace DeskStage.App
                 return;
             }
             UiRequests.RequestSetPaused(true);
-            UiSound.Play(UiSound.Cue.Error);
+            UiSound.SetWater(false);
+            UiSound.Play(UiSound.Cue.GameOver); // トロンボーンの「ぷわわ〜ん」（2026-11-15。前はエラーの音）
             context.Router.Show(AppScreenId.GameOver, reason, false);
         }
 
@@ -446,7 +447,10 @@ namespace DeskStage.App
             // 撮影、つくっている、あそぶの間は、画面を暗くしない
             Screen.sleepTimeout = InScan(id) || id == AppScreenId.Play ? SleepTimeout.NeverSleep : SleepTimeout.SystemSetting;
             // BGM：メニューの画面では流し続け、写真を撮る・あそぶなどでは止める（2026-11-12。前は、スタート画面の間だけ）
-            if (FlowRules.PlaysMusic(id)) AppMusic.Play(); else AppMusic.Stop();
+            // 遊ぶ画面では、遊んでいるときの曲を小さめに流す（2026-11-15）
+            if (FlowRules.PlaysMusic(id)) AppMusic.Play();
+            else if (FlowRules.PlaysGameMusic(id)) AppMusic.Play(AppMusic.Track.Game);
+            else AppMusic.Stop();
             previousScreen = id;
         }
     }

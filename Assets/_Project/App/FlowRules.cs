@@ -73,6 +73,9 @@ namespace DeskStage.App
         /// </summary>
         public static bool PlaysMusic(AppScreenId screen) => ModeFor(screen) == AppMode.Menu;
 
+        /// <summary>遊んでいるときの BGM を流す画面か（2026-11-15）。遊ぶ画面だけ（クリア・ゲームオーバーでは止めて、その音を鳴らす）。</summary>
+        public static bool PlaysGameMusic(AppScreenId screen) => screen == AppScreenId.Play;
+
         /// <summary>画面に対応する場面（StageContext.Mode）。D の ScreenModeMap と同じ決まり。</summary>
         public static AppMode ModeFor(AppScreenId screen)
         {

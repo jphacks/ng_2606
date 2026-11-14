@@ -21,6 +21,11 @@ namespace DeskStage.App
             AirJump,
             JumpPad,
             Goal,
+            Warp,
+            Fall,
+            FireHit,
+            EnemyHit,
+            GameOver,
         }
 
         const int SampleRate = 22050;
@@ -36,6 +41,13 @@ namespace DeskStage.App
         static AudioClip airJump;
         static AudioClip jumpPad;
         static AudioClip goal;
+        static AudioClip warp;
+        static AudioClip fall;
+        static AudioClip fireHit;
+        static AudioClip enemyHit;
+        static AudioClip gameOver;
+        static AudioClip water;
+        static AudioSource waterSource;
 
         /// <summary>false にすると、音を出さない（確認用の画像を作るときなど）。</summary>
         public static bool Enabled = true;
@@ -65,9 +77,44 @@ namespace DeskStage.App
                 case Cue.AirJump: clip = airJump ??= MakeSweep(620f, 1400f, 0.13f, 0.4f); break;
                 case Cue.JumpPad: clip = jumpPad ??= MakeSpring(); break;
                 case Cue.Goal: clip = goal ??= MakeFanfare(); break;
+                // 遊んでいるときの音（2026-11-15。聞き比べて、えらんだ）
+                case Cue.Warp: clip = warp ??= MakeWarp(); break;
+                case Cue.Fall: clip = fall ??= MakeFall(); break;
+                case Cue.FireHit: clip = fireHit ??= MakeCrackle(); break;
+                case Cue.EnemyHit: clip = enemyHit ??= MakeBuzz(); break;
+                case Cue.GameOver: clip = gameOver ??= MakeTrombone(); break;
                 default: clip = click ??= Make(new[] { 900f }, 0.06f, 0.45f); break;
             }
             source.PlayOneShot(clip, volume);
+        }
+
+        /// <summary>
+        /// 水に流されている間の「ちょろちょろ」を、鳴らす・止める（2026-11-15）。毎フレーム呼んでよい（同じ状態なら何もしない）。
+        /// くり返して鳴らすので、効果音とは別の鳴らし口を使う。
+        /// </summary>
+        public static void SetWater(bool on)
+        {
+            if (!Enabled || !Application.isPlaying)
+            {
+                return;
+            }
+            if (!on)
+            {
+                if (waterSource != null && waterSource.isPlaying) waterSource.Stop();
+                return;
+            }
+            if (waterSource == null)
+            {
+                EnsureSource();
+                if (source == null) return;
+                waterSource = source.gameObject.AddComponent<AudioSource>();
+                waterSource.playOnAwake = false;
+                waterSource.spatialBlend = 0f;
+                waterSource.loop = true;
+                waterSource.volume = 0.7f;
+                waterSource.clip = water ??= MakeTrickle();
+            }
+            if (!waterSource.isPlaying) waterSource.Play();
         }
 
         static void EnsureSource()
@@ -213,6 +260,162 @@ namespace DeskStage.App
         {
             var w = 2f * Mathf.PI * frequency * t;
             return Mathf.Sin(w) * 0.75f + Mathf.Sin(2f * w) * 0.2f + Mathf.Sin(3f * w) * 0.08f;
+        }
+
+        static AudioClip Clip(string name, float[] data)
+        {
+            var clip = AudioClip.Create(name, data.Length, 1, SampleRate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        // 立ち上がり attack 秒で大きくなり、1 秒に decay の割合で小さくなる
+        static float Envelope(float t, float attack, float decay) => Mathf.Min(1f, t / attack) * Mathf.Exp(-t * decay);
+
+        // from から to（Hz）へ、seconds 秒で変わる音（shape：変わり方。1 で一定、小さいほど はじめに大きく変わる）。k（0〜1）を返す
+        static float[] Glide(float from, float to, float seconds, float shape, out float[] k)
+        {
+            var length = Mathf.RoundToInt(SampleRate * seconds);
+            var wave = new float[length];
+            k = new float[length];
+            var phase = 0f;
+            for (var i = 0; i < length; i++)
+            {
+                k[i] = i / (float)length;
+                phase += 2f * Mathf.PI * Mathf.Lerp(from, to, Mathf.Pow(k[i], shape)) / SampleRate;
+                wave[i] = Mathf.Sin(phase);
+            }
+            return wave;
+        }
+
+        /// <summary>ワープ：上がっていく「ひゅいーん」に、きらきらの粒（ド・ミ・ソ・ドの高い音）が重なる。</summary>
+        static AudioClip MakeWarp()
+        {
+            var data = Glide(300f, 1600f, 0.55f, 0.6f, out var k);
+            for (var i = 0; i < data.Length; i++)
+            {
+                var t = i / (float)SampleRate;
+                data[i] *= Mathf.Min(1f, t / 0.02f) * Mathf.Pow(1f - k[i], 0.6f) * 0.5f;
+            }
+            var sparkles = new[] { 84, 88, 91, 96 };
+            for (var n = 0; n < sparkles.Length; n++)
+            {
+                var start = Mathf.RoundToInt(SampleRate * (0.12f + n * 0.07f));
+                var frequency = 440f * Mathf.Pow(2f, (sparkles[n] - 69) / 12f);
+                for (var i = 0; i < SampleRate * 0.25f && start + i < data.Length; i++)
+                {
+                    var t = i / (float)SampleRate;
+                    data[start + i] += Mathf.Sin(2f * Mathf.PI * frequency * t) * Envelope(t, 0.002f, 14f) * 0.3f;
+                }
+            }
+            return Clip("warp", data);
+        }
+
+        /// <summary>落ちた：高い音から、ゆっくり下がる「ひゅ〜〜」。</summary>
+        static AudioClip MakeFall()
+        {
+            var data = Glide(1300f, 180f, 1f, 0.8f, out var k);
+            for (var i = 0; i < data.Length; i++)
+            {
+                data[i] *= Mathf.Min(1f, i / (SampleRate * 0.02f)) * (1f - k[i] * 0.7f) * 0.4f;
+            }
+            return Clip("fall", data);
+        }
+
+        /// <summary>炎に当たった：火の粉がはじける「パチパチッ」（小さなざらざらの粒に、少し下がる音を重ねる）。</summary>
+        static AudioClip MakeCrackle()
+        {
+            var data = Glide(900f, 600f, 0.4f, 0.5f, out _);
+            for (var i = 0; i < data.Length; i++)
+            {
+                data[i] *= Envelope(i / (float)SampleRate, 0.003f, 10f) * 0.2f;
+            }
+            var random = new System.Random(5);
+            foreach (var at in new[] { 0f, 0.03f, 0.07f, 0.12f, 0.2f, 0.27f })
+            {
+                var start = Mathf.RoundToInt(SampleRate * at);
+                var loudness = 0.4f + 0.4f * (float)random.NextDouble();
+                for (var i = 0; i < SampleRate * 0.025f && start + i < data.Length; i++)
+                {
+                    var t = i / (float)SampleRate;
+                    data[start + i] += ((float)random.NextDouble() * 2f - 1f) * Envelope(t, 0.0005f, 160f) * loudness;
+                }
+            }
+            return Clip("fire-hit", data);
+        }
+
+        /// <summary>敵に当たった：ぶるぶるふるえる「びびっ」（高さが、1 秒に 28 回、2 つの高さを行き来する）。</summary>
+        static AudioClip MakeBuzz()
+        {
+            const float seconds = 0.3f;
+            var length = Mathf.RoundToInt(SampleRate * seconds);
+            var data = new float[length];
+            var phase = 0f;
+            for (var i = 0; i < length; i++)
+            {
+                var t = i / (float)SampleRate;
+                var frequency = 300f + 120f * Mathf.Sign(Mathf.Sin(2f * Mathf.PI * 28f * t));
+                phase += 2f * Mathf.PI * frequency / SampleRate;
+                var wave = Mathf.Sin(phase) * 0.6f + Mathf.Sign(Mathf.Sin(phase)) * 0.3f;
+                data[i] = wave * Mathf.Min(1f, t / 0.005f) * (1f - t / seconds) * 0.45f;
+            }
+            return Clip("enemy-hit", data);
+        }
+
+        /// <summary>ゲームオーバー：トロンボーンが、ゆれながら下がる「ぷわわ〜ん」（ソ・ファ#・ファ・ミ。最後はのばして、ゆらす）。</summary>
+        static AudioClip MakeTrombone()
+        {
+            var notes = new[] { (67, 0.35f), (66, 0.35f), (65, 0.35f), (64, 1.2f) };
+            var total = 0;
+            foreach (var (_, d) in notes) total += Mathf.RoundToInt(SampleRate * d);
+            var data = new float[total];
+            var at = 0;
+            foreach (var (note, d) in notes)
+            {
+                var length = Mathf.RoundToInt(SampleRate * d);
+                var phase = 0f;
+                var last = d > 1f;
+                for (var i = 0; i < length; i++)
+                {
+                    var t = i / (float)SampleRate;
+                    var frequency = 440f * Mathf.Pow(2f, (note - 69) / 12f) * (last ? 1f + 0.012f * Mathf.Sin(2f * Mathf.PI * 6f * t) : 1f);
+                    phase += 2f * Mathf.PI * frequency / SampleRate;
+                    // 出だしはこもって、だんだん明るく（「わ」の音）
+                    var wah = 0.5f + 0.5f * Mathf.Sin(Mathf.PI * Mathf.Min(1f, t / 0.25f));
+                    var tone = Mathf.Sin(phase) + 0.6f * wah * Mathf.Sin(2f * phase) + 0.35f * wah * Mathf.Sin(3f * phase);
+                    var release = t < d * 0.85f ? 1f : Mathf.Exp(-(t - d * 0.85f) * 10f);
+                    data[at + i] = tone * Mathf.Min(1f, t / 0.03f) * release * 0.28f;
+                }
+                at += length;
+            }
+            return Clip("gameover", data);
+        }
+
+        /// <summary>
+        /// 水に流されている間：細い水の、こまかいしずくの「ちょろちょろ」（3 秒をくり返す）。
+        /// しずくの音は、くり返しのつなぎ目をまたぐときは頭に重ねるので、つなぎ目で切れない。
+        /// </summary>
+        static AudioClip MakeTrickle()
+        {
+            const float seconds = 3f;
+            var length = Mathf.RoundToInt(SampleRate * seconds);
+            var data = new float[length];
+            var random = new System.Random(7);
+            var dropLength = Mathf.RoundToInt(SampleRate * 0.04f);
+            for (var d = 0; d < 84; d++)
+            {
+                var start = random.Next(length);
+                var frequency = 1400f + 1200f * (float)random.NextDouble();
+                var loudness = 0.06f + 0.08f * (float)random.NextDouble();
+                var phase = 0f;
+                for (var i = 0; i < dropLength; i++)
+                {
+                    var t = i / (float)SampleRate;
+                    phase += 2f * Mathf.PI * frequency * (1f + 0.6f * i / dropLength) / SampleRate; // しずくは、少し上がる
+                    data[(start + i) % length] += Mathf.Sin(phase) * Envelope(t, 0.001f, 70f) * loudness;
+                }
+            }
+            return Clip("water", data);
         }
 
         static AudioClip MakeNoiseClick()

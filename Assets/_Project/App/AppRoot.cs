@@ -103,7 +103,7 @@ namespace DeskStage.App
             Context.Rules = gameObject.AddComponent<CourseRuleSystem>();
             Context.Rules.Set(Context.Gimmicks);
             Context.Overlays = gameObject.AddComponent<AppOverlays>();
-            gameObject.AddComponent<GameSounds>().Set(Context.Router);
+            gameObject.AddComponent<GameSounds>().Set(Context.Router, Context.Gimmicks);
             gameObject.AddComponent<DustEffects>().Set(Context.Router, gimmickMaterial); // 足もとの土煙（しかけと同じ、半透明の素材）
 
             Context.Flow.Init(Context);
