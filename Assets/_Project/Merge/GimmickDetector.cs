@@ -16,6 +16,9 @@ namespace DeskStage.Merge
         /// <summary>ピンクと赤の分かれ目の色相（度）。これより赤寄り（〜360 度、0〜14 度）で、あざやかなら赤。</summary>
         public const float PinkRedBorder = 348f;
 
+        /// <summary>赤紫の色相（285〜330 度）で、これより暗ければ紫、明るければピンク（暖色の光で赤寄りにずれた紫のため）。</summary>
+        public const float PurpleMaxValue = 0.6f;
+
         /// <summary>画素の色の種類。</summary>
         public enum Hue
         {
@@ -53,6 +56,13 @@ namespace DeskStage.Merge
                 return Hue.Blue;
             }
             if (degrees >= 235f && degrees < 285f && s >= 0.25f)
+            {
+                return Hue.Purple;
+            }
+            // 暖色の光の下の紫（2026-11-15）：電球色の光では、紫が赤寄りにずれて 285 度を越え、ピンクか、何でもない色になっていた
+            // （11-14 の写真の紫の箱は 色相 276〜279 度・明るさ 0.44。前の 11-07 は 248〜250 度）。
+            // ピンクは明るい（実機で 明るさ 0.72〜0.96）ので、285〜330 度でも、暗い色（明るさ PurpleMaxValue より下）なら紫にする
+            if (degrees >= 285f && degrees < 330f && s >= 0.25f && v >= 0.22f && v < PurpleMaxValue)
             {
                 return Hue.Purple;
             }

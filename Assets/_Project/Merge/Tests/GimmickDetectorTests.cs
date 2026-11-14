@@ -192,5 +192,17 @@ namespace DeskStage.Merge.Tests
             Assert.AreEqual(GimmickDetector.Hue.Red, GimmickDetector.Classify(new Color32(204, 92, 97, 255)), "赤の折り紙");
             Assert.AreEqual(BoxData.GimmickWarp, GimmickDetector.Detect(Fill(400, new Color32(184, 75, 111, 255))));
         }
+
+        [Test]
+        public void 暖色の光で赤寄りになった暗い紫は紫_明るいピンクはピンクのまま()
+        {
+            // 暖色の光の紫（色相 300〜315 度・明るさ 0.44〜0.5）。ピンクは明るい（実機で 0.72〜0.96）
+            Assert.AreEqual(GimmickDetector.Hue.Purple, GimmickDetector.Classify(new Color32(112, 65, 112, 255)), "暖色の紫");
+            Assert.AreEqual(GimmickDetector.Hue.Purple, GimmickDetector.Classify(new Color32(128, 70, 113, 255)), "暖色の紫（もっと赤寄り）");
+            Assert.AreEqual(GimmickDetector.Hue.Pink, GimmickDetector.Classify(new Color32(184, 75, 111, 255)), "濃いピンクの紙");
+            Assert.AreEqual(GimmickDetector.Hue.Pink, GimmickDetector.Classify(new Color32(235, 135, 237, 255)), "ピンクの折り紙");
+            Assert.AreEqual(GimmickDetector.Hue.Pink, GimmickDetector.Classify(new Color32(158, 79, 132, 255)), "少し影になったピンク");
+            Assert.AreEqual(BoxData.GimmickEnemy, GimmickDetector.Detect(Fill(400, new Color32(112, 65, 112, 255))));
+        }
     }
 }
