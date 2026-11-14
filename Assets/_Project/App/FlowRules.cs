@@ -67,6 +67,12 @@ namespace DeskStage.App
     /// </summary>
     public static class FlowRules
     {
+        /// <summary>
+        /// BGM（AppMusic）を流す画面か（2026-11-12）。メニューの画面（スタート、どれで あそぶ？、いちらん、撮り方の説明、キャラ、背景など）を
+        /// 行き来している間は流し続け、写真を撮る・ステージを作る・たしかめ・あそぶ・クリア・ゲームオーバーでは止める。
+        /// </summary>
+        public static bool PlaysMusic(AppScreenId screen) => ModeFor(screen) == AppMode.Menu;
+
         /// <summary>画面に対応する場面（StageContext.Mode）。D の ScreenModeMap と同じ決まり。</summary>
         public static AppMode ModeFor(AppScreenId screen)
         {

@@ -13,6 +13,9 @@ namespace DeskStage.Merge
         /// <summary>しかけにする割合。上面の画素の、これ以上が同じ色なら、しかけ（影やふちを見込んで、全部ではない）。</summary>
         public const float Ratio = 0.85f;
 
+        /// <summary>ピンクと赤の分かれ目の色相（度）。これより赤寄り（〜360 度、0〜14 度）で、あざやかなら赤。</summary>
+        public const float PinkRedBorder = 348f;
+
         /// <summary>画素の色の種類。</summary>
         public enum Hue
         {
@@ -63,11 +66,13 @@ namespace DeskStage.Merge
                 return Hue.Yellow;
             }
             // 紫とピンクの分かれ目は 285 度（2026-11-07。実機のピンクの折り紙は 299〜305 度で、300 度では一部が紫になっていた）
-            if (degrees >= 285f && degrees < 335f && s >= 0.20f && v >= 0.30f)
+            // ピンクと赤の分かれ目は 348 度（2026-11-14。実機の濃いピンクの紙は 色相 340 度・彩度 0.59 で、335 度の分かれ目では赤になっていた。
+            // 淡いピンクの箱は 333 度。赤の折り紙は 356〜358 度、赤い箱は 6〜8 度なので、341 度と 356 度のまん中で分ける）
+            if (degrees >= 285f && degrees < PinkRedBorder && s >= 0.20f && v >= 0.30f)
             {
                 return Hue.Pink;
             }
-            if (degrees <= 14f || degrees >= 335f)
+            if (degrees <= 14f || degrees >= PinkRedBorder)
             {
                 if (s >= 0.47f && v >= 0.30f)
                 {

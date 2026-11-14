@@ -17,6 +17,21 @@ namespace DeskStage.Merge
         /// </summary>
         public static event System.Action<bool> FootDown;
 
+        /// <summary>
+        /// 足が地面に着いた（FootDown と同じとき）。足もとの位置、進んでいる向き（横の向き、長さ 1）、歩く速さ（0〜1）。
+        /// 足もとの土煙（App の DustEffects）に使う（2026-11-12）。
+        /// </summary>
+        public static event System.Action<Vector3, Vector3, float> Stepped;
+
+        /// <summary>
+        /// 空中から地面に着いた。足もとの位置と、着く直前の落ちる速さ（m/秒、0 以上）。着地の土煙に使う（2026-11-12）。
+        /// 段差や坂で、ほんの少し浮いただけのときは知らせない（LandMinAirSeconds より長く浮いていたときだけ）。
+        /// </summary>
+        public static event System.Action<Vector3, float> Landed;
+
+        /// <summary>着地とみなす、浮いていた時間の下限（秒）。</summary>
+        const float LandMinAirSeconds = 0.08f;
+
         /// <summary>目標の姿勢へ近づく速さ（1 秒あたり。大きいほど、すばやく追いつく）。</summary>
         const float Follow = 12f;
 
@@ -36,6 +51,8 @@ namespace DeskStage.Merge
         float air;        // 空中の姿勢の混ぜ具合（0：地上、1：空中）
         LimbPose.Pose airPose;
         float lean;
+        float airTime;      // 浮いている時間（秒）
+        float fallSpeed;    // 浮いている間の、いちばん速い落ちる速さ（m/秒）
 
         public void Set(CharacterMotor target, Transform[] partJoints, float bodyHeight)
         {
@@ -83,6 +100,23 @@ namespace DeskStage.Merge
             if (nextStep != step && grounded && swingScale >= LimbPose.StepSoundSwing && !motor.Paused)
             {
                 FootDown?.Invoke((nextStep & 1) == 1);
+                var forward = Vector3.ProjectOnPlane(motor.transform.forward, Vector3.up);
+                Stepped?.Invoke(position, forward.sqrMagnitude > 1e-6f ? forward.normalized : Vector3.forward, swingScale);
+            }
+            // 着地：しばらく浮いていて、地面に着いたとき
+            if (motor.IsGrounded)
+            {
+                if (airTime > LandMinAirSeconds && !motor.Paused)
+                {
+                    Landed?.Invoke(position, fallSpeed);
+                }
+                airTime = 0f;
+                fallSpeed = 0f;
+            }
+            else
+            {
+                airTime += dt;
+                fallSpeed = Mathf.Max(fallSpeed, -verticalSpeed);
             }
             air = Mathf.Lerp(air, grounded ? 0f : 1f, k);
             var walkPose = LimbPose.Evaluate(LimbPose.State.Ground, phase, swingScale, Time.time);

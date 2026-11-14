@@ -21,6 +21,26 @@ namespace DeskStage.App.Tests
             Assert.AreEqual(expected, FlowRules.ModeFor(screen));
         }
 
+        // BGM：メニューの画面では流し、写真を撮る・作る・たしかめ・あそぶ・クリア・ゲームオーバーでは止める
+        [TestCase(AppScreenId.Title, true)]
+        [TestCase(AppScreenId.Mode, true)]
+        [TestCase(AppScreenId.Home, true)]
+        [TestCase(AppScreenId.HowTo, true)]
+        [TestCase(AppScreenId.Reach, true)]
+        [TestCase(AppScreenId.GimmickGuide, true)]
+        [TestCase(AppScreenId.Characters, true)]
+        [TestCase(AppScreenId.Backdrop, true)]
+        [TestCase(AppScreenId.Capture, false)]
+        [TestCase(AppScreenId.Generating, false)]
+        [TestCase(AppScreenId.Check, false)]
+        [TestCase(AppScreenId.Play, false)]
+        [TestCase(AppScreenId.Clear, false)]
+        [TestCase(AppScreenId.GameOver, false)]
+        public void BGMを流す画面(AppScreenId screen, bool expected)
+        {
+            Assert.AreEqual(expected, FlowRules.PlaysMusic(screen));
+        }
+
         [Test]
         public void すべての画面に場面が決まっている()
         {

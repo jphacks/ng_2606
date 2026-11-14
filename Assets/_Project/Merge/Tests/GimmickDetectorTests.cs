@@ -180,5 +180,17 @@ namespace DeskStage.Merge.Tests
             Assert.AreEqual(GimmickDetector.Hue.Pink, GimmickDetector.Classify(new Color32(235, 135, 237, 255)));
             Assert.AreEqual(GimmickDetector.Hue.Purple, GimmickDetector.Classify(new Color32(91, 79, 171, 255)));
         }
+
+        [Test]
+        public void 実機の濃いピンクの紙は赤ではなくピンク_赤い紙と箱は赤のまま()
+        {
+            // 2026-11-14 に実機で測った色（濃いピンクの紙：色相 340 度・彩度 0.59、淡いピンクの箱：333 度・0.54、
+            // 赤い箱：8 度・0.92、赤の折り紙：357 度・0.55）
+            Assert.AreEqual(GimmickDetector.Hue.Pink, GimmickDetector.Classify(new Color32(184, 75, 111, 255)), "濃いピンクの紙");
+            Assert.AreEqual(GimmickDetector.Hue.Pink, GimmickDetector.Classify(new Color32(242, 111, 170, 255)), "淡いピンクの箱");
+            Assert.AreEqual(GimmickDetector.Hue.Red, GimmickDetector.Classify(new Color32(163, 33, 13, 255)), "赤い箱");
+            Assert.AreEqual(GimmickDetector.Hue.Red, GimmickDetector.Classify(new Color32(204, 92, 97, 255)), "赤の折り紙");
+            Assert.AreEqual(BoxData.GimmickWarp, GimmickDetector.Detect(Fill(400, new Color32(184, 75, 111, 255))));
+        }
     }
 }
