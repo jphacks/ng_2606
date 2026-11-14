@@ -158,8 +158,8 @@ namespace DeskStage.AR
                 yield break;
             }
 
-            var device = FindBackCamera();
-            if (device == null)
+            var deviceName = BackCamera.FindName("Photo");
+            if (deviceName == null)
             {
                 Debug.LogWarning("[Photo] カメラが見つかりません");
                 StageContext.SetScanStatus(ScanStatus.Lost);
@@ -167,7 +167,7 @@ namespace DeskStage.AR
             }
 
             StopCamera();
-            webcam = new WebCamTexture(device.Value.name, 1920, 1440);
+            webcam = new WebCamTexture(deviceName, 1920, 1440);
             webcam.Play();
             ScanContext.CameraPreview = webcam;
             StageContext.SetScanStatus(ScanStatus.FindingDesk);
@@ -295,19 +295,6 @@ namespace DeskStage.AR
             ReleaseUpright();
             lastOrientation = "";
             ScanContext.CameraPreview = null;
-        }
-
-        static WebCamDevice? FindBackCamera()
-        {
-            var devices = WebCamTexture.devices;
-            foreach (var d in devices)
-            {
-                if (!d.isFrontFacing)
-                {
-                    return d;
-                }
-            }
-            return devices.Length > 0 ? devices[0] : (WebCamDevice?)null;
         }
 
         static string ProjectRoot() => Path.GetDirectoryName(Application.dataPath);
