@@ -57,6 +57,7 @@ namespace DeskStage.App
             public string Id;
             public string Kind;
             public Transform Box;
+            public GameObject Pad; // 上面に敷いた模様の板（箱の子）。作り直すときに消す
             public Material Material;
             public Vector2 Direction;
             public int Flow;
@@ -377,6 +378,9 @@ namespace DeskStage.App
                 {
                     if (bb.Transform != null) UiKit.Kill(bb.Transform.gameObject);
                 }
+                // 模様の板も消す（2026-11-15：前は素材だけを消し、板は箱の子として残っていた。箱は同じ id なら使い回すので、
+                // 保存したステージを読み込み直すと、素材の無い板がマゼンタ一色で、新しい板と重なって出ていた）
+                if (v.Pad != null) UiKit.Kill(v.Pad);
             }
             visuals.Clear();
             foreach (var o in created)
@@ -464,6 +468,7 @@ namespace DeskStage.App
                 pad.transform.localScale = Vector3.one;
             }
             pad.layer = v.Box.gameObject.layer;
+            v.Pad = pad;
             v.Material = NewMaterial(texture, tint);
             // 模様の 1 つ分を、約 4cm にして、箱の大きさだけ並べる
             v.Material.mainTextureScale = new Vector2(Mathf.Max(1f, Mathf.Round(scale.x / 0.04f)), Mathf.Max(1f, Mathf.Round(scale.z / 0.04f)));
