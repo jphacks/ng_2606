@@ -96,7 +96,7 @@ namespace DeskStage.Stage
             // 箱から坂へ（またはその反対）に変わったときは、作り直す
             if (go != null && (go.GetComponent<MeshCollider>() != null) != box.ramp)
             {
-                Destroy(go);
+                Discard(go);
                 go = null;
             }
             if (go == null)
@@ -115,9 +115,21 @@ namespace DeskStage.Stage
                 boxes.Remove(id);
                 if (go != null)
                 {
-                    Destroy(go);
+                    Discard(go);
                 }
             }
+        }
+
+        // 箱を消す。Destroy はフレームの終わりまで待つので、その前に、ステージから外して名前も変える。
+        // 2026-11-15：同じ id の箱と坂が入れ替わると（お手本ステージの box-09 は水の坂）、同じフレームの StageBuilt で
+        // 写真を貼る処理（root.Find(id)）が、消える前の古い方を見つけていた。写真の板が古い方に付いて一緒に消え、
+        // その箱が写真なしの色（サーモンピンク）になっていた
+        void Discard(GameObject go)
+        {
+            go.name += "（消す）";
+            go.SetActive(false);
+            go.transform.SetParent(null, false);
+            Destroy(go);
         }
 
         /// <summary>箱の id からオブジェクトを探す。なければ null。</summary>
