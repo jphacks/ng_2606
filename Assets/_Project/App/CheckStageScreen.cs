@@ -47,6 +47,7 @@ namespace DeskStage.App
         readonly List<AppButton> flowButtons = new List<AppButton>();
         readonly List<Image> flowLines = new List<Image>();
         readonly List<Image> flowDots = new List<Image>();
+        readonly List<TMP_Text> flowArrows = new List<TMP_Text>();
         readonly List<Rect> placedButtons = new List<Rect>();
         readonly List<string> flowIds = new List<string>();
         readonly List<string> warpIds = new List<string>();
@@ -645,6 +646,14 @@ namespace DeskStage.App
                 line.gameObject.SetActive(true);
                 dot.rectTransform.anchoredPosition = anchor;
                 dot.gameObject.SetActive(true);
+
+                // 水：上面の真ん中に、青い丸と、いまの流れの向きを画面の上で指す白い矢印（2026-11-15：ボタンの文字だけでは、
+                // いまどちら向きか分からず、押すたびに何が変わったかも見えにくかった）。ワープは、小さな白い点のまま
+                var arrow = flowArrows[used - 1];
+                var size = isWarp ? FlowDotSize : FlowArrowDotSize;
+                dot.rectTransform.sizeDelta = new Vector2(size, size);
+                dot.color = isWarp ? Color.white : Theme.Blue;
+                arrow.gameObject.SetActive(!isWarp && FlowAngle(cam, box, id, anchor, out var angle) && SetArrow(arrow, angle));
             }
             for (var i = used; i < flowButtons.Count; i++)
             {
@@ -662,11 +671,45 @@ namespace DeskStage.App
             line.rectTransform.anchorMin = line.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             line.rectTransform.SetAsFirstSibling();
             flowLines.Add(line);
-            var dot = UiKit.Disc(flowLayer, "FlowDot", Color.white, 26f);
+            var dot = UiKit.Disc(flowLayer, "FlowDot", Color.white, FlowDotSize);
             dot.rectTransform.anchorMin = dot.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             flowDots.Add(dot);
+            var arrow = UiKit.Label(dot.rectTransform, "▲", FlowArrowDotSize * 0.5f, Color.white, TextAlignmentOptions.Center, true, "FlowArrow");
+            UiKit.Fill(arrow.rectTransform);
+            arrow.raycastTarget = false;
+            flowArrows.Add(arrow);
             flowButtons.Add(UiKit.Button(flowLayer, AppText.CheckFlow, UiKit.ButtonStyle.Soft, new Vector2(SideButtonWidth, Theme.SmallButtonHeight),
                 null, "Flow", Theme.Body));
+        }
+
+        const float FlowDotSize = 26f;
+        const float FlowArrowDotSize = 76f;
+
+        // 水の流れの向きを、画面の上の角度（度。右が 0、反時計回り）にする。流れは、箱の座標の (x, z) の向き（GimmickRules.WaterDirection）。
+        // 箱の大きさで向きがゆがまないよう、回転だけで世界の向きにする
+        bool FlowAngle(Camera cam, Transform box, string id, Vector2 anchor, out float angle)
+        {
+            angle = 0f;
+            if (!Context.Gimmicks.IsWater(id, out var flow))
+            {
+                return false;
+            }
+            var d = GimmickRules.WaterDirection(id, flow);
+            var world = box.rotation * new Vector3(d.x, 0f, d.y);
+            var center = box.TransformPoint(new Vector3(0f, box.GetComponent<MeshCollider>() != null ? 0f : 0.5f, 0f));
+            if (!ToLocal(cam, center + world.normalized * 0.03f, out var tip) || (tip - anchor).sqrMagnitude < 1f)
+            {
+                return false;
+            }
+            angle = Mathf.Atan2(tip.y - anchor.y, tip.x - anchor.x) * Mathf.Rad2Deg;
+            return true;
+        }
+
+        // 「▲」は上（90 度）を指すので、その分だけ戻して回す
+        static bool SetArrow(TMP_Text arrow, float angle)
+        {
+            arrow.rectTransform.localRotation = Quaternion.Euler(0f, 0f, angle - 90f);
+            return true;
         }
 
         bool ToLocal(Camera cam, Vector3 world, out Vector2 local)

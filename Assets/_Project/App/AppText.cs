@@ -182,7 +182,7 @@ namespace DeskStage.App
         public const string CheckHeight = "たかさ";
         public const string CheckDeleteBox = "けす";
         public const string CheckModeCourseHint = "つくえの うえを タップして おいてね";
-        public const string CheckFlow = "ながれの むき";
+        public const string CheckFlow = "むきを かえる";
         public const string CheckCourseChoose = "「スタート」か「ゴール」を えらんでね";
         public const string CharDeleteConfirm = "えらんでいる こを けすよ。\nもとには もどせないよ";
         public const string CharNamed = "キャラ";
