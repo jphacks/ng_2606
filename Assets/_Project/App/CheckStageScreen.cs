@@ -563,7 +563,7 @@ namespace DeskStage.App
             rulesButton.SetText(CourseRuleState.HasAny(r) ? AppText.RulesSet : AppText.Rules);
         }
 
-        const float SideButtonWidth = 300f;
+        const float SideButtonWidth = 380f;
         const float SideGap = 40f;
 
         // 水の箱とワープの箱それぞれの横に、ボタンを出す（ふだんの状態だけ。なおす・コースの間と、置く場所を選ぶ間は隠す）
@@ -611,7 +611,10 @@ namespace DeskStage.App
                 var dot = flowDots[used];
                 used++;
                 var target = id;
-                button.SetText(isWarp ? Context.Gimmicks.WarpLabel(id) : AppText.CheckFlow);
+                // 水：いまの流れの向きを、画面の上での「うえ・した・みぎ・ひだり」の言葉で出す（2026-11-15：矢印だけでは分かりにくかった）
+                var angle = 0f;
+                var hasAngle = !isWarp && FlowAngle(cam, box, id, anchor, out angle);
+                button.SetText(isWarp ? Context.Gimmicks.WarpLabel(id) : hasAngle ? FlowWord(angle) : AppText.CheckFlow);
                 button.Button.onClick.RemoveAllListeners();
                 if (isWarp) button.Button.onClick.AddListener(() => Context.Gimmicks.CycleWarp(target));
                 else button.Button.onClick.AddListener(() => Context.Gimmicks.CycleFlow(target));
@@ -653,7 +656,7 @@ namespace DeskStage.App
                 var dotSize = isWarp ? FlowDotSize : FlowArrowDotSize;
                 dot.rectTransform.sizeDelta = new Vector2(dotSize, dotSize);
                 dot.color = isWarp ? Color.white : Theme.Blue;
-                arrow.gameObject.SetActive(!isWarp && FlowAngle(cam, box, id, anchor, out var angle) && SetArrow(arrow, angle));
+                arrow.gameObject.SetActive(hasAngle && SetArrow(arrow, angle));
             }
             for (var i = used; i < flowButtons.Count; i++)
             {
@@ -703,6 +706,16 @@ namespace DeskStage.App
             }
             angle = Mathf.Atan2(tip.y - anchor.y, tip.x - anchor.x) * Mathf.Rad2Deg;
             return true;
+        }
+
+        /// <summary>画面の上の角度（度。右が 0、反時計回り）を、流れの向きの言葉にする。</summary>
+        public static string FlowWord(float angle)
+        {
+            angle = Mathf.Repeat(angle + 180f, 360f) - 180f;
+            if (angle >= -45f && angle < 45f) return AppText.FlowRight;
+            if (angle >= 45f && angle < 135f) return AppText.FlowUp;
+            if (angle >= -135f && angle < -45f) return AppText.FlowDown;
+            return AppText.FlowLeft;
         }
 
         // 「▲」は上（90 度）を指すので、その分だけ戻して回す

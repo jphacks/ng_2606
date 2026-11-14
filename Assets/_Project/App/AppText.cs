@@ -183,6 +183,11 @@ namespace DeskStage.App
         public const string CheckDeleteBox = "けす";
         public const string CheckModeCourseHint = "つくえの うえを タップして おいてね";
         public const string CheckFlow = "むきを かえる";
+        // 水の流れの向き（たしかめの画面のボタン。画面の上での向き。押すたびに、次の向きに変わる）
+        public const string FlowUp = "うえに ながれる";
+        public const string FlowDown = "したに ながれる";
+        public const string FlowRight = "みぎに ながれる";
+        public const string FlowLeft = "ひだりに ながれる";
         public const string CheckCourseChoose = "「スタート」か「ゴール」を えらんでね";
         public const string CharDeleteConfirm = "えらんでいる こを けすよ。\nもとには もどせないよ";
         public const string CharNamed = "キャラ";
