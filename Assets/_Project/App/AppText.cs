@@ -91,7 +91,7 @@ namespace DeskStage.App
         public const string CheckAddBox = "＋ はこ";
         public const string CheckAddBoxHint = "はこを おきたい ところを タップしてね";
         public const string CheckUndo = "もどす";
-        public const string CheckCourse = "コース";
+        public const string CheckCourse = "コースせってい";
         public const string CheckCourseClose = "とじる";
         public const string CheckSetStart = "スタートを おく";
         public const string CheckSetGoal = "ゴールを おく";

@@ -111,12 +111,12 @@ namespace DeskStage.App
             var rescan = UiKit.Button(barSafe, AppText.CheckRescanButton, UiKit.ButtonStyle.Secondary, new Vector2(620f, Theme.ButtonHeight),
                 AskRescan, "Rescan", Theme.H2);
             UiKit.Place(rescan.Rect, new Vector2(0f, 0f), new Vector2(Theme.Margin, 50f), rescan.Rect.sizeDelta);
-            courseButton = UiKit.Button(barSafe, AppText.CheckCourse, UiKit.ButtonStyle.Soft, new Vector2(360f, Theme.ButtonHeight),
+            courseButton = UiKit.Button(barSafe, AppText.CheckCourse, UiKit.ButtonStyle.Soft, new Vector2(540f, Theme.ButtonHeight), // 「コースせってい」が 1 行に入る幅
                 ToggleCourse, "Course", Theme.H2);
             UiKit.Place(courseButton.Rect, new Vector2(0f, 0f), new Vector2(Theme.Margin + 660f, 50f), courseButton.Rect.sizeDelta);
             saveButton = UiKit.Button(barSafe, AppText.CheckSave, UiKit.ButtonStyle.Soft, new Vector2(360f, Theme.ButtonHeight),
                 () => Context.Flow.SaveStage(), "Save", Theme.H2);
-            UiKit.Place(saveButton.Rect, new Vector2(0f, 0f), new Vector2(Theme.Margin + 1060f, 50f), saveButton.Rect.sizeDelta);
+            UiKit.Place(saveButton.Rect, new Vector2(0f, 0f), new Vector2(Theme.Margin + 1240f, 50f), saveButton.Rect.sizeDelta);
 
             playButton = UiKit.Button(barSafe, AppText.CheckPlay, UiKit.ButtonStyle.Primary, new Vector2(560f, Theme.ButtonHeight),
                 () => Context.Flow.PlayFromCheck(), "Play", Theme.H1);
