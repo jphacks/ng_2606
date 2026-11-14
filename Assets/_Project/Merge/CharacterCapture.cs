@@ -54,19 +54,8 @@ namespace DeskStage.Merge
                 yield break;
             }
 
-            string deviceName = null;
-            foreach (var d in WebCamTexture.devices)
-            {
-                if (!d.isFrontFacing)
-                {
-                    deviceName = d.name;
-                    break;
-                }
-            }
-            if (deviceName == null && WebCamTexture.devices.Length > 0)
-            {
-                deviceName = WebCamTexture.devices[0].name;
-            }
+            // ステージの撮影と同じ選び方（背面の広角。2026-11-14：iPhone 15 で前のカメラが開いていた）
+            var deviceName = DeskStage.AR.BackCamera.FindName("Character");
             if (deviceName == null)
             {
                 Problem = "カメラが みつかりません";
