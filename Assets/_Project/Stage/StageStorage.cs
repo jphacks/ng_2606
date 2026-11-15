@@ -46,8 +46,9 @@ namespace DeskStage.Stage
         }
 
         /// <summary>
-        /// 同梱用のステージを保存用へコピーする。まだコピーしていないか、更新番号が上がったものだけ。
-        /// 子どもが消した同梱用のステージは、更新番号が上がるまでは戻さない。コピーした数を返す。
+        /// 同梱用のステージを保存用へコピーする。まだコピーしていないか、更新番号が上がったもの、保存用から無くなったものだけ。コピーした数を返す。
+        /// 2026-11-15：前は、消した同梱用のステージは更新番号が上がるまで戻さなかった。お手本は一覧から消せなくした
+        /// （FlowRules.CanDeleteStage）ので、無くなっていたら（消せなくする前に消した端末など）入れ直す。
         /// </summary>
         public int CopyBundled()
         {
@@ -72,7 +73,8 @@ namespace DeskStage.Stage
             var count = 0;
             foreach (var e in index.stages ?? Array.Empty<IndexEntry>())
             {
-                if (string.IsNullOrEmpty(e.id) || (known.TryGetValue(e.id, out var rev) && rev >= e.revision))
+                var present = !string.IsNullOrEmpty(e.id) && File.Exists(Path.Combine(savedDir, e.id, StageFile));
+                if (string.IsNullOrEmpty(e.id) || (known.TryGetValue(e.id, out var rev) && rev >= e.revision && present))
                 {
                     continue;
                 }

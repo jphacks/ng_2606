@@ -118,15 +118,16 @@ namespace DeskStage.Stage.Tests
         }
 
         [Test]
-        public void 消した同梱用のステージは更新番号が上がるまで戻らない()
+        public void 無くなった同梱用のステージは次のコピーで戻る()
         {
+            // お手本は一覧から消せない（2026-11-15）。消せなくする前に消した端末でも、次に起動したときに戻す
             var storage = new StageStorage(bundled, saved);
             storage.CopyBundled();
             storage.Delete("sample-01");
 
-            storage.CopyBundled();
+            Assert.That(storage.CopyBundled(), Is.EqualTo(1));
 
-            Assert.That(Directory.Exists(Path.Combine(saved, "sample-01")), Is.False);
+            Assert.That(File.Exists(Path.Combine(saved, "sample-01", "stage.json")), Is.True);
         }
 
         // --- 保存・一覧・読み込み・消す ---
