@@ -92,7 +92,7 @@ namespace DeskStage.App
         public const string CheckAddBoxHint = "はこを おきたい ところを タップしてね";
         public const string CheckUndo = "もどす";
         public const string CheckCourse = "コースせってい";
-        public const string CheckCourseClose = "とじる";
+        public const string CheckCourseClose = "せってい おわる"; // 「なおす」→「なおしおわる」とそろえる（2026-11-19：「とじる」では、何のボタンか分かりにくかった）
         public const string CheckSetStart = "スタートを おく";
         public const string CheckSetGoal = "ゴールを おく";
         // 置いたあとも「おく」のまま（置き直せることが分かるように。置いたことは、ボタンの緑の色で見せる。2026-11-07）
